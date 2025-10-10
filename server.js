@@ -1,268 +1,77 @@
+// server.js (DEV RELAY) — forwards to your real Playwright API on the VPS
+// Usage:
+//   npm i node-fetch@3
+//   node server.js
+// Frontend can call: http://localhost:3001/run, /status/:id, /results/:id
+
 const express = require('express');
 const cors = require('cors');
-const { spawn } = require('child_process');
-const path = require('path');
+
+// node-fetch v3 is ESM; use dynamic import in CJS:
+const fetch = (...args) => import('node-fetch').then(({ default: f }) => f(...args));
+
+const APP_PORT = process.env.PORT || 3001;
+
+// Set these via env in CI/hosting if you want, but defaults work for you:
+const API_BASE = process.env.REAL_API_BASE || 'https://api.organitrafficboost.com';
+const API_KEY  = process.env.REAL_API_KEY  || 'm7fB9zQv4kR2sX8nH6pW0tLq3YvZ1uC5gD8eF4rJp';
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+app.use(express.json());
 
-// Enable CORS for all routes
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://127.0.0.1:5173', '*'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'x-api-key', 'Authorization'],
+  origin: [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'https://organitrafficboost.com',
+    'https://www.organitrafficboost.com'
+  ],
   credentials: false
 }));
 
-// Parse JSON bodies
-app.use(express.json());
+// local health for quick checks
+app.get('/health', (req, res) => res.json({ ok: true, relay: true, upstream: API_BASE }));
 
-// API Key validation middleware
-const validateApiKey = (req, res, next) => {
-  const apiKey = req.headers['x-api-key'] || req.headers['authorization']?.replace('Bearer ', '');
-  const expectedKey = 'm7fB9zQv4kR2sX8nH6pW0tLq3YvZ1uC5gD8eF4rJp';
-  
-  if (!apiKey || apiKey !== expectedKey) {
-    return res.status(401).json({ error: 'Invalid API key' });
-  }
-  
-  next();
-};
-
-// Store running campaigns
-const campaigns = new Map();
-
-// Health check endpoint (no auth required)
-app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'online', 
-    timestamp: new Date().toISOString(),
-    server: 'Local Development Server',
-    campaigns: campaigns.size
+async function forward(method, path, body) {
+  const url = `${API_BASE}${path}`;
+  const res = await fetch(url, {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': API_KEY
+    },
+    body: body ? JSON.stringify(body) : undefined
   });
-});
-
-// Ping endpoint (no auth required)
-app.get('/ping', (req, res) => {
-  res.json({ 
-    message: 'pong', 
-    timestamp: new Date().toISOString() 
-  });
-});
-
-// Status endpoint (no auth required)
-app.get('/status', (req, res) => {
-  res.json({ 
-    status: 'running', 
-    activeCampaigns: campaigns.size,
-    uptime: process.uptime(),
-    timestamp: new Date().toISOString()
-  });
-});
-
-// Start campaign endpoint
-app.post('/run', validateApiKey, (req, res) => {
-  try {
-    const { urls, dwellMs = 8000, scroll = true, ...options } = req.body;
-    
-    if (!urls || (Array.isArray(urls) && urls.length === 0)) {
-      return res.status(400).json({ error: 'URLs are required' });
-    }
-    
-    const campaignId = `campaign_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const urlList = Array.isArray(urls) ? urls : [urls];
-    
-    // Simulate campaign creation
-    const campaign = {
-      id: campaignId,
-      urls: urlList,
-      dwellMs,
-      scroll,
-      status: 'running',
-      startTime: new Date().toISOString(),
-      visitCount: 0,
-      totalVisits: options.trafficAmount || 100,
-      ...options
-    };
-    
-    campaigns.set(campaignId, campaign);
-    
-    // Start simulated traffic generation
-    simulateTrafficGeneration(campaignId);
-    
-    res.json({
-      success: true,
-      id: campaignId,
-      sessionId: campaignId,
-      message: 'Campaign started successfully',
-      campaign: {
-        id: campaignId,
-        urls: urlList,
-        status: 'running',
-        startTime: campaign.startTime
-      }
-    });
-    
-  } catch (error) {
-    console.error('Campaign start error:', error);
-    res.status(500).json({ 
-      error: 'Failed to start campaign',
-      details: error.message 
-    });
-  }
-});
-
-// Get campaign status
-app.get('/status/:campaignId', validateApiKey, (req, res) => {
-  const { campaignId } = req.params;
-  const campaign = campaigns.get(campaignId);
-  
-  if (!campaign) {
-    return res.status(404).json({ error: 'Campaign not found' });
-  }
-  
-  res.json({
-    id: campaignId,
-    status: campaign.status,
-    visitCount: campaign.visitCount,
-    totalVisits: campaign.totalVisits,
-    progress: Math.min((campaign.visitCount / campaign.totalVisits) * 100, 100),
-    startTime: campaign.startTime,
-    urls: campaign.urls
-  });
-});
-
-// Get campaign results
-app.get('/results/:campaignId', validateApiKey, (req, res) => {
-  const { campaignId } = req.params;
-  const campaign = campaigns.get(campaignId);
-  
-  if (!campaign) {
-    return res.status(404).json({ error: 'Campaign not found' });
-  }
-  
-  res.json({
-    id: campaignId,
-    status: campaign.status,
-    results: {
-      totalVisits: campaign.visitCount,
-      targetVisits: campaign.totalVisits,
-      successRate: '98.5%',
-      averageDwellTime: `${campaign.dwellMs}ms`,
-      urls: campaign.urls,
-      startTime: campaign.startTime,
-      endTime: campaign.status === 'completed' ? campaign.endTime : null
-    }
-  });
-});
-
-// Stop campaign
-app.post('/stop/:campaignId', validateApiKey, (req, res) => {
-  const { campaignId } = req.params;
-  const campaign = campaigns.get(campaignId);
-  
-  if (!campaign) {
-    return res.status(404).json({ error: 'Campaign not found' });
-  }
-  
-  campaign.status = 'stopped';
-  campaign.endTime = new Date().toISOString();
-  
-  res.json({
-    success: true,
-    message: 'Campaign stopped successfully',
-    id: campaignId,
-    finalStats: {
-      visitCount: campaign.visitCount,
-      totalVisits: campaign.totalVisits,
-      status: 'stopped'
-    }
-  });
-});
-
-// List all campaigns
-app.get('/campaigns', validateApiKey, (req, res) => {
-  const campaignList = Array.from(campaigns.values()).map(campaign => ({
-    id: campaign.id,
-    status: campaign.status,
-    visitCount: campaign.visitCount,
-    totalVisits: campaign.totalVisits,
-    startTime: campaign.startTime,
-    urls: campaign.urls.slice(0, 1) // Only show first URL
-  }));
-  
-  res.json({
-    campaigns: campaignList,
-    total: campaignList.length
-  });
-});
-
-// Simulate traffic generation
-function simulateTrafficGeneration(campaignId) {
-  const campaign = campaigns.get(campaignId);
-  if (!campaign) return;
-  
-  const interval = setInterval(() => {
-    if (campaign.status !== 'running') {
-      clearInterval(interval);
-      return;
-    }
-    
-    // Simulate visits
-    const increment = Math.floor(Math.random() * 3) + 1;
-    campaign.visitCount = Math.min(campaign.visitCount + increment, campaign.totalVisits);
-    
-    // Check if completed
-    if (campaign.visitCount >= campaign.totalVisits) {
-      campaign.status = 'completed';
-      campaign.endTime = new Date().toISOString();
-      clearInterval(interval);
-      console.log(`Campaign ${campaignId} completed with ${campaign.visitCount} visits`);
-    }
-    
-  }, 2000); // Update every 2 seconds
+  const text = await res.text();
+  try { return { status: res.status, json: JSON.parse(text) }; }
+  catch { return { status: res.status, json: { raw: text } }; }
 }
 
-// Error handling middleware
-app.use((error, req, res, next) => {
-  console.error('Server error:', error);
-  res.status(500).json({ 
-    error: 'Internal server error',
-    message: error.message 
-  });
+// Relay the three API endpoints your UI uses
+app.post('/run', async (req, res) => {
+  const { status, json } = await forward('POST', '/run', req.body);
+  res.status(status).json(json);
 });
 
-// Handle 404s
-app.use('*', (req, res) => {
-  res.status(404).json({ 
-    error: 'Endpoint not found',
-    availableEndpoints: ['/health', '/ping', '/status', '/run', '/status/:id', '/results/:id', '/stop/:id', '/campaigns']
-  });
+app.get('/status/:id', async (req, res) => {
+  const { status, json } = await forward('GET', `/status/${encodeURIComponent(req.params.id)}`);
+  res.status(status).json(json);
 });
 
-// Start server
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Traffic Generation Server running on http://localhost:${PORT}`);
-  console.log(`📊 Health check: http://localhost:${PORT}/health`);
-  console.log(`🔑 API Key required for most endpoints`);
-  console.log(`📝 Available endpoints:`);
-  console.log(`   GET  /health - Server health check`);
-  console.log(`   GET  /ping - Simple ping test`);
-  console.log(`   GET  /status - Server status`);
-  console.log(`   POST /run - Start campaign`);
-  console.log(`   GET  /status/:id - Campaign status`);
-  console.log(`   GET  /results/:id - Campaign results`);
-  console.log(`   POST /stop/:id - Stop campaign`);
-  console.log(`   GET  /campaigns - List campaigns`);
+app.get('/results/:id', async (req, res) => {
+  const { status, json } = await forward('GET', `/results/${encodeURIComponent(req.params.id)}`);
+  res.status(status).json(json);
 });
 
-// Graceful shutdown
-process.on('SIGTERM', () => {
-  console.log('Received SIGTERM, shutting down gracefully');
-  process.exit(0);
+// Optional passthrough to upstream health
+app.get('/upstream/health', async (req, res) => {
+  const { status, json } = await forward('GET', '/health');
+  res.status(status).json(json);
 });
 
-process.on('SIGINT', () => {
-  console.log('Received SIGINT, shutting down gracefully');
-  process.exit(0);
+// 404 helper
+app.use('*', (_req, res) => res.status(404).json({ error: 'Not found', relay: true }));
+
+app.listen(APP_PORT, () => {
+  console.log(`Relay listening on http://localhost:${APP_PORT} -> ${API_BASE}`);
 });

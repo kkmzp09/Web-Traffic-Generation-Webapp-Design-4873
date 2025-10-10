@@ -1,109 +1,74 @@
-// Mock authentication functions for development
-// In production, replace these with actual API calls
-
-export const loginUser = async (email, password) => {
-  console.log('loginUser called with:', email);
-  
-  try {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Check if user was previously registered
-    const registeredUser = localStorage.getItem('registered_user');
-    let userData;
-    
-    if (registeredUser) {
-      userData = JSON.parse(registeredUser);
-      // Verify email matches
-      if (userData.email !== email) {
-        throw new Error('Invalid email or password');
-      }
-    } else {
-      // Create new user data for login
-      userData = {
-        id: `user_${Date.now()}`,
-        email: email,
-        name: email.split('@')[0]
-      };
-    }
-    
-    // Mock successful login
-    return {
-      success: true,
-      user: userData,
-      sessionToken: `session_${Date.now()}`
-    };
-    
-  } catch (error) {
-    console.error('Login error:', error);
-    throw new Error(error.message || 'Login failed. Please try again.');
+// Mock user database
+// In a real application, this would be a database call.
+let USERS = [
+  { 
+    id: 'usr_1', 
+    email: 'user@example.com', 
+    password: 'password123', 
+    name: 'Test User' 
   }
+];
+
+const FAKE_DELAY = 500;
+
+// --- Mock Auth Service ---
+
+export const loginUser = (email, password) => {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const user = USERS.find(u => u.email === email && u.password === password);
+      if (user) {
+        const userData = { id: user.id, email: user.email, name: user.name };
+        localStorage.setItem('authUser', JSON.stringify(userData));
+        // Return object expected by AuthModal
+        resolve({ user: userData, sessionToken: 'fake-token-for-demo' });
+      } else {
+        reject(new Error('Invalid credentials. Please try again.'));
+      }
+    }, FAKE_DELAY);
+  });
 };
 
-export const registerUser = async (userData) => {
-  console.log('registerUser called with:', userData);
-  
-  try {
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Validate required fields
-    if (!userData.email || !userData.password || !userData.name) {
-      throw new Error('All fields are required');
-    }
-    
-    // Check if user already exists (mock check)
-    const existingUser = localStorage.getItem('registered_user');
-    if (existingUser) {
-      const existing = JSON.parse(existingUser);
-      if (existing.email === userData.email) {
-        throw new Error('User with this email already exists');
+export const registerUser = ({ name, email, password }) => {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      if (USERS.some(u => u.email === email)) {
+        reject(new Error('An account with this email already exists.'));
+      } else {
+        const newUser = {
+          id: `usr_${Date.now()}`,
+          name,
+          email,
+          password, // In a real app, hash this!
+        };
+        USERS.push(newUser);
+        const userData = { id: newUser.id, email: newUser.email, name: newUser.name };
+        // Does not log in, just resolves with user data
+        resolve(userData);
       }
-    }
-    
-    const newUser = {
-      id: `user_${Date.now()}`,
-      email: userData.email,
-      name: userData.name,
-      createdAt: new Date().toISOString()
-    };
-    
-    // Store user data (in production, this would be saved to database)
-    localStorage.setItem('registered_user', JSON.stringify(newUser));
-    
-    return {
-      success: true,
-      user: newUser,
-      message: 'Account created successfully'
-    };
-    
-  } catch (error) {
-    console.error('Registration error:', error);
-    throw new Error(error.message || 'Registration failed. Please try again.');
-  }
+    }, FAKE_DELAY);
+  });
 };
 
-export const logoutUser = async () => {
-  try {
-    // In production, this would call the logout API endpoint
-    localStorage.removeItem('auth_state');
-    return { success: true };
-  } catch (error) {
-    console.error('Logout error:', error);
-    throw new Error('Logout failed');
-  }
+export const logout = () => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      localStorage.clear();
+      sessionStorage.clear();
+      resolve(true);
+    }, FAKE_DELAY);
+  });
 };
 
 export const getCurrentUser = () => {
-  try {
-    const authState = localStorage.getItem('auth_state');
-    if (authState) {
-      const parsed = JSON.parse(authState);
-      return parsed.user;
-    }
-    return null;
-  } catch (error) {
-    console.error('Error getting current user:', error);
-    return null;
-  }
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      const storedUser = localStorage.getItem('authUser');
+      if (storedUser) {
+        resolve(JSON.parse(storedUser));
+      } else {
+        resolve(null);
+      }
+    }, FAKE_DELAY / 2); 
+  });
 };

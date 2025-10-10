@@ -1,244 +1,247 @@
-import React, { useState } from 'react';
-import SafeIcon from '../common/SafeIcon';
-import * as FiIcons from 'react-icons/fi';
+import React, { useState, useEffect } from 'react';
+    import { motion } from 'framer-motion';
+    import SafeIcon from '../common/SafeIcon';
+    import * as FiIcons from 'react-icons/fi';
+    import {
+      startCampaign,
+      checkCampaignStatus,
+      getCampaignResults,
+      checkServerHealth,
+      buildCampaignRequest,
+      handleApiError,
+      getServerUrl,
+    } from '../api';
+    import { DEFAULT_SERVER_CONFIG } from '../config';
 
-const { FiZap, FiPlay, FiSettings, FiTarget, FiGlobe, FiClock, FiBarChart } = FiIcons;
+    const { FiZap, FiPlay, FiTarget, FiGlobe, FiBarChart, FiRefreshCw, FiCheckCircle, FiXCircle } = FiIcons;
 
-const DirectTraffic = () => {
-  const [campaignData, setCampaignData] = useState({
-    url: '',
-    trafficAmount: 100,
-    duration: 60,
-    concurrent: 5
-  });
+    function DirectTraffic() {
+      const [targetUrl, setTargetUrl] = useState('https://jobmakers.in');
+      const [trafficAmount, setTrafficAmount] = useState(10);
+      const [campaignStatus, setCampaignStatus] = useState('idle'); // idle, running, finished, error
+      const [jobId, setJobId] = useState(null);
+      const [results, setResults] = useState(null);
+      const [progress, setProgress] = useState(0);
 
-  const [isRunning, setIsRunning] = useState(false);
-  const [campaigns, setCampaigns] = useState([
-    {
-      id: 1,
-      name: 'Website Homepage',
-      url: 'https://example.com',
-      status: 'completed',
-      traffic: 500,
-      success: 94.2,
-      created: '2024-01-15'
-    },
-    {
-      id: 2,
-      name: 'Product Page',
-      url: 'https://example.com/product',
-      status: 'running',
-      traffic: 150,
-      success: 96.8,
-      created: '2024-01-16'
-    }
-  ]);
+      const [serverStatus, setServerStatus] = useState('unknown');
+      const [serverConfig] = useState(DEFAULT_SERVER_CONFIG);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setCampaignData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleRunCampaign = () => {
-    if (!campaignData.url) return;
-    
-    setIsRunning(true);
-    // Simulate campaign running
-    setTimeout(() => {
-      setIsRunning(false);
-      // Add new campaign to list
-      const newCampaign = {
-        id: campaigns.length + 1,
-        name: `Campaign ${campaigns.length + 1}`,
-        url: campaignData.url,
-        status: 'completed',
-        traffic: campaignData.trafficAmount,
-        success: Math.random() * 10 + 90, // Random success rate 90-100%
-        created: new Date().toISOString().split('T')[0]
+      const checkApiConnection = async () => {
+        setServerStatus('checking');
+        try {
+          await checkServerHealth(serverConfig);
+          setServerStatus('ok');
+        } catch (error) {
+          setServerStatus('error');
+          console.error(handleApiError(error, 'Health check'));
+        }
       };
-      setCampaigns(prev => [newCampaign, ...prev]);
-    }, 5000);
-  };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'running': return 'text-green-600 bg-green-100';
-      case 'completed': return 'text-blue-600 bg-blue-100';
-      case 'paused': return 'text-yellow-600 bg-yellow-100';
-      default: return 'text-gray-600 bg-gray-100';
-    }
-  };
+      useEffect(() => {
+        checkApiConnection();
+      }, []);
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="p-6">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center space-x-4 mb-4">
-            <div className="p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl shadow-lg">
-              <SafeIcon icon={FiZap} className="w-8 h-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Direct Traffic</h1>
-              <p className="text-gray-600 mt-1">
-                Generate direct website traffic with customizable campaigns
-              </p>
-            </div>
+      const startPolling = (sessionId) => {
+        const interval = setInterval(async () => {
+          try {
+            const statusData = await checkCampaignStatus(sessionId);
+            setProgress(statusData.progress || 0);
+
+            if (statusData.status === 'finished' || statusData.status === 'completed') {
+              clearInterval(interval);
+              setCampaignStatus('finished');
+              setProgress(100);
+              const finalResults = await getCampaignResults(sessionId);
+              setResults(finalResults.results || finalResults);
+            } else if (statusData.status === 'failed' || statusData.status === 'error') {
+              clearInterval(interval);
+              setCampaignStatus('error');
+            }
+          } catch (error) {
+            console.error(handleApiError(error, 'Status check'));
+            setCampaignStatus('error');
+            clearInterval(interval);
+          }
+        }, 2000);
+
+        // Stop polling after 2 minutes to prevent infinite loops
+        setTimeout(() => {
+          clearInterval(interval);
+          if (campaignStatus === 'running') {
+            setCampaignStatus('error'); // Assume timeout is an error
+          }
+        }, 120000);
+      };
+
+      const handleRunCampaign = async () => {
+        setCampaignStatus('running');
+        setResults(null);
+        setProgress(0);
+        setJobId(null);
+        
+        try {
+          const urlList = Array(trafficAmount).fill(targetUrl);
+
+          const payload = buildCampaignRequest({
+            urls: urlList,
+            dwellMs: 15000,
+            scroll: true,
+          });
+          
+          const response = await startCampaign(payload, serverConfig);
+          
+          if (response.id || response.sessionId) {
+            const sessionId = response.id || response.sessionId;
+            setJobId(sessionId);
+            startPolling(sessionId);
+          } else {
+            throw new Error(response.message || 'Failed to get a campaign ID');
+          }
+        } catch (error) {
+          setCampaignStatus('error');
+          console.error(handleApiError(error, 'Campaign start'));
+        }
+      };
+
+      const getStatusIndicator = () => {
+        const statuses = {
+          checking: { icon: FiZap, color: 'text-yellow-500', label: 'Checking API...', pulse: true },
+          ok: { icon: FiZap, color: 'text-green-500', label: 'API Connected' },
+          error: { icon: FiZap, color: 'text-red-500', label: 'API Unreachable' },
+        };
+        const currentStatus = statuses[serverStatus] || statuses.error;
+        return (
+          <div className={`flex items-center ${currentStatus.color}`}>
+            <SafeIcon icon={currentStatus.icon} className={currentStatus.pulse ? 'animate-pulse' : ''} />
+            <span className="ml-2 text-sm">{currentStatus.label}</span>
           </div>
-        </div>
+        );
+      };
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Campaign Setup */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center space-x-2 mb-6">
-                <SafeIcon icon={FiTarget} className="w-5 h-5 text-blue-600" />
-                <h2 className="text-lg font-semibold text-gray-900">Run Campaign</h2>
+      return (
+        <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-screen">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="max-w-4xl mx-auto"
+          >
+            <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
+                <div className="mb-4 sm:mb-0">
+                  <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+                    <SafeIcon icon={FiTarget} className="mr-3 text-red-500" />
+                    Direct Traffic
+                  </h1>
+                  <p className="text-gray-500 mt-1">Send direct visits to a URL.</p>
+                </div>
+                {getStatusIndicator()}
               </div>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+              <div className="space-y-6">
+                {/* URL Input */}
+                <motion.div
+                  className="p-5 bg-gray-100 rounded-lg"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <label htmlFor="targetUrl" className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                    <SafeIcon icon={FiGlobe} className="mr-2" />
                     Target URL
                   </label>
                   <input
-                    type="url"
-                    name="url"
-                    value={campaignData.url}
-                    onChange={handleInputChange}
+                    type="text"
+                    id="targetUrl"
+                    value={targetUrl}
+                    onChange={(e) => setTargetUrl(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
                     placeholder="https://example.com"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={isRunning}
                   />
-                </div>
+                </motion.div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                {/* Traffic Amount */}
+                <motion.div
+                  className="p-5 bg-gray-100 rounded-lg"
+                  whileHover={{ scale: 1.02 }}
+                >
+                  <label htmlFor="trafficAmount" className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
+                    <SafeIcon icon={FiBarChart} className="mr-2" />
                     Traffic Amount
                   </label>
                   <input
-                    type="number"
-                    name="trafficAmount"
-                    value={campaignData.trafficAmount}
-                    onChange={handleInputChange}
+                    type="range"
+                    id="trafficAmount"
                     min="1"
-                    max="10000"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={isRunning}
+                    max="100"
+                    value={trafficAmount}
+                    onChange={(e) => setTrafficAmount(Number(e.target.value))}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-red-600"
                   />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Duration (minutes)
-                  </label>
-                  <input
-                    type="number"
-                    name="duration"
-                    value={campaignData.duration}
-                    onChange={handleInputChange}
-                    min="1"
-                    max="1440"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={isRunning}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Concurrent Sessions
-                  </label>
-                  <input
-                    type="number"
-                    name="concurrent"
-                    value={campaignData.concurrent}
-                    onChange={handleInputChange}
-                    min="1"
-                    max="50"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={isRunning}
-                  />
-                </div>
-
-                <button
-                  onClick={handleRunCampaign}
-                  disabled={!campaignData.url || isRunning}
-                  className={`w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-lg font-medium transition-colors duration-200 ${
-                    isRunning
-                      ? 'bg-gray-400 text-white cursor-not-allowed'
-                      : 'bg-blue-600 hover:bg-blue-700 text-white'
-                  }`}
-                >
-                  <SafeIcon icon={FiPlay} className="w-4 h-4" />
-                  <span>{isRunning ? 'Campaign Running...' : 'Start Campaign'}</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Campaign List */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center space-x-2">
-                  <SafeIcon icon={FiBarChart} className="w-5 h-5 text-green-600" />
-                  <h2 className="text-lg font-semibold text-gray-900">Campaign History</h2>
-                </div>
-                <div className="text-sm text-gray-500">
-                  {campaigns.length} campaigns
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                {campaigns.map((campaign) => (
-                  <div key={campaign.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow duration-200">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center space-x-3">
-                        <SafeIcon icon={FiGlobe} className="w-4 h-4 text-gray-400" />
-                        <div>
-                          <h3 className="font-medium text-gray-900">{campaign.name}</h3>
-                          <p className="text-sm text-gray-600">{campaign.url}</p>
-                        </div>
-                      </div>
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(campaign.status)}`}>
-                        {campaign.status}
-                      </span>
-                    </div>
-                    
-                    <div className="grid grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <p className="text-gray-500">Traffic</p>
-                        <p className="font-medium text-gray-900">{campaign.traffic}</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500">Success Rate</p>
-                        <p className="font-medium text-gray-900">{campaign.success.toFixed(1)}%</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500">Created</p>
-                        <p className="font-medium text-gray-900">{campaign.created}</p>
-                      </div>
-                    </div>
+                  <div className="text-center text-lg font-semibold text-gray-800 mt-2">
+                    {trafficAmount} visits
                   </div>
-                ))}
+                </motion.div>
               </div>
 
-              {campaigns.length === 0 && (
-                <div className="text-center py-8">
-                  <SafeIcon icon={FiBarChart} className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">No campaigns yet</h3>
-                  <p className="text-gray-600">Start your first direct traffic campaign to see results here</p>
+              {/* Action Button */}
+              <div className="mt-8">
+                <motion.button
+                  onClick={handleRunCampaign}
+                  disabled={campaignStatus === 'running' || serverStatus !== 'ok'}
+                  className="w-full py-3 px-4 text-white font-semibold rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <div className="flex items-center justify-center">
+                    <SafeIcon icon={campaignStatus === 'running' ? FiRefreshCw : FiPlay} className={campaignStatus === 'running' ? 'animate-spin' : ''} />
+                    <span className="ml-2">{campaignStatus === 'running' ? 'Campaign Running...' : 'Run Campaign'}</span>
+                  </div>
+                </motion.button>
+              </div>
+
+              {/* Progress and Status */}
+              {campaignStatus !== 'idle' && (
+                <div className="mt-6 text-center">
+                  {campaignStatus === 'running' && (
+                    <div className="space-y-2">
+                      <p className="text-blue-600">Campaign is in progress... (ID: {jobId ? jobId.slice(-8) : '...'})</p>
+                      <div className="w-full bg-gray-200 rounded-full h-2.5">
+                        <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${progress}%` }}></div>
+                      </div>
+                      <p className="text-sm text-gray-500">{progress}% complete</p>
+                    </div>
+                  )}
+                  {campaignStatus === 'finished' && (
+                    <div className="flex items-center justify-center text-green-600">
+                      <SafeIcon icon={FiCheckCircle} className="mr-2" />
+                      <p>Campaign finished successfully!</p>
+                    </div>
+                  )}
+                  {campaignStatus === 'error' && (
+                    <div className="flex items-center justify-center text-red-600">
+                      <SafeIcon icon={FiXCircle} className="mr-2" />
+                      <p>There was an error running the campaign.</p>
+                    </div>
+                  )}
                 </div>
               )}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
+              
+              {/* Results */}
+              {results && (
+                <div className="mt-6 p-4 bg-gray-50 rounded-lg border">
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Results</h3>
+                  <pre className="text-xs text-gray-700 whitespace-pre-wrap bg-white p-2 rounded">
+                    {JSON.stringify(results, null, 2)}
+                  </pre>
+                </div>
+              )}
 
-export default DirectTraffic;
+              <div className="mt-6 text-center text-xs text-gray-400">
+                API Endpoint: {getServerUrl(serverConfig)}
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      );
+    }
+
+    export default DirectTraffic;

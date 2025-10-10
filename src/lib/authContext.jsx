@@ -1,96 +1,71 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import { getCurrentUser, loginUser, registerUser, logout as authLogout } from './auth';
 
-// Create AuthContext
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [isAuthModalOpen, setAuthModalOpen] = useState(false);
 
   useEffect(() => {
-    // Check for stored auth state on app load
-    const storedAuth = localStorage.getItem('auth_state');
-    if (storedAuth) {
+    const fetchUser = async () => {
       try {
-        const authData = JSON.parse(storedAuth);
-        if (authData.isAuthenticated && authData.user) {
-          setUser(authData.user);
-          setIsAuthenticated(true);
-        }
+        const currentUser = await getCurrentUser();
+        setUser(currentUser);
       } catch (error) {
-        console.error('Error loading auth state:', error);
-        localStorage.removeItem('auth_state');
+        console.error("Failed to fetch current user", error);
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
-    }
-    setIsLoading(false);
+    };
+    fetchUser();
   }, []);
 
-  const login = (userData, sessionToken) => {
-    console.log('AuthContext login called with:', userData);
-    
-    const userObject = {
-      id: userData.id || `user_${Date.now()}`,
-      email: userData.email,
-      name: userData.name || userData.email?.split('@')[0] || 'User'
-    };
-    
-    setUser(userObject);
-    setIsAuthenticated(true);
-    
-    // Store auth state in localStorage
-    const authState = {
-      user: userObject,
-      isAuthenticated: true,
-      sessionToken: sessionToken || 'mock_session_token'
-    };
-    
-    localStorage.setItem('auth_state', JSON.stringify(authState));
-    console.log('User logged in successfully:', userObject);
-  };
-
-  const logout = () => {
-    setUser(null);
-    setIsAuthenticated(false);
-    localStorage.removeItem('auth_state');
-    console.log('User logged out');
+  const login = async (email, password) => {
+    try {
+      const { user: loggedInUser } = await loginUser(email, password);
+      setUser(loggedInUser);
+      setAuthModalOpen(false); // Close modal on success
+      return loggedInUser;
+    } catch (error) {
+      console.error("Login failed:", error);
+      throw error;
+    }
   };
 
   const register = async (userData) => {
     try {
-      console.log('AuthContext register called with:', userData);
-      
-      const userObject = {
-        id: `user_${Date.now()}`,
-        email: userData.email,
-        name: userData.name || userData.email.split('@')[0]
-      };
-      
-      // In a real app, you would make an API call here
-      // For now, we'll just store the user data
-      const authState = {
-        user: userObject,
-        isAuthenticated: false, // User needs to login after registration
-        sessionToken: null
-      };
-      
-      localStorage.setItem('registered_user', JSON.stringify(userObject));
-      console.log('User registered successfully:', userObject);
-      
-      return { success: true, user: userObject };
+      await registerUser(userData);
+      // Optional: auto-login after registration
+      // const { user: loggedInUser } = await loginUser(userData.email, userData.password);
+      // setUser(loggedInUser);
+      // setAuthModalOpen(false);
     } catch (error) {
-      console.error('Register error:', error);
-      return { success: false, error: error.message };
+      console.error("Registration failed:", error);
+      throw error;
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await authLogout();
+      setUser(null); // Clear user state
+    } catch (error) {
+      console.error("Logout failed:", error);
     }
   };
 
   const value = {
     user,
-    isAuthenticated,
-    isLoading,
+    loading,
     login,
+    register,
     logout,
-    register
+    isAuthModalOpen,
+    openAuthModal: () => setAuthModalOpen(true),
+    closeAuthModal: () => setAuthModalOpen(false),
   };
 
   return (
@@ -107,5 +82,3 @@ export const useAuth = () => {
   }
   return context;
 };
-
-export default AuthContext;

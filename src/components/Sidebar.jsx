@@ -1,65 +1,54 @@
+// src/components/Sidebar.jsx
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
 import { useAuth } from '../lib/authContext';
 
-const { 
+const {
   FiHome, FiTrendingUp, FiSettings, FiFileText, FiZap, FiSearch, FiUser, FiLogOut
 } = FiIcons;
 
-const Sidebar = () => {
+export default function Sidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
 
+  // Use "/" for Dashboard because App.jsx mounts <Dashboard /> at "/"
   const navigationItems = [
-    { 
-      name: 'Dashboard', 
-      href: '/dashboard', 
-      icon: FiHome,
-      description: 'Overview & analytics'
-    },
-    { 
-      name: 'Direct Traffic', 
-      href: '/direct-traffic', 
-      icon: FiZap,
-      description: 'Run direct campaigns'
-    },
-    { 
-      name: 'SEO Traffic', 
-      href: '/seo-traffic', 
-      icon: FiSearch,
-      description: 'Run SEO campaigns'
-    },
-    { 
-      name: 'Settings', 
-      href: '/settings', 
-      icon: FiSettings,
-      description: 'Profile management'
-    },
-    { 
-      name: 'Invoice', 
-      href: '/invoice', 
-      icon: FiFileText,
-      description: 'Billing & invoices'
-    }
+    { name: 'Dashboard',     href: '/',              icon: FiHome,     description: 'Overview & analytics' },
+    { name: 'Direct Traffic', href: '/direct-traffic', icon: FiZap,      description: 'Run direct campaigns' },
+    { name: 'SEO Traffic',    href: '/seo-traffic',    icon: FiSearch,   description: 'Run SEO campaigns' },
+    { name: 'Settings',       href: '/settings',       icon: FiSettings, description: 'Profile management' },
+    { name: 'Invoice',        href: '/invoice',        icon: FiFileText, description: 'Billing & invoices' },
   ];
 
+  // For HashRouter, the location.pathname still gives the part after the hash.
+  // Consider "/" and "/dashboard" as the same (in case you had old links).
   const isActive = (href) => {
+    if (href === '/' && (location.pathname === '/' || location.pathname === '/dashboard')) return true;
     return location.pathname === href;
   };
 
   const getNavItemClass = (item) => {
     const baseClass = "group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 relative";
-    
     if (isActive(item.href)) {
       return `${baseClass} bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg`;
     }
     return `${baseClass} text-gray-700 hover:bg-gray-100 hover:text-gray-900`;
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    try {
+      // If logout clears tokens/localStorage asynchronously, wait for it.
+      await logout();
+
+      // After state is cleared, navigate to a public route (home). Change to "/login" if you have a login page.
+      navigate('/', { replace: true });
+    } catch (e) {
+      // optional: toast or console
+      console.error('Logout failed:', e);
+    }
   };
 
   return (
@@ -92,23 +81,13 @@ const Sidebar = () => {
       {/* Navigation */}
       <nav className="flex-1 px-4 py-4 space-y-2">
         {navigationItems.map((item) => (
-          <Link
-            key={item.name}
-            to={item.href}
-            className={getNavItemClass(item)}
-          >
+          <Link key={item.name} to={item.href} className={getNavItemClass(item)}>
             <SafeIcon icon={item.icon} className="mr-3 h-5 w-5 flex-shrink-0" />
             <div className="flex-1 min-w-0">
               <div className="truncate">{item.name}</div>
-              <div className="text-xs opacity-75 truncate">
-                {item.description}
-              </div>
+              <div className="text-xs opacity-75 truncate">{item.description}</div>
             </div>
-            
-            {/* Active indicator */}
-            {isActive(item.href) && (
-              <div className="absolute right-2 w-2 h-2 bg-white rounded-full"></div>
-            )}
+            {isActive(item.href) && <div className="absolute right-2 w-2 h-2 bg-white rounded-full" />}
           </Link>
         ))}
       </nav>
@@ -116,6 +95,7 @@ const Sidebar = () => {
       {/* Logout Button */}
       <div className="px-4 py-4 border-t border-gray-200">
         <button
+          type="button"
           onClick={handleLogout}
           className="w-full flex items-center px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200"
         >
@@ -131,13 +111,9 @@ const Sidebar = () => {
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
             <span className="text-sm font-medium text-gray-900">System Online</span>
           </div>
-          <div className="text-xs text-gray-600">
-            All services operational
-          </div>
+          <div className="text-xs text-gray-600">All services operational</div>
         </div>
       </div>
     </div>
   );
-};
-
-export default Sidebar;
+}
