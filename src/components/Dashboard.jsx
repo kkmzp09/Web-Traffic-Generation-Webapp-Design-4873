@@ -1,191 +1,271 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import SafeIcon from '../common/SafeIcon';
-import TrafficChart from './TrafficChart';
 import * as FiIcons from 'react-icons/fi';
+import { useAuth } from '../lib/authContext';
 
-const { FiTrendingUp, FiUsers, FiGlobe, FiActivity, FiPlay, FiPause, FiEye } = FiIcons;
+const { 
+  FiTrendingUp, FiUsers, FiPlay, FiBarChart, FiTarget, FiZap, FiActivity,
+  FiSearch, FiSettings, FiArrowRight, FiClock, FiCheckCircle
+} = FiIcons;
 
 const Dashboard = () => {
+  const { user } = useAuth();
   const [stats, setStats] = useState({
-    totalVisits: 45678,
-    activeVisitors: 234,
-    activeCampaigns: 12,
-    successRate: 98.5
+    totalCampaigns: 0,
+    activeCampaigns: 0,
+    totalTraffic: 0,
+    successRate: 0
   });
 
-  const [activeCampaigns, setActiveCampaigns] = useState([
-    {
-      id: 1,
-      name: 'E-commerce Boost',
-      url: 'https://example-store.com',
-      status: 'active',
-      visitors: 1234,
-      duration: '2h 15m',
-      rate: '45/min'
-    },
-    {
-      id: 2,
-      name: 'Blog Traffic',
-      url: 'https://myblog.com',
-      status: 'active',
-      visitors: 856,
-      duration: '1h 45m',
-      rate: '32/min'
-    },
-    {
-      id: 3,
-      name: 'Landing Page Test',
-      url: 'https://landing.example.com',
-      status: 'paused',
-      visitors: 445,
-      duration: '45m',
-      rate: '0/min'
-    }
-  ]);
+  useEffect(() => {
+    // Load dashboard stats
+    loadDashboardStats();
+  }, []);
 
-  const toggleCampaign = (id) => {
-    setActiveCampaigns(prev => prev.map(campaign => 
-      campaign.id === id 
-        ? { ...campaign, status: campaign.status === 'active' ? 'paused' : 'active' }
-        : campaign
-    ));
+  const loadDashboardStats = () => {
+    // Mock data for now - replace with actual API calls
+    setStats({
+      totalCampaigns: 24,
+      activeCampaigns: 3,
+      totalTraffic: 47820,
+      successRate: 96.8
+    });
   };
 
+  const StatCard = ({ title, value, subtitle, icon, color, trend, className = "" }) => (
+    <div className={`bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200 ${className}`}>
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
+          <h3 className="text-3xl font-bold text-gray-900 mb-1">{value}</h3>
+          <p className="text-xs text-gray-500">{subtitle}</p>
+          {trend && (
+            <div className="flex items-center mt-2">
+              <SafeIcon icon={FiTrendingUp} className="w-3 h-3 text-green-500 mr-1" />
+              <span className="text-xs text-green-600 font-medium">{trend}</span>
+            </div>
+          )}
+        </div>
+        <div className={`p-3 rounded-xl ${color}`}>
+          <SafeIcon icon={icon} className="w-6 h-6 text-white" />
+        </div>
+      </div>
+    </div>
+  );
+
+  const QuickActionCard = ({ title, description, icon, color, to, buttonText }) => (
+    <Link to={to} className="block">
+      <div className={`${color} rounded-xl p-6 hover:shadow-lg transition-all duration-200 transform hover:scale-[1.02]`}>
+        <div className="flex items-start justify-between mb-4">
+          <div className="p-3 bg-white/20 rounded-lg">
+            <SafeIcon icon={icon} className="w-6 h-6 text-white" />
+          </div>
+          <SafeIcon icon={FiArrowRight} className="w-5 h-5 text-white/80" />
+        </div>
+        <h3 className="text-lg font-semibold text-white mb-2">{title}</h3>
+        <p className="text-white/90 text-sm mb-4">{description}</p>
+        <div className="inline-flex items-center text-white text-sm font-medium">
+          {buttonText}
+          <SafeIcon icon={FiArrowRight} className="w-4 h-4 ml-1" />
+        </div>
+      </div>
+    </Link>
+  );
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-1">Monitor your traffic generation campaigns</p>
-        </div>
-        <button className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-all">
-          New Campaign
-        </button>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+    <div className="min-h-screen bg-gray-50">
+      <div className="p-6">
+        {/* Header */}
+        <div className="mb-8">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Total Visits</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{stats.totalVisits.toLocaleString()}</p>
+            <div className="flex items-center space-x-4">
+              <div className="p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl shadow-lg">
+                <SafeIcon icon={FiActivity} className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+                <p className="text-gray-600 mt-1">
+                  Welcome back, <span className="font-semibold text-blue-600">{user?.name || 'User'}!</span>
+                </p>
+              </div>
             </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <SafeIcon icon={FiEye} className="text-blue-600 text-xl" />
+            
+            <div className="flex items-center space-x-2 bg-green-50 px-4 py-2 rounded-lg">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-sm font-medium text-green-700">System Online</span>
             </div>
-          </div>
-          <div className="flex items-center mt-4 text-sm">
-            <SafeIcon icon={FiTrendingUp} className="text-green-500 mr-1" />
-            <span className="text-green-500 font-medium">+12.5%</span>
-            <span className="text-gray-500 ml-1">from last week</span>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Active Visitors</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{stats.activeVisitors}</p>
-            </div>
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <SafeIcon icon={FiUsers} className="text-green-600 text-xl" />
-            </div>
-          </div>
-          <div className="flex items-center mt-4 text-sm">
-            <SafeIcon icon={FiActivity} className="text-green-500 mr-1" />
-            <span className="text-green-500 font-medium">Live</span>
-            <span className="text-gray-500 ml-1">real-time</span>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <StatCard
+            title="Total Campaigns"
+            value={stats.totalCampaigns}
+            subtitle="Lifetime campaigns created"
+            icon={FiTarget}
+            color="bg-gradient-to-r from-blue-500 to-blue-600"
+            trend="+12% this month"
+          />
+          
+          <StatCard
+            title="Active Campaigns"
+            value={stats.activeCampaigns}
+            subtitle="Currently running"
+            icon={FiPlay}
+            color="bg-gradient-to-r from-green-500 to-green-600"
+            trend="3 running now"
+          />
+          
+          <StatCard
+            title="Total Traffic"
+            value={stats.totalTraffic.toLocaleString()}
+            subtitle="Visits generated"
+            icon={FiTrendingUp}
+            color="bg-gradient-to-r from-purple-500 to-purple-600"
+            trend="+24% this week"
+          />
+          
+          <StatCard
+            title="Success Rate"
+            value={`${stats.successRate}%`}
+            subtitle="Average completion rate"
+            icon={FiBarChart}
+            color="bg-gradient-to-r from-orange-500 to-orange-600"
+            trend="+2.1% improvement"
+          />
+        </div>
+
+        {/* Quick Actions */}
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-6">Quick Actions</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <QuickActionCard
+              title="Direct Traffic"
+              description="Generate immediate website traffic with our direct traffic campaigns"
+              icon={FiZap}
+              color="bg-gradient-to-r from-blue-600 to-blue-700"
+              to="/direct-traffic"
+              buttonText="Start Campaign"
+            />
+            
+            <QuickActionCard
+              title="SEO Traffic"
+              description="Boost your search rankings with targeted SEO traffic campaigns"
+              icon={FiSearch}
+              color="bg-gradient-to-r from-green-600 to-green-700"
+              to="/seo-traffic"
+              buttonText="Create SEO Campaign"
+            />
+            
+            <QuickActionCard
+              title="Settings"
+              description="Manage your profile, preferences, and account settings"
+              icon={FiSettings}
+              color="bg-gradient-to-r from-purple-600 to-purple-700"
+              to="/settings"
+              buttonText="Manage Settings"
+            />
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Active Campaigns</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{stats.activeCampaigns}</p>
+        {/* Recent Activity & Analytics */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Recent Activity */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
+              <SafeIcon icon={FiActivity} className="w-5 h-5 text-gray-400" />
             </div>
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-              <SafeIcon icon={FiGlobe} className="text-purple-600 text-xl" />
-            </div>
-          </div>
-          <div className="flex items-center mt-4 text-sm">
-            <span className="text-purple-500 font-medium">8 running</span>
-            <span className="text-gray-500 ml-1">4 paused</span>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600">Success Rate</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">{stats.successRate}%</p>
-            </div>
-            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-              <SafeIcon icon={FiTrendingUp} className="text-orange-600 text-xl" />
-            </div>
-          </div>
-          <div className="flex items-center mt-4 text-sm">
-            <SafeIcon icon={FiTrendingUp} className="text-green-500 mr-1" />
-            <span className="text-green-500 font-medium">+2.1%</span>
-            <span className="text-gray-500 ml-1">from yesterday</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Traffic Chart */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">Traffic Overview</h2>
-          <div className="flex space-x-2">
-            <button className="px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-lg">24h</button>
-            <button className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">7d</button>
-            <button className="px-3 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">30d</button>
-          </div>
-        </div>
-        <TrafficChart />
-      </div>
-
-      {/* Active Campaigns */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-gray-900">Active Campaigns</h2>
-          <button className="text-blue-600 hover:text-blue-700 font-medium">View All</button>
-        </div>
-        
-        <div className="space-y-4">
-          {activeCampaigns.map((campaign) => (
-            <div key={campaign.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
-              <div className="flex items-center space-x-4">
-                <div className={`w-3 h-3 rounded-full ${campaign.status === 'active' ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                <div>
-                  <h3 className="font-medium text-gray-900">{campaign.name}</h3>
-                  <p className="text-sm text-gray-500">{campaign.url}</p>
+            
+            <div className="space-y-4">
+              <div className="flex items-start space-x-3 p-3 bg-blue-50 rounded-lg">
+                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900">Direct traffic campaign started</p>
+                  <p className="text-xs text-gray-500 mt-1">Campaign "Website Boost" - 500 visits</p>
+                  <p className="text-xs text-blue-600 mt-1">5 minutes ago</p>
                 </div>
+                <SafeIcon icon={FiPlay} className="w-4 h-4 text-blue-600 mt-1" />
               </div>
               
-              <div className="flex items-center space-x-6">
-                <div className="text-center">
-                  <p className="text-sm font-medium text-gray-900">{campaign.visitors}</p>
-                  <p className="text-xs text-gray-500">visitors</p>
+              <div className="flex items-start space-x-3 p-3 bg-green-50 rounded-lg">
+                <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900">SEO campaign completed</p>
+                  <p className="text-xs text-gray-500 mt-1">Campaign "Organic Growth" - 100% success rate</p>
+                  <p className="text-xs text-green-600 mt-1">2 hours ago</p>
                 </div>
-                <div className="text-center">
-                  <p className="text-sm font-medium text-gray-900">{campaign.duration}</p>
-                  <p className="text-xs text-gray-500">duration</p>
+                <SafeIcon icon={FiCheckCircle} className="w-4 h-4 text-green-600 mt-1" />
+              </div>
+              
+              <div className="flex items-start space-x-3 p-3 bg-purple-50 rounded-lg">
+                <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-900">New campaign scheduled</p>
+                  <p className="text-xs text-gray-500 mt-1">Campaign "Daily Traffic" - Starts in 1 hour</p>
+                  <p className="text-xs text-purple-600 mt-1">1 hour ago</p>
                 </div>
-                <div className="text-center">
-                  <p className="text-sm font-medium text-gray-900">{campaign.rate}</p>
-                  <p className="text-xs text-gray-500">rate</p>
-                </div>
-                <button
-                  onClick={() => toggleCampaign(campaign.id)}
-                  className={`p-2 rounded-lg ${campaign.status === 'active' ? 'text-orange-600 hover:bg-orange-50' : 'text-green-600 hover:bg-green-50'}`}
+                <SafeIcon icon={FiClock} className="w-4 h-4 text-purple-600 mt-1" />
+              </div>
+              
+              <div className="text-center pt-4">
+                <Link 
+                  to="/analytics" 
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
                 >
-                  <SafeIcon icon={campaign.status === 'active' ? FiPause : FiPlay} className="text-lg" />
-                </button>
+                  View all activity →
+                </Link>
               </div>
             </div>
-          ))}
+          </div>
+
+          {/* Performance Overview */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-semibold text-gray-900">Performance Overview</h2>
+              <SafeIcon icon={FiBarChart} className="w-5 h-5 text-gray-400" />
+            </div>
+            
+            <div className="space-y-6">
+              {/* Traffic Growth */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">Traffic Growth</span>
+                  <span className="text-sm font-semibold text-green-600">+24%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full" style={{ width: '78%' }}></div>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">vs. last month</p>
+              </div>
+              
+              {/* Campaign Success */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">Campaign Success</span>
+                  <span className="text-sm font-semibold text-blue-600">96.8%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full" style={{ width: '97%' }}></div>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Average success rate</p>
+              </div>
+              
+              {/* Server Uptime */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-gray-700">Server Uptime</span>
+                  <span className="text-sm font-semibold text-green-600">99.9%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full" style={{ width: '100%' }}></div>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">Last 30 days</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

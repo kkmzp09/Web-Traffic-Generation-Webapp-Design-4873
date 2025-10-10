@@ -1,0 +1,260 @@
+import React, { useState } from 'react';
+import SafeIcon from '../common/SafeIcon';
+import * as FiIcons from 'react-icons/fi';
+
+const { FiSearch, FiPlay, FiTarget, FiGlobe, FiTrendingUp, FiBarChart } = FiIcons;
+
+const SeoTraffic = () => {
+  const [campaignData, setCampaignData] = useState({
+    url: '',
+    keywords: '',
+    trafficAmount: 50,
+    duration: 120,
+    searchEngine: 'google'
+  });
+
+  const [isRunning, setIsRunning] = useState(false);
+  const [campaigns, setCampaigns] = useState([
+    {
+      id: 1,
+      name: 'SEO Campaign 1',
+      url: 'https://example.com',
+      keywords: 'web development, programming',
+      status: 'completed',
+      traffic: 200,
+      success: 92.5,
+      created: '2024-01-15'
+    }
+  ]);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setCampaignData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleRunCampaign = () => {
+    if (!campaignData.url || !campaignData.keywords) return;
+    
+    setIsRunning(true);
+    // Simulate campaign running
+    setTimeout(() => {
+      setIsRunning(false);
+      // Add new campaign to list
+      const newCampaign = {
+        id: campaigns.length + 1,
+        name: `SEO Campaign ${campaigns.length + 1}`,
+        url: campaignData.url,
+        keywords: campaignData.keywords,
+        status: 'completed',
+        traffic: campaignData.trafficAmount,
+        success: Math.random() * 10 + 85, // Random success rate 85-95%
+        created: new Date().toISOString().split('T')[0]
+      };
+      setCampaigns(prev => [newCampaign, ...prev]);
+    }, 7000);
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'running': return 'text-green-600 bg-green-100';
+      case 'completed': return 'text-blue-600 bg-blue-100';
+      case 'paused': return 'text-yellow-600 bg-yellow-100';
+      default: return 'text-gray-600 bg-gray-100';
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="p-6">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center space-x-4 mb-4">
+            <div className="p-3 bg-gradient-to-r from-green-600 to-blue-600 rounded-xl shadow-lg">
+              <SafeIcon icon={FiSearch} className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">SEO Traffic</h1>
+              <p className="text-gray-600 mt-1">
+                Generate organic search engine traffic with keyword-based campaigns
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Campaign Setup */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center space-x-2 mb-6">
+                <SafeIcon icon={FiTarget} className="w-5 h-5 text-green-600" />
+                <h2 className="text-lg font-semibold text-gray-900">Run SEO Campaign</h2>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Target URL
+                  </label>
+                  <input
+                    type="url"
+                    name="url"
+                    value={campaignData.url}
+                    onChange={handleInputChange}
+                    placeholder="https://example.com"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    disabled={isRunning}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Keywords (comma separated)
+                  </label>
+                  <textarea
+                    name="keywords"
+                    value={campaignData.keywords}
+                    onChange={handleInputChange}
+                    placeholder="web development, programming, coding"
+                    rows="3"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    disabled={isRunning}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Search Engine
+                  </label>
+                  <select
+                    name="searchEngine"
+                    value={campaignData.searchEngine}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    disabled={isRunning}
+                  >
+                    <option value="google">Google</option>
+                    <option value="bing">Bing</option>
+                    <option value="yahoo">Yahoo</option>
+                    <option value="duckduckgo">DuckDuckGo</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Traffic Amount
+                  </label>
+                  <input
+                    type="number"
+                    name="trafficAmount"
+                    value={campaignData.trafficAmount}
+                    onChange={handleInputChange}
+                    min="1"
+                    max="5000"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    disabled={isRunning}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Duration (minutes)
+                  </label>
+                  <input
+                    type="number"
+                    name="duration"
+                    value={campaignData.duration}
+                    onChange={handleInputChange}
+                    min="1"
+                    max="1440"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                    disabled={isRunning}
+                  />
+                </div>
+
+                <button
+                  onClick={handleRunCampaign}
+                  disabled={!campaignData.url || !campaignData.keywords || isRunning}
+                  className={`w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-lg font-medium transition-colors duration-200 ${
+                    isRunning
+                      ? 'bg-gray-400 text-white cursor-not-allowed'
+                      : 'bg-green-600 hover:bg-green-700 text-white'
+                  }`}
+                >
+                  <SafeIcon icon={FiPlay} className="w-4 h-4" />
+                  <span>{isRunning ? 'SEO Campaign Running...' : 'Start SEO Campaign'}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Campaign List */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-2">
+                  <SafeIcon icon={FiTrendingUp} className="w-5 h-5 text-green-600" />
+                  <h2 className="text-lg font-semibold text-gray-900">SEO Campaign History</h2>
+                </div>
+                <div className="text-sm text-gray-500">
+                  {campaigns.length} campaigns
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {campaigns.map((campaign) => (
+                  <div key={campaign.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow duration-200">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-3">
+                        <SafeIcon icon={FiSearch} className="w-4 h-4 text-gray-400" />
+                        <div>
+                          <h3 className="font-medium text-gray-900">{campaign.name}</h3>
+                          <p className="text-sm text-gray-600">{campaign.url}</p>
+                        </div>
+                      </div>
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(campaign.status)}`}>
+                        {campaign.status}
+                      </span>
+                    </div>
+                    
+                    <div className="mb-3">
+                      <p className="text-sm text-gray-500">Keywords:</p>
+                      <p className="text-sm text-gray-900 font-medium">{campaign.keywords}</p>
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <p className="text-gray-500">Traffic</p>
+                        <p className="font-medium text-gray-900">{campaign.traffic}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Success Rate</p>
+                        <p className="font-medium text-gray-900">{campaign.success.toFixed(1)}%</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Created</p>
+                        <p className="font-medium text-gray-900">{campaign.created}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {campaigns.length === 0 && (
+                <div className="text-center py-8">
+                  <SafeIcon icon={FiTrendingUp} className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No SEO campaigns yet</h3>
+                  <p className="text-gray-600">Start your first SEO traffic campaign to see results here</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default SeoTraffic;

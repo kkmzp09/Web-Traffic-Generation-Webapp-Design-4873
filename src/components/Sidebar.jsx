@@ -2,58 +2,138 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
+import { useAuth } from '../lib/authContext';
 
-const { FiHome, FiPlay, FiBarChart3, FiSettings, FiZap } = FiIcons;
+const { 
+  FiHome, FiTrendingUp, FiSettings, FiFileText, FiZap, FiSearch, FiUser, FiLogOut
+} = FiIcons;
 
-const Sidebar = ({ activePage, setActivePage }) => {
+const Sidebar = () => {
   const location = useLocation();
-  
-  const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: FiHome, path: '/' },
-    { id: 'campaigns', label: 'Campaigns', icon: FiPlay, path: '/campaigns' },
-    { id: 'analytics', label: 'Analytics', icon: FiBarChart3, path: '/analytics' },
-    { id: 'settings', label: 'Settings', icon: FiSettings, path: '/settings' }
+  const { user, logout } = useAuth();
+
+  const navigationItems = [
+    { 
+      name: 'Dashboard', 
+      href: '/dashboard', 
+      icon: FiHome,
+      description: 'Overview & analytics'
+    },
+    { 
+      name: 'Direct Traffic', 
+      href: '/direct-traffic', 
+      icon: FiZap,
+      description: 'Run direct campaigns'
+    },
+    { 
+      name: 'SEO Traffic', 
+      href: '/seo-traffic', 
+      icon: FiSearch,
+      description: 'Run SEO campaigns'
+    },
+    { 
+      name: 'Settings', 
+      href: '/settings', 
+      icon: FiSettings,
+      description: 'Profile management'
+    },
+    { 
+      name: 'Invoice', 
+      href: '/invoice', 
+      icon: FiFileText,
+      description: 'Billing & invoices'
+    }
   ];
 
+  const isActive = (href) => {
+    return location.pathname === href;
+  };
+
+  const getNavItemClass = (item) => {
+    const baseClass = "group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 relative";
+    
+    if (isActive(item.href)) {
+      return `${baseClass} bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg`;
+    }
+    return `${baseClass} text-gray-700 hover:bg-gray-100 hover:text-gray-900`;
+  };
+
+  const handleLogout = () => {
+    logout();
+  };
+
   return (
-    <div className="fixed left-0 top-0 h-full w-64 bg-white shadow-lg border-r border-gray-200 z-50">
-      <div className="p-6 border-b border-gray-200">
+    <div className="w-64 bg-white shadow-xl border-r border-gray-200 flex flex-col h-full">
+      {/* Header */}
+      <div className="flex items-center justify-center h-16 px-6 border-b border-gray-200">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-            <SafeIcon icon={FiZap} className="text-white text-xl" />
+          <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+            <SafeIcon icon={FiTrendingUp} className="text-white text-lg" />
           </div>
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">TrafficGen</h1>
-            <p className="text-sm text-gray-500">Pro Traffic Generator</p>
+          <span className="text-xl font-bold text-gray-900">TrafficGen</span>
+        </div>
+      </div>
+
+      {/* User info */}
+      <div className="px-6 py-4 border-b border-gray-200">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-100 to-purple-100 flex items-center justify-center">
+            <SafeIcon icon={FiUser} className="text-blue-600" />
+          </div>
+          <div className="flex-1">
+            <div className="text-sm font-medium text-gray-900 truncate">
+              {user?.name || 'User'}
+            </div>
+            <div className="text-xs text-blue-600">Premium Account</div>
           </div>
         </div>
       </div>
-      
-      <nav className="mt-6">
-        {menuItems.map((item) => {
-          const isActive = location.pathname === item.path;
-          return (
-            <Link
-              key={item.id}
-              to={item.path}
-              onClick={() => setActivePage(item.id)}
-              className={`flex items-center space-x-3 px-6 py-3 text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-              }`}
-            >
-              <SafeIcon icon={item.icon} className="text-lg" />
-              <span>{item.label}</span>
-            </Link>
-          );
-        })}
+
+      {/* Navigation */}
+      <nav className="flex-1 px-4 py-4 space-y-2">
+        {navigationItems.map((item) => (
+          <Link
+            key={item.name}
+            to={item.href}
+            className={getNavItemClass(item)}
+          >
+            <SafeIcon icon={item.icon} className="mr-3 h-5 w-5 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <div className="truncate">{item.name}</div>
+              <div className="text-xs opacity-75 truncate">
+                {item.description}
+              </div>
+            </div>
+            
+            {/* Active indicator */}
+            {isActive(item.href) && (
+              <div className="absolute right-2 w-2 h-2 bg-white rounded-full"></div>
+            )}
+          </Link>
+        ))}
       </nav>
-      
-      <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-gray-200">
-        <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg p-4 text-white">
-          <h3 className="font-semibold text-sm">Upgrade to Pro</h3>
-          <p className="text-xs opacity-90 mt-1">Unlimited campaigns & advanced analytics</p>
+
+      {/* Logout Button */}
+      <div className="px-4 py-4 border-t border-gray-200">
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200"
+        >
+          <SafeIcon icon={FiLogOut} className="mr-3 h-5 w-5" />
+          <span>Sign Out</span>
+        </button>
+      </div>
+
+      {/* System Status */}
+      <div className="px-4 pb-4">
+        <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-3">
+          <div className="flex items-center space-x-2 mb-1">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span className="text-sm font-medium text-gray-900">System Online</span>
+          </div>
+          <div className="text-xs text-gray-600">
+            All services operational
+          </div>
         </div>
       </div>
     </div>

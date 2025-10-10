@@ -1,77 +1,115 @@
-import React, { useEffect, useRef } from 'react';
-import * as echarts from 'echarts';
+import React from 'react';
 
-const GeographyChart = () => {
-  const chartRef = useRef(null);
-
-  useEffect(() => {
-    const chart = echarts.init(chartRef.current);
+const GeographyChart = ({ data = [] }) => {
+  // Process country data for display
+  const processChartData = () => {
+    if (!data || data.length === 0) {
+      return [];
+    }
     
-    const data = [
-      { name: 'United States', value: 25430 },
-      { name: 'United Kingdom', value: 18920 },
-      { name: 'Germany', value: 15680 },
-      { name: 'France', value: 12340 },
-      { name: 'Canada', value: 9870 },
-      { name: 'Australia', value: 7650 },
-      { name: 'Japan', value: 6540 },
-      { name: 'Others', value: 15670 }
-    ];
+    return data.slice(0, 10).map(item => ({
+      country: item.country,
+      requestCount: parseInt(item.requestCount) || 0,
+      successRate: parseFloat(item.successRate) || 0
+    }));
+  };
 
-    const option = {
-      tooltip: {
-        trigger: 'item',
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-        borderColor: '#e5e7eb',
-        textStyle: {
-          color: '#374151'
-        }
-      },
-      series: [
-        {
-          name: 'Visitors by Country',
-          type: 'pie',
-          radius: ['40%', '70%'],
-          center: ['50%', '50%'],
-          data: data,
-          emphasis: {
-            itemStyle: {
-              shadowBlur: 10,
-              shadowOffsetX: 0,
-              shadowColor: 'rgba(0, 0, 0, 0.5)'
-            }
-          },
-          label: {
-            show: true,
-            formatter: '{b}: {d}%',
-            fontSize: 12,
-            color: '#374151'
-          },
-          itemStyle: {
-            borderRadius: 4,
-            borderColor: '#fff',
-            borderWidth: 2
-          }
-        }
-      ],
-      color: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16', '#6b7280']
-    };
+  const chartData = processChartData();
+  const maxRequests = Math.max(...chartData.map(d => d.requestCount), 1);
+  const hasData = chartData.length > 0;
 
-    chart.setOption(option);
+  // Country flag emojis mapping
+  const countryFlags = {
+    'United States': '🇺🇸',
+    'United Kingdom': '🇬🇧',
+    'Canada': '🇨🇦',
+    'Germany': '🇩🇪',
+    'France': '🇫🇷',
+    'Japan': '🇯🇵',
+    'Australia': '🇦🇺',
+    'Spain': '🇪🇸',
+    'Italy': '🇮🇹',
+    'Netherlands': '🇳🇱',
+    'Brazil': '🇧🇷',
+    'India': '🇮🇳',
+    'China': '🇨🇳',
+    'Russia': '🇷🇺',
+    'South Korea': '🇰🇷'
+  };
 
-    const handleResize = () => {
-      chart.resize();
-    };
-
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      chart.dispose();
-    };
-  }, []);
-
-  return <div ref={chartRef} style={{ width: '100%', height: '300px' }} />;
+  return (
+    <div className="w-full h-64">
+      {!hasData ? (
+        <div className="flex items-center justify-center h-full text-gray-500">
+          <div className="text-center">
+            <div className="text-4xl mb-2">🌍</div>
+            <p className="font-medium">No geographic data yet</p>
+            <p className="text-sm">Start campaigns to see country distribution</p>
+          </div>
+        </div>
+      ) : (
+        <div className="h-full overflow-y-auto">
+          <div className="space-y-3">
+            {chartData.map((item, index) => {
+              const barWidth = maxRequests > 0 ? (item.requestCount / maxRequests) * 100 : 0;
+              const flag = countryFlags[item.country] || '🌐';
+              
+              return (
+                <div key={item.country} className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-2 w-32 flex-shrink-0">
+                    <span className="text-lg">{flag}</span>
+                    <span className="text-sm font-medium text-gray-900 truncate">
+                      {item.country}
+                    </span>
+                  </div>
+                  
+                  <div className="flex-1 relative">
+                    <div className="w-full bg-gray-200 rounded-full h-4">
+                      <div 
+                        className={`h-4 rounded-full transition-all duration-500 ${
+                          item.successRate >= 80 ? 'bg-green-500' :
+                          item.successRate >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                        }`}
+                        style={{ width: `${barWidth}%` }}
+                      ></div>
+                    </div>
+                    <div className="absolute inset-0 flex items-center justify-between px-2 text-xs">
+                      <span className="text-white font-medium drop-shadow">
+                        {item.requestCount.toLocaleString()}
+                      </span>
+                      <span className="text-gray-700 font-medium">
+                        {item.successRate.toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="w-16 text-right text-sm text-gray-600 flex-shrink-0">
+                    #{index + 1}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          
+          {/* Legend */}
+          <div className="flex items-center justify-center space-x-4 mt-4 text-xs text-gray-600">
+            <div className="flex items-center space-x-1">
+              <div className="w-3 h-3 bg-green-500 rounded"></div>
+              <span>80%+ success</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <div className="w-3 h-3 bg-yellow-500 rounded"></div>
+              <span>60-79% success</span>
+            </div>
+            <div className="flex items-center space-x-1">
+              <div className="w-3 h-3 bg-red-500 rounded"></div>
+              <span>&lt;60% success</span>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default GeographyChart;
