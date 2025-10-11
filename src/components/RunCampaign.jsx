@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
-import { useAuth } from '../lib/authContext';
+import { useAuth } from '../lib/authContext.jsx';
 import { 
   startCampaign, 
   checkCampaignStatus, 
@@ -19,7 +19,7 @@ const {
   FiTarget, FiServer, FiUsers
 } = FiIcons;
 
-export default function RunCampaign() {
+export default function RunCampaign({ campaign }) {
   // Authentication context
   const { user, isAuthenticated } = useAuth();
 
@@ -35,6 +35,14 @@ export default function RunCampaign() {
   const [progress, setProgress] = useState(0);
   const [results, setResults] = useState(null);
   const [logs, setLogs] = useState([]);
+
+  useEffect(() => {
+    if (campaign) {
+      setUrls(campaign.targetUrl || '');
+      // You can also set other campaign-specific settings here
+      addLog(`Selected campaign: ${campaign.name}`, 'info');
+    }
+  }, [campaign]);
 
   // Add log helper
   const addLog = (message, type = 'info') => {
@@ -53,6 +61,11 @@ export default function RunCampaign() {
   }, [isAuthenticated, user]);
 
   const handleRun = async () => {
+    if (!isAuthenticated) {
+      addLog('❌ Please log in to run a campaign.', 'error');
+      setStatus("Error: Please log in to run a campaign.");
+      return;
+    }
     // Reset state
     setResults(null);
     setProgress(0);
@@ -176,11 +189,23 @@ export default function RunCampaign() {
   };
 
   const getStatusColor = () => {
-    if (status.includes('Error')) return 'text-red-600';
+    if (status.toLowerCase().includes('error') || status.toLowerCase().includes('failed')) return 'text-red-600';
     if (status.includes('completed') || status.includes('started')) return 'text-green-600';
     if (status.includes('Starting') || isRunning) return 'text-blue-600';
     return 'text-gray-600';
   };
+  
+  if (!campaign) {
+    return (
+        <div className="flex items-center justify-center h-full bg-gray-50 rounded-lg p-8">
+            <div className="text-center">
+                <SafeIcon icon={FiTarget} className="mx-auto h-12 w-12 text-gray-400" />
+                <h3 className="mt-2 text-lg font-medium text-gray-900">No Campaign Selected</h3>
+                <p className="mt-1 text-sm text-gray-500">Please select a campaign from the 'Manage' tab to run it.</p>
+            </div>
+        </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
@@ -193,7 +218,7 @@ export default function RunCampaign() {
         >
           <h1 className="text-3xl font-bold text-gray-900 mb-2 flex items-center space-x-3">
             <SafeIcon icon={FiTarget} className="text-red-600" />
-            <span>Quick Campaign Runner</span>
+            <span>Run Campaign: {campaign.name}</span>
             {isAuthenticated && (
               <div className="flex items-center space-x-2 px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
                 <SafeIcon icon={FiUsers} />
@@ -234,7 +259,7 @@ export default function RunCampaign() {
                     onChange={(e) => setUrls(e.target.value)}
                     rows={6}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent font-mono text-sm"
-                    placeholder="https://example.com&#10;https://example.com/about"
+                    placeholder={"https://example.com\nhttps://example.com/about"}
                   />
                   <p className="text-xs text-gray-500 mt-1">
                     {urls.split('\n').filter(Boolean).length} URLs configured
@@ -314,7 +339,7 @@ export default function RunCampaign() {
                     <div className="flex items-center space-x-2">
                       <SafeIcon 
                         icon={
-                          status.includes('Error') ? FiXCircle :
+                          status.toLowerCase().includes('error') || status.toLowerCase().includes('failed') ? FiXCircle :
                           status.includes('completed') ? FiCheckCircle :
                           isRunning ? FiActivity : FiAlertTriangle
                         } 
@@ -353,68 +378,7 @@ export default function RunCampaign() {
             animate={{ opacity: 1, x: 0 }}
             className="space-y-6"
           >
-            {/* VPS Info */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center space-x-2">
-                <SafeIcon icon={FiServer} />
-                <span>VPS Status</span>
-              </h3>
-              
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Server:</span>
-                  <span className="font-medium text-gray-900">{DEFAULT_SERVER_CONFIG.host}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Port:</span>
-                  <span className="font-medium text-gray-900">{DEFAULT_SERVER_CONFIG.port}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">User:</span>
-                  <span className={`font-medium ${isAuthenticated ? 'text-green-600' : 'text-blue-600'}`}>
-                    {isAuthenticated ? user.email : 'Guest'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Status:</span>
-                  <span className={`font-medium ${isRunning ? 'text-blue-600' : 'text-gray-600'}`}>
-                    {isRunning ? 'Running' : 'Ready'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Campaign Info */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center space-x-2">
-                <SafeIcon icon={FiEye} />
-                <span>Campaign Info</span>
-              </h3>
-              
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">URLs:</span>
-                  <span className="font-medium">{urls.split('\n').filter(Boolean).length}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Dwell Time:</span>
-                  <span className="font-medium">{dwellMs / 1000}s</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Scrolling:</span>
-                  <span className={`font-medium ${scroll ? 'text-green-600' : 'text-gray-400'}`}>
-                    {scroll ? 'Enabled' : 'Disabled'}
-                  </span>
-                </div>
-                {jobId && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Job ID:</span>
-                    <span className="font-mono text-xs text-gray-500">{jobId.slice(-8)}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
+           
             {/* Activity Logs */}
             <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
               <div className="flex items-center justify-between mb-4">
@@ -430,7 +394,7 @@ export default function RunCampaign() {
                 </button>
               </div>
               
-              <div className="bg-gray-900 rounded-lg p-3 h-48 overflow-y-auto font-mono text-xs">
+              <div className="bg-gray-900 rounded-lg p-3 h-96 overflow-y-auto font-mono text-xs">
                 {logs.length === 0 ? (
                   <div className="text-gray-500 text-center py-8">
                     No activity yet
@@ -442,7 +406,7 @@ export default function RunCampaign() {
                       log.type === 'success' ? 'text-green-400' :
                       log.type === 'warning' ? 'text-yellow-400' :
                       'text-gray-300'
-                    }`}>
+                    }`}>\
                       <span className="text-gray-500">[{log.timestamp}]</span> {log.message}
                     </div>
                   ))
@@ -462,7 +426,7 @@ export default function RunCampaign() {
                   <span>Results</span>
                 </h3>
                 
-                <div className="space-y-2">
+                <div className="space-y-2 max-h-96 overflow-y-auto">
                   {Array.isArray(results) ? results.map((result, index) => (
                     <div key={index} className="flex items-center space-x-2 p-2 bg-gray-50 rounded-lg">
                       <SafeIcon 

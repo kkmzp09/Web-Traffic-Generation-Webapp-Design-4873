@@ -1,68 +1,109 @@
-// Mock authentication functions
-// In a real application, these would make API calls to your backend.
+const USERS_STORAGE_KEY = 'trafficker_users';
+const FAKE_DELAY = 500;
 
-const users = [
-  {
-    id: 1,
-    email: 'user@example.com',
-    password: 'password123',
-    username: 'TestUser',
-  },
-];
+// Initialize users from localStorage or with a default user
+const initializeUsers = () => {
+  try {
+    const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
+    if (storedUsers) {
+      return JSON.parse(storedUsers);
+    }
+  } catch (e) {
+    console.error('Failed to parse users from localStorage', e);
+  }
+  
+  // Default user if nothing is in storage
+  const defaultUsers = [
+    { 
+      id: 'usr_1', 
+      email: 'user@example.com', 
+      password: 'password123', 
+      name: 'Test User' 
+    }
+  ];
+  
+  try {
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(defaultUsers));
+  } catch (e) {
+    console.error('Failed to save default users to localStorage', e);
+  }
+  
+  return defaultUsers;
+};
 
-let currentUser = null;
+let USERS = initializeUsers();
 
-const login = (email, password) => {
+// Save users to localStorage
+const saveUsers = () => {
+  try {
+    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(USERS));
+  } catch (e) {
+    console.error('Failed to save users to localStorage', e);
+  }
+};
+
+
+export const loginUser = (email, password) => {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
-      const user = users.find(
-        (u) => u.email === email && u.password === password
-      );
+      const user = USERS.find(u => u.email === email && u.password === password);
       if (user) {
-        currentUser = { id: user.id, email: user.email, username: user.username };
-        resolve(currentUser);
+        const userData = { id: user.id, email: user.email, name: user.name };
+        localStorage.setItem('authUser', JSON.stringify(userData));
+        resolve({ user: userData, sessionToken: 'fake-token-for-demo-user' });
       } else {
-        reject(new Error('Invalid email or password'));
+        reject(new Error('Invalid credentials. Please try again.'));
       }
-    }, 500);
+    }, FAKE_DELAY);
   });
 };
 
-const register = (email, password) => {
+export const registerUser = ({ name, email, password }) => {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
-      if (users.find((u) => u.email === email)) {
-        reject(new Error('User with this email already exists'));
+      if (USERS.some(u => u.email === email)) {
+        reject(new Error('An account with this email already exists.'));
       } else {
+        const newName = name || email.split('@')[0];
         const newUser = {
-          id: users.length + 1,
+          id: `usr_${Date.now()}`,
+          name: newName,
           email,
           password,
-          username: email.split('@')[0],
         };
-        users.push(newUser);
-        currentUser = { id: newUser.id, email: newUser.email, username: newUser.username };
-        resolve(currentUser);
+        USERS.push(newUser);
+        saveUsers(); 
+        const userData = { id: newUser.id, email: newUser.email, name: newName };
+        resolve(userData);
       }
-    }, 500);
+    }, FAKE_DELAY);
   });
 };
 
-const logout = () => {
+export const logout = () => {
   return new Promise((resolve) => {
     setTimeout(() => {
-      currentUser = null;
-      resolve();
-    }, 200);
+      localStorage.removeItem('authUser');
+      sessionStorage.clear();
+      resolve(true);
+    }, FAKE_DELAY);
   });
 };
 
-const getCurrentUser = () => {
+export const getCurrentUser = () => {
   return new Promise((resolve) => {
     setTimeout(() => {
-      resolve(currentUser);
-    }, 200);
+      try {
+        const storedUser = localStorage.getItem('authUser');
+        if (storedUser) {
+          resolve(JSON.parse(storedUser));
+        } else {
+          resolve(null);
+        }
+      } catch (e) {
+        console.error('Failed to get current user from localStorage', e);
+        resolve(null);
+      }
+    }, FAKE_DELAY / 2); 
   });
 };
-
-export { login, register, logout, getCurrentUser };

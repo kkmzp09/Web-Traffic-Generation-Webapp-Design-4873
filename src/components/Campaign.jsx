@@ -1,53 +1,108 @@
-// src/pages/RunCampaign.jsx
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import SafeIcon from '../common/SafeIcon';
-import * as FiIcons from 'react-icons/fi';
-import { useAuth } from '../lib/authContext';
-import { DEFAULT_SERVER_CONFIG, CAMPAIGN_DEFAULTS } from '../config';
-import {
-  startCampaign,
-  checkCampaignStatus,
-  getCampaignResults,
-  stopCampaign,
-  checkServerHealth,
-  buildCampaignRequest,
-  handleApiError,
-  validateServerConfig,
-  getServerUrl
-} from '../api';
+import React, { useState, useEffect, useCallback } from 'react';
+import CampaignManager from './CampaignManager';
+import RunCampaign from './RunCampaign';
+import Analytics from './Analytics';
+import { useAuth } from '../lib/authContext'; 
+import * as api from '../api';
 
-const {
-  FiPlay, FiPause, FiStop, FiRefreshCw, FiMonitor, FiGlobe,
-  FiClock, FiActivity, FiCheckCircle, FiXCircle, FiAlertCircle,
-  FiSettings, FiEye, FiDownload, FiVideo, FiChrome, FiTarget,
-  FiTrendingUp, FiUsers, FiZap, FiCpu, FiWifi, FiServer,
-  FiCloud, FiDatabase, FiTerminal, FiEdit3, FiUserCheck
-} = FiIcons;
+const Campaign = () => {
+    const { user } = useAuth();
+    const [activeTab, setActiveTab] = useState('manage');
+    const [campaigns, setCampaigns] = useState([]);
+    const [selectedCampaign, setSelectedCampaign] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
+    const [error, setError] = useState(null);
 
-export default function RunCampaign() {
-  const { user, isAuthenticated } = useAuth();
+    const fetchCampaigns = useCallback(async () => {
+        if (!user) return;
+        try {
+            setIsLoading(true);
+            const userCampaigns = await api.getCampaigns(user.id);
+            setCampaigns(userCampaigns);
+            setError(null);
+        } catch (err) {
+            setError('Failed to fetch campaigns. Please try again.');
+            console.error(err);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [user]);
 
-  const [serverConfig, setServerConfig] = useState(DEFAULT_SERVER_CONFIG);
-  const [showServerConfig, setShowServerConfig] = useState(false);
-  const [isServerConfigured, setIsServerConfigured] = useState(true);
+    useEffect(() => {
+        fetchCampaigns();
+    }, [fetchCampaigns]);
 
-  const [urlsText, setUrlsText] = useState(
-    'https://jobmakers.in\nhttps://jobmakers.in/about\nhttps://jobmakers.in/services'
-  );
-  const [dwellMs, setDwellMs] = useState(CAMPAIGN_DEFAULTS.dwellMs);
-  const [scroll, setScroll] = useState(CAMPAIGN_DEFAULTS.scroll);
+    const handleSaveCampaign = async (campaignData) => {
+        if (!user) {
+            setError("You must be logged in to save a campaign.");
+            return;
+        }
 
-  const [jobId, setJobId] = useState(null);
-  const [progress, setProgress] = useState(0);
-  const [status, setStatus] = useState('');
-  const [results, setResults] = useState(null);
-  const [isRunning, setIsRunning] = useState(false);
-  const [logs, setLogs] = useState([]);
-  const [activeTab, setActiveTab] = useState('config');
-  const [workerStatus, setWorkerStatus] = useState('checking');
+        try {
+            const savedCampaign = await api.saveCampaign({ ...campaignData, userId: user.id });
+            const updatedCampaigns = campaigns.map(c => c.id === savedCampaign.id ? savedCampaign : c);
+            if (!campaigns.some(c => c.id === savedCampaign.id)) {
+                updatedCampaigns.push(savedCampaign);
+            }
+            setCampaigns(updatedCampaigns);
+            setSelectedCampaign(savedCampaign);
+            setActiveTab('run');
+        } catch (err) {
+            setError('Failed to save campaign.');
+            console.error(err);
+        }
+    };
 
-  const [advancedSettings, setAdvancedSettings] = useState(CAMPAIGN_DEFAULTS);
+    const handleSelectCampaign = (campaign) => {
+        setSelectedCampaign(campaign);
+        setActiveTab('run');
+    };
 
-  useEffect(() => {
-    const saved = localStorage.getItem(
+    const renderContent = () => {
+        switch (activeTab) {
+            case 'manage':
+                return <CampaignManager 
+                            campaigns={campaigns}
+                            onSave={handleSaveCampaign} 
+                            onSelect={handleSelectCampaign}
+                            selectedCampaign={selectedCampaign}
+                            setSelectedCampaign={setSelectedCampaign}
+                            isLoading={isLoading}
+                            error={error}
+                        />;
+            case 'run':
+                return <RunCampaign campaign={selectedCampaign} />;
+            case 'analytics':
+                return <Analytics campaign={selectedCampaign} />;
+            default:
+                return null;
+        }
+    };
+
+    const TabButton = ({ tabName, label }) => (
+        <button
+            onClick={() => setActiveTab(tabName)}
+            className={`px-4 py-2 text-sm font-medium rounded-md ${
+                activeTab === tabName 
+                ? 'bg-red-600 text-white' 
+                : 'text-gray-600 hover:bg-gray-200'
+            }`}
+        >
+            {label}
+        </button>
+    );
+
+    return (
+        <div className="p-4 md:p-6 lg:p-8">
+            <h1 className="text-2xl font-bold mb-4">Campaigns</h1>
+            <div className="flex space-x-2 border-b mb-4">
+                <TabButton tabName="manage" label="Manage" />
+                <TabButton tabName="run" label="Run" />
+                <TabButton tabName="analytics" label="Analytics" />
+            </div>
+            <div>{renderContent()}</div>
+        </div>
+    );
+};
+
+export default Campaign;

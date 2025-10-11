@@ -1,79 +1,119 @@
+// src/components/Sidebar.jsx
 import React from 'react';
-import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
 import { useAuth } from '../lib/authContext';
 
-const { 
-  FiGrid, FiTarget, FiBarChart2, FiSettings, FiPlayCircle, FiLogOut, FiZap, FiChevronDown, FiUser
+const {
+  FiHome, FiTrendingUp, FiSettings, FiFileText, FiZap, FiSearch, FiUser, FiLogOut
 } = FiIcons;
 
-const Sidebar = () => {
+export default function Sidebar() {
   const location = useLocation();
-  const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
-  const handleLogout = () => {
-    logout();
-    navigate('/', { replace: true });
-  };
-
-  const navLinks = [
-    { to: '/', icon: FiGrid, text: 'Dashboard' },
-    { to: '/direct-traffic', icon: FiTarget, text: 'Direct Traffic' },
-    { to: '/seo-traffic', icon: FiZap, text: 'SEO Traffic' },
-    { to: '/analytics', icon: FiBarChart2, text: 'Analytics' },
-    { to: '/run-campaign', icon: FiPlayCircle, text: 'Run Campaign' },
-    { to: '/settings', icon: FiSettings, text: 'Settings' },
+  // Use "/" for Dashboard because App.jsx mounts <Dashboard /> at "/"
+  const navigationItems = [
+    { name: 'Dashboard',     href: '/',              icon: FiHome,     description: 'Overview & analytics' },
+    { name: 'Direct Traffic', href: '/direct-traffic', icon: FiZap,      description: 'Run direct campaigns' },
+    { name: 'SEO Traffic',    href: '/seo-traffic',    icon: FiSearch,   description: 'Run SEO campaigns' },
+    { name: 'Settings',       href: '/settings',       icon: FiSettings, description: 'Profile management' },
+    { name: 'Invoice',        href: '/invoice',        icon: FiFileText, description: 'Billing & invoices' },
   ];
 
+  // For HashRouter, the location.pathname still gives the part after the hash.
+  // Consider "/" and "/dashboard" as the same (in case you had old links).
+  const isActive = (href) => {
+    if (href === '/' && (location.pathname === '/' || location.pathname === '/dashboard')) return true;
+    return location.pathname === href;
+  };
+
+  const getNavItemClass = (item) => {
+    const baseClass = "group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 relative";
+    if (isActive(item.href)) {
+      return `${baseClass} bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg`;
+    }
+    return `${baseClass} text-gray-700 hover:bg-gray-100 hover:text-gray-900`;
+  };
+
+  const handleLogout = async () => {
+    try {
+      // If logout clears tokens/localStorage asynchronously, wait for it.
+      await logout();
+
+      // After state is cleared, navigate to a public route (home). Change to "/login" if you have a login page.
+      navigate('/', { replace: true });
+    } catch (e) {
+      // optional: toast or console
+      console.error('Logout failed:', e);
+    }
+  };
+
   return (
-    <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
-      <div className="p-4 border-b border-gray-200">
-        <h1 className="text-2xl font-bold text-gray-900">TrafficGen</h1>
+    <div className="w-64 bg-white shadow-xl border-r border-gray-200 flex flex-col h-full">
+      {/* Header */}
+      <div className="flex items-center justify-center h-16 px-6 border-b border-gray-200">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+            <SafeIcon icon={FiTrendingUp} className="text-white text-lg" />
+          </div>
+          <span className="text-xl font-bold text-gray-900">TrafficGen</span>
+        </div>
       </div>
 
-      <nav className="flex-1 p-4 space-y-2">
-        {navLinks.map(({ to, icon, text }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) =>
-              `flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors ${
-                isActive
-                  ? 'bg-blue-600 text-white shadow-md'
-                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-              }`
-            }
-          >
-            <SafeIcon icon={icon} className="mr-3 text-lg" />
-            {text}
-          </NavLink>
+      {/* User info */}
+      <div className="px-6 py-4 border-b border-gray-200">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-100 to-purple-100 flex items-center justify-center">
+            <SafeIcon icon={FiUser} className="text-blue-600" />
+          </div>
+          <div className="flex-1">
+            <div className="text-sm font-medium text-gray-900 truncate">
+              {user?.name || 'User'}
+            </div>
+            <div className="text-xs text-blue-600">Premium Account</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 px-4 py-4 space-y-2">
+        {navigationItems.map((item) => (
+          <Link key={item.name} to={item.href} className={getNavItemClass(item)}>
+            <SafeIcon icon={item.icon} className="mr-3 h-5 w-5 flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <div className="truncate">{item.name}</div>
+              <div className="text-xs opacity-75 truncate">{item.description}</div>
+            </div>
+            {isActive(item.href) && <div className="absolute right-2 w-2 h-2 bg-white rounded-full" />}
+          </Link>
         ))}
       </nav>
 
-      <div className="p-4 border-t border-gray-200">
-        <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50">
-            <div className="flex items-center">
-                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
-                    <SafeIcon icon={FiUser} className="text-blue-600"/>
-                </div>
-                <div>
-                    <p className="text-sm font-semibold text-gray-800">{user?.email || 'User'}</p>
-                    <p className="text-xs text-gray-500 capitalize">{user?.role || 'user'}</p>
-                </div>
-            </div>
-            <button
-              onClick={handleLogout}
-              className="text-gray-500 hover:text-red-600 transition-colors"
-              title="Sign Out"
-            >
-              <SafeIcon icon={FiLogOut} className="text-xl" />
-            </button>
+      {/* Logout Button */}
+      <div className="px-4 py-4 border-t border-gray-200">
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="w-full flex items-center px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-50 rounded-xl transition-all duration-200"
+        >
+          <SafeIcon icon={FiLogOut} className="mr-3 h-5 w-5" />
+          <span>Sign Out</span>
+        </button>
+      </div>
+
+      {/* System Status */}
+      <div className="px-4 pb-4">
+        <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-3">
+          <div className="flex items-center space-x-2 mb-1">
+            <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+            <span className="text-sm font-medium text-gray-900">System Online</span>
+          </div>
+          <div className="text-xs text-gray-600">All services operational</div>
         </div>
       </div>
     </div>
   );
-};
-
-export default Sidebar;
+}

@@ -1,77 +1,65 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import { loginRequest, meRequest } from './authApi';
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import { getCurrentUser, loginUser, registerUser, logout as authLogout } from './auth';
 
 const AuthContext = createContext(null);
 
-export function AuthProvider({ children }) {
+export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const rawSession = localStorage.getItem('tg_session');
-    if (!rawSession) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const session = JSON.parse(rawSession);
-      if (session?.token) {
-        setToken(session.token);
-        // Verify session on load
-        meRequest(session.token)
-          .then((me) => {
-            setUser({ ...me });
-            setIsAuthenticated(true);
-          })
-          .catch(() => {
-            // Token is invalid, clear session
-            localStorage.removeItem('tg_session');
-            setIsAuthenticated(false);
-            setUser(null);
-            setToken(null);
-          })
-          .finally(() => {
-            setLoading(false);
-          });
-      } else {
+    const fetchUser = async () => {
+      try {
+        const currentUser = await getCurrentUser();
+        setUser(currentUser);
+      } catch (error) {
+        console.error("Failed to fetch current user", error);
+        setUser(null);
+      } finally {
         setLoading(false);
       }
-    } catch {
-      // Corrupted session data
-      localStorage.removeItem('tg_session');
-      setLoading(false);
-    }
+    };
+    fetchUser();
   }, []);
 
-  const login = async (email, password) => {
-    const response = await loginRequest(email, password);
-    const session = {
-      token: response.accessToken,
-      user: response.user,
-    };
-    localStorage.setItem('tg_session', JSON.stringify(session));
-    setToken(response.accessToken);
-    setUser(response.user);
-    setIsAuthenticated(true);
+  const login = async ({ email, password }) => {
+    try {
+      const { user: loggedInUser } = await loginUser(email, password);
+      setUser(loggedInUser);
+      return loggedInUser;
+    } catch (error) {
+      console.error("Login failed:", error);
+      throw error;
+    }
   };
 
-  const logout = () => {
-    localStorage.removeItem('tg_session');
-    setUser(null);
-    setToken(null);
-    setIsAuthenticated(false);
+  const register = async (userData) => {
+    try {
+      await registerUser(userData);
+      // Auto-login after successful registration
+      const { user: loggedInUser } = await loginUser(userData.email, userData.password);
+      setUser(loggedInUser);
+    } catch (error) {
+      console.error("Registration failed:", error);
+      throw error;
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await authLogout();
+      setUser(null);
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   const value = {
     user,
-    token,
-    isAuthenticated,
+    isAuthenticated: !!user,
     loading,
-    isAdmin: user?.role === 'admin',
     login,
+    register,
     logout,
   };
 
@@ -80,7 +68,7 @@ export function AuthProvider({ children }) {
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
 export const useAuth = () => {
   const context = useContext(AuthContext);

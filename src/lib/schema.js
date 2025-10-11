@@ -40,6 +40,8 @@ export const campaigns=pgTable('campaigns',{
   name: varchar('name',{length: 255}).notNull(),
   targetUrl: text('target_url').notNull(),
   status: varchar('status',{length: 50}).notNull().default('inactive'), // active,inactive,paused,completed
+  type: varchar('type',{length: 50}).notNull().default('direct'),
+  duration: integer('duration'),
   trafficRate: integer('traffic_rate').notNull().default(30), // requests per minute
   totalRequests: integer('total_requests').default(0),
   successfulRequests: integer('successful_requests').default(0),

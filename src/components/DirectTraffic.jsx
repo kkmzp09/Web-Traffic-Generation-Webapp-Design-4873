@@ -1,195 +1,440 @@
+// src/components/DirectTraffic.jsx
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
+import { useAuth } from '../lib/authContext';
+import { createCampaign, getDirectCampaigns } from '../lib/queries';
+
 import {
   startCampaign,
-  checkServerHealth,
-  buildCampaignRequest,
+  checkCampaignStatus,
+  getCampaignResults,
   handleApiError,
-  getServerUrl,
 } from '../api';
-import { DEFAULT_SERVER_CONFIG } from '../config';
+import { DEFAULT_SERVER_CONFIG, getServerUrl } from '../config';
 
 const { FiZap, FiPlay, FiTarget, FiGlobe, FiBarChart } = FiIcons;
 
-function DirectTraffic() {
-  const [targetUrl, setTargetUrl] = useState('https://jobmakers.in');
-  const [trafficAmount, setTrafficAmount] = useState(10);
-  const [campaignStatus, setCampaignStatus] = useState(null);
-  const [serverStatus, setServerStatus] = useState('unknown');
+const clamp = (n, min, max) => Math.max(min, Math.min(max, n));
+
+export default function DirectTraffic() {
+  const { user } = useAuth();
   const [serverConfig] = useState(DEFAULT_SERVER_CONFIG);
 
-  const checkApiConnection = async () => {
-    setServerStatus('checking');
-    try {
-      await checkServerHealth(serverConfig);
-      setServerStatus('ok');
-    } catch (error) {
-      setServerStatus('error');
-      console.error(handleApiError(error, 'Health check'));
-    }
+  const [campaignData, setCampaignData] = useState({
+    url: '',
+    trafficAmount: 10,   // keep small while validating GA
+    duration: 15,        // minutes; we enforce ≥15s/visit (GA-friendly)
+  });
+
+  const [isRunning, setIsRunning] = useState(false);
+  const [activeJobId, setActiveJobId] = useState(null);
+  const [statusText, setStatusText] = useState('');
+  const [progress, setProgress] = useState(0);
+  const [campaigns, setCampaigns] = useState([]);
+
+  // GA helpers
+  const [gaMode, setGaMode] = useState(true);
+  const [clickConsent, setClickConsent] = useState(true);
+  const [internalClick, setInternalClick] = useState(true);
+  const [useRealisticUA, setUseRealisticUA] = useState(true);
+
+  // Load campaigns from database on initial render
+  useEffect(() => {
+    const fetchCampaigns = async () => {
+      if (!user) return;
+      try {
+        const history = await getDirectCampaigns(user.id);
+        const formattedHistory = history.map(c => ({
+            id: c.id,
+            name: c.name,
+            url: c.targetUrl,
+            status: c.status,
+            traffic: c.totalRequests,
+            success: c.totalRequests > 0 ? (c.successfulRequests / c.totalRequests) * 100 : 0,
+            created: new Date(c.createdAt).toISOString().split('T')[0],
+        }));
+        setCampaigns(formattedHistory);
+      } catch (error) {
+        console.error('Failed to load campaign history:', error);
+      }
+    };
+    fetchCampaigns();
+  }, [user]);
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setCampaignData(prev => ({ ...prev, [name]: name === 'url' ? value : Number(value) }));
   };
 
-  useEffect(() => {
-    checkApiConnection();
-  }, [serverConfig]);
+  // Build payload to match backend schema { urls[], dwellMs, scroll, actions?, userAgent? }
+  const buildPayload = () => {
+    const { url, trafficAmount, duration } = campaignData;
+    if (!url) throw new Error('Please provide a URL');
+
+    const totalMs = duration * 60 * 1000;
+    const perVisit = Math.round(totalMs / Math.max(trafficAmount, 1));
+    const minDwell = gaMode ? 15000 : 6000;             // 15s if GA mode
+    const dwellMs = clamp(perVisit, minDwell, 120000);
+
+    const count = clamp(trafficAmount, 1, 100);
+    const urls = Array.from({ length: count }, () => url.trim());
+
+    const payload = { urls, dwellMs, scroll: true };
+
+    const actions = [];
+    if (gaMode && clickConsent) {
+      actions.push(
+        { type: 'waitForSelector', selector: '#onetrust-accept-btn-handler' },
+        { type: 'click',           selector: '#onetrust-accept-btn-handler' },
+
+        { type: 'waitForSelector', selector: 'button[aria-label="Accept all"]' },
+        { type: 'click',           selector: 'button[aria-label="Accept all"]' },
+
+        { type: 'waitForSelector', selector: 'button:has-text("Accept")' },
+        { type: 'click',           selector: 'button:has-text("Accept")' },
+
+        { type: 'waitForSelector', selector: '.cookie-accept,.cc-allow' },
+        { type: 'click',           selector: '.cookie-accept,.cc-allow' },
+      );
+    }
+
+    if (gaMode && internalClick) {
+      const host = (() => {
+        try { return new URL(url).hostname; } catch { return ''; }
+      })();
+
+      actions.push(
+        { type: 'waitForSelector', selector: `a[href^="/"], a[href^="#"], a[href*="${host}"]` },
+        { type: 'click',           selector: `a[href^="/"], a[href^="#"], a[href*="${host}"]` },
+        { type: 'waitForSelector', selector: 'body' }
+      );
+    }
+
+    if (gaMode && useRealisticUA) {
+      payload.userAgent =
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 ' +
+        '(KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36';
+    }
+
+    if (actions.length) payload.actions = actions;
+    return payload;
+  };
+
+  const pollStatus = async (id) => {
+    try {
+      const s = await checkCampaignStatus(id, serverConfig);
+      setProgress(s.progress || 0);
+      setStatusText(s.status || 'running');
+
+      if (s.status === 'finished' || s.status === 'completed') {
+        setIsRunning(false);
+        setActiveJobId(null);
+
+        const r = await getCampaignResults(id, serverConfig);
+        const okCount = Array.isArray(r.results) ? r.results.filter(x => x.ok).length : 0;
+        const total = Array.isArray(r.results) ? r.results.length : 0;
+        
+        const created = new Date();
+        const newCampaignForDb = {
+          userId: user.id,
+          name: `Direct: ${(() => { try { return new URL(campaignData.url).hostname; } catch { return campaignData.url; } })()}`,
+          targetUrl: campaignData.url,
+          status: 'completed',
+          type: 'direct',
+          duration: campaignData.duration,
+          totalRequests: total,
+          successfulRequests: okCount,
+          failedRequests: total - okCount,
+          createdAt: created,
+          completedAt: created,
+        };
+
+        try {
+            const savedCampaign = await createCampaign(newCampaignForDb);
+            const newCampaignForUi = {
+                id: savedCampaign.id,
+                name: savedCampaign.name,
+                url: savedCampaign.targetUrl,
+                status: savedCampaign.status,
+                traffic: savedCampaign.totalRequests,
+                success: savedCampaign.totalRequests > 0 ? (savedCampaign.successfulRequests / savedCampaign.totalRequests) * 100 : 0,
+                created: new Date(savedCampaign.createdAt).toISOString().split('T')[0],
+            };
+            setCampaigns(prev => [newCampaignForUi, ...prev]);
+        } catch (error) {
+            console.error('Failed to save campaign history:', error);
+        }
+
+        return;
+      }
+
+      if (s.status === 'failed' || s.status === 'error') {
+        setIsRunning(false);
+        setActiveJobId(null);
+        setStatusText('failed');
+        return;
+      }
+
+      setTimeout(() => pollStatus(id), 2000);
+    } catch {
+      setStatusText('checking…');
+      setTimeout(() => pollStatus(id), 3000);
+    }
+  };
 
   const handleRunCampaign = async () => {
-    setCampaignStatus('running');
+    if (!campaignData.url) return;
+    if (!user) {
+        alert("Please log in to run a campaign.");
+        return;
+    }
+
     try {
-      const payload = buildCampaignRequest({
-        urls: [targetUrl],
-        dwellMs: 10000,
-        scroll: true,
-      });
-      // We are not using the result of startCampaign for now
-      await startCampaign(payload, serverConfig);
-      setCampaignStatus('finished');
-      // Here you would normally start polling for status
-    } catch (error) {
-      setCampaignStatus('error');
-      console.error(handleApiError(error, 'Campaign start'));
+      const payload = buildPayload();
+      setIsRunning(true);
+      setStatusText('starting…');
+      setProgress(0);
+
+      const res = await startCampaign(payload, serverConfig); // { id, status }
+      const id = res.id || res.sessionId;
+      if (!id) throw new Error('No job id returned from API');
+
+      setActiveJobId(id);
+      setStatusText(res.status || 'running');
+
+      setTimeout(() => pollStatus(id), 1500);
+    } catch (err) {
+      setIsRunning(false);
+      setActiveJobId(null);
+      setStatusText('error');
+      alert(handleApiError(err, 'Start campaign'));
     }
   };
 
-  const getStatusIndicator = () => {
-    if (serverStatus === 'checking') {
-      return (
-        <div className="flex items-center text-yellow-500">
-          <SafeIcon icon={FiZap} className="animate-pulse" />
-          <span className="ml-2 text-sm">Checking API...</span>
-        </div>
-      );
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'running': return 'text-green-600 bg-green-100';
+      case 'completed': return 'text-blue-600 bg-blue-100';
+      case 'paused': return 'text-yellow-600 bg-yellow-100';
+      default: return 'text-gray-600 bg-gray-100';
     }
-    if (serverStatus === 'ok') {
-      return (
-        <div className="flex items-center text-green-500">
-          <SafeIcon icon={FiZap} />
-          <span className="ml-2 text-sm">API Connected</span>
-        </div>
-      );
-    }
-    return (
-      <div className="flex items-center text-red-500">
-        <SafeIcon icon={FiZap} />
-        <span className="ml-2 text-sm">API Unreachable</span>
-      </div>
-    );
   };
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 bg-gray-50 min-h-screen">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="max-w-4xl mx-auto"
-      >
-        <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
-            <div className="mb-4 sm:mb-0">
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-                <SafeIcon icon={FiTarget} className="mr-3 text-red-500" />
-                Direct Traffic
-              </h1>
-              <p className="text-gray-500 mt-1">Send direct visits to a URL.</p>
+    <div className="min-h-screen bg-gray-50">
+      <div className="p-6">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center space-x-4 mb-4">
+            <div className="p-3 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl shadow-lg">
+              <SafeIcon icon={FiZap} className="w-8 h-8 text-white" />
             </div>
-            {getStatusIndicator()}
-          </div>
-
-          <div className="space-y-6">
-            <motion.div
-              className="p-5 bg-gray-100 rounded-lg"
-              whileHover={{ scale: 1.02 }}
-              transition={{ type: 'spring', stiffness: 300 }}
-            >
-              <label
-                htmlFor="targetUrl"
-                className="block text-sm font-medium text-gray-700 mb-2 flex items-center"
-              >
-                <SafeIcon icon={FiGlobe} className="mr-2" />
-                Target URL
-              </label>
-              <input
-                type="text"
-                id="targetUrl"
-                value={targetUrl}
-                onChange={(e) => setTargetUrl(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-red-500"
-                placeholder="https://example.com"
-              />
-              <p className="text-xs text-gray-500 mt-2">
-                This is the destination for the simulated traffic.
-              </p>
-            </motion.div>
-
-            <motion.div
-              className="p-5 bg-gray-100 rounded-lg"
-              whileHover={{ scale: 1.02 }}
-              transition={{ type: 'spring', stiffness: 300 }}
-            >
-              <label
-                htmlFor="trafficAmount"
-                className="block text-sm font-medium text-gray-700 mb-2 flex items-center"
-              >
-                <SafeIcon icon={FiBarChart} className="mr-2" />
-                Traffic Amount
-              </label>
-              <input
-                type="range"
-                id="trafficAmount"
-                min="1"
-                max="100"
-                value={trafficAmount}
-                onChange={(e) => setTrafficAmount(Number(e.target.value))}
-                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                style={{ accentColor: 'rgb(239 68 68)' }}
-              />
-              <div className="text-center text-lg font-semibold text-gray-800 mt-2">
-                {trafficAmount} visits
-              </div>
-            </motion.div>
-          </div>
-
-          <div className="mt-8">
-            <motion.button
-              onClick={handleRunCampaign}
-              disabled={campaignStatus === 'running' || serverStatus !== 'ok'}
-              className="w-full py-3 px-4 text-white font-semibold rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <div className="flex items-center justify-center">
-                <SafeIcon icon={FiPlay} className="mr-2" />
-                {campaignStatus === 'running' ? 'Campaign Running...' : 'Run Campaign'}
-              </div>
-            </motion.button>
-          </div>
-
-          {campaignStatus && (
-            <div className="mt-6 text-center">
-              {campaignStatus === 'running' && (
-                <p className="text-blue-600">Campaign is in progress...</p>
-              )}
-              {campaignStatus === 'finished' && (
-                <p className="text-green-600">Campaign finished successfully!</p>
-              )}
-              {campaignStatus === 'error' && (
-                <p className="text-red-600">
-                  There was an error running the campaign.
-                </p>
-              )}
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Direct Traffic</h1>
+              <p className="text-gray-600 mt-1">Generate direct website traffic with GA-friendly visits</p>
+              <p className="text-xs text-gray-500 mt-1">API: <strong>{getServerUrl(serverConfig)}</strong></p>
             </div>
-          )}
-
-          <div className="mt-6 text-center text-xs text-gray-400">
-            API Endpoint: {getServerUrl(serverConfig)}
           </div>
         </div>
-      </motion.div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Campaign Setup */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center space-x-2 mb-6">
+                <SafeIcon icon={FiTarget} className="w-5 h-5 text-blue-600" />
+                <h2 className="text-lg font-semibold text-gray-900">Run Campaign</h2>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Target URL</label>
+                  <input
+                    type="url"
+                    name="url"
+                    value={campaignData.url}
+                    onChange={handleInputChange}
+                    placeholder="https://example.com"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    disabled={isRunning}
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Visits</label>
+                    <input
+                      type="number"
+                      name="trafficAmount"
+                      value={campaignData.trafficAmount}
+                      onChange={handleInputChange}
+                      min="1"
+                      max="100"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      disabled={isRunning}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">Max 100 per run.</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Duration (min)</label>
+                    <input
+                      type="number"
+                      name="duration"
+                      value={campaignData.duration}
+                      onChange={handleInputChange}
+                      min="1"
+                      max="1440"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      disabled={isRunning}
+                    />
+                    <p className="text-xs text-gray-500 mt-1">We compute dwell/visit.</p>
+                  </div>
+                </div>
+
+                {/* GA Mode & helpers */}
+                <div className="space-y-2">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={gaMode}
+                      onChange={e => setGaMode(e.target.checked)}
+                      className="h-4 w-4 text-blue-600"
+                    />
+                    <span className="text-sm text-gray-800 font-medium">GA Compatibility Mode</span>
+                  </label>
+
+                  <div className="grid grid-cols-2 gap-3 pl-6">
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={clickConsent}
+                        onChange={e => setClickConsent(e.target.checked)}
+                        className="h-4 w-4 text-blue-600"
+                        disabled={!gaMode}
+                      />
+                      <span className="text-sm text-gray-700">Click cookie consent</span>
+                    </label>
+
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={internalClick}
+                        onChange={e => setInternalClick(e.target.checked)}
+                        className="h-4 w-4 text-blue-600"
+                        disabled={!gaMode}
+                      />
+                      <span className="text-sm text-gray-700">Click one internal link</span>
+                    </label>
+
+                    <label className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={useRealisticUA}
+                        onChange={e => setUseRealisticUA(e.target.checked)}
+                        className="h-4 w-4 text-blue-600"
+                        disabled={!gaMode}
+                      />
+                      <span className="text-sm text-gray-700">Realistic User-Agent</span>
+                    </label>
+                  </div>
+                </div>
+
+                <button
+                  onClick={handleRunCampaign}
+                  disabled={!campaignData.url || isRunning}
+                  className={`w-full flex items-center justify-center space-x-2 px-4 py-3 rounded-lg font-medium transition-colors duration-200 ${
+                    isRunning
+                      ? 'bg-gray-400 text-white cursor-not-allowed'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  }`}
+                >
+                  <SafeIcon icon={FiPlay} className="w-4 h-4" />
+                  <span>{isRunning ? 'Campaign Running…' : 'Start Campaign'}</span>
+                </button>
+
+                {activeJobId && (
+                  <div className="mt-3 text-sm text-gray-600">
+                    <div>Job ID: <code className="text-gray-800">{activeJobId}</code></div>
+                    <div>Status: {statusText || 'running'}</div>
+                    {progress > 0 && (
+                      <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                        <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${progress}%` }} />
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Campaign List */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center space-x-2">
+                  <SafeIcon icon={FiBarChart} className="w-5 h-5 text-green-600" />
+                  <h2 className="text-lg font-semibold text-gray-900">Campaign History</h2>
+                </div>
+                <div className="text-sm text-gray-500">{campaigns.length} campaigns</div>
+              </div>
+
+              <div className="space-y-4">
+                {campaigns.map((c) => (
+                  <div key={c.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-sm transition-shadow duration-200">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-3">
+                        <SafeIcon icon={FiGlobe} className="w-4 h-4 text-gray-400" />
+                        <div>
+                          <h3 className="font-medium text-gray-900">{c.name}</h3>
+                          <p className="text-sm text-gray-600">{c.url}</p>
+                        </div>
+                      </div>
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(c.status)}`}>
+                        {c.status}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4 text-sm">
+                      <div>
+                        <p className="text-gray-500">Traffic</p>
+                        <p className="font-medium text-gray-900">{c.traffic}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Success Rate</p>
+                        <p className="font-medium text-gray-900">
+                          {typeof c.success === 'number' ? c.success.toFixed(1) : c.success}%
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Created</p>
+                        <p className="font-medium text-gray-900">{c.created}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {campaigns.length === 0 && (
+                <div className="text-center py-8">
+                  <SafeIcon icon={FiBarChart} className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">No campaigns yet</h3>
+                  <p className="text-gray-600">Start your first direct traffic campaign to see results here</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Tiny legend */}
+        <div className="mt-6 text-xs text-gray-500">
+          <p>
+            * GA Mode enforces ≥15s dwell, scrolls the page, tries common cookie-consent buttons, and clicks one internal link.
+            This increases the chance that GA4 records <code>page_view</code> and <code>user_engagement</code>.
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
-
-export default DirectTraffic;

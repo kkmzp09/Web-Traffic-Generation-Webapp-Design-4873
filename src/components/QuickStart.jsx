@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
 import { checkTablesExist, testConnection } from '../lib/database.js';
-import { register } from '../lib/auth.js';
+import { registerUser } from '../lib/auth.js';
 
 const { FiPlay, FiCheck, FiX, FiUser, FiDatabase, FiRefreshCw, FiArrowRight } = FiIcons;
 
@@ -38,11 +38,14 @@ const QuickStart = () => {
   const createTestUser = async () => {
     setIsLoading(true);
     try {
-      const email = `test.user.${Date.now()}@example.com`;
-      const password = 'testpass123';
+      const userData = {
+        name: 'Test User',
+        email: `test.user.${Date.now()}@example.com`,
+        password: 'testpass123'
+      };
       
-      const user = await register(email, password);
-      setTestUser({ ...user, password: password });
+      const user = await registerUser(userData);
+      setTestUser({ ...user, password: userData.password });
       setStep(3);
     } catch (error) {
       console.error('Test user creation failed:', error);
@@ -160,8 +163,8 @@ const QuickStart = () => {
                     <p className="text-sm text-green-800 mb-2">✅ Test user created successfully!</p>
                     <div className="text-xs text-green-700 space-y-1">
                       <div><span className="font-medium">Email:</span> {testUser.email}</div>
-                      <div><span className="font-medium">Password:</span> {testUser.password}</div>
-                      <div><span className="font-medium">Username:</span> {testUser.username}</div>
+                      <div><span className="font-medium">Password:</span> testpass123</div>
+                      <div><span className="font-medium">Name:</span> {testUser.name}</div>
                     </div>
                   </div>
                 )}

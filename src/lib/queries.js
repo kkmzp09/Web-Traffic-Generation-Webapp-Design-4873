@@ -102,6 +102,32 @@ export const getCampaigns = async (userId = null, limit = 50) => {
   }
 };
 
+export const getDirectCampaigns = async (userId = null, limit = 50) => {
+    try {
+      return await executeQuery(async (db) => {
+        const conditions = [eq(campaigns.type, 'direct')];
+        if (userId) {
+          conditions.push(eq(campaigns.userId, userId));
+        }
+        
+        const query = db.select()
+          .from(campaigns)
+          .where(and(...conditions))
+          .orderBy(desc(campaigns.createdAt))
+          .limit(limit);
+          
+        return await query;
+      });
+    } catch (error) {
+      console.error('Error fetching direct campaigns:', error);
+      // Return mock data in development
+      if (import.meta.env?.DEV) {
+        return getMockCampaigns(); // Assuming mock data is fine for now
+      }
+      return [];
+    }
+  };
+
 export const getCampaignById = async (id) => {
   try {
     return await executeQuery(async (db) => {
