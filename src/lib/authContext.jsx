@@ -1,71 +1,78 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import { getCurrentUser, loginUser, registerUser, logout as authLogout } from './auth';
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import { loginRequest, meRequest } from './authApi';
 
 const AuthContext = createContext(null);
 
-export const AuthProvider = ({ children }) => {
+export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [isAuthModalOpen, setAuthModalOpen] = useState(false);
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const currentUser = await getCurrentUser();
-        setUser(currentUser);
-      } catch (error) {
-        console.error("Failed to fetch current user", error);
-        setUser(null);
-      } finally {
+    const rawSession = localStorage.getItem('tg_session');
+    if (!rawSession) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const session = JSON.parse(rawSession);
+      if (session?.token) {
+        setToken(session.token);
+        // Verify session on load
+        meRequest(session.token)
+          .then((me) => {
+            setUser({ ...me });
+            setIsAuthenticated(true);
+          })
+          .catch(() => {
+            // Token is invalid, clear session
+            localStorage.removeItem('tg_session');
+            setIsAuthenticated(false);
+            setUser(null);
+            setToken(null);
+          })
+          .finally(() => {
+            setLoading(false);
+          });
+      } else {
         setLoading(false);
       }
-    };
-    fetchUser();
+    } catch {
+      // Corrupted session data
+      localStorage.removeItem('tg_session');
+      setLoading(false);
+    }
   }, []);
 
   const login = async (email, password) => {
-    try {
-      const { user: loggedInUser } = await loginUser(email, password);
-      setUser(loggedInUser);
-      setAuthModalOpen(false); // Close modal on success
-      return loggedInUser;
-    } catch (error) {
-      console.error("Login failed:", error);
-      throw error;
-    }
+    const response = await loginRequest(email, password);
+    const session = {
+      token: response.accessToken,
+      user: response.user,
+    };
+    localStorage.setItem('tg_session', JSON.stringify(session));
+    setToken(response.accessToken);
+    setUser(response.user);
+    setIsAuthenticated(true);
   };
 
-  const register = async (userData) => {
-    try {
-      await registerUser(userData);
-      // Optional: auto-login after registration
-      // const { user: loggedInUser } = await loginUser(userData.email, userData.password);
-      // setUser(loggedInUser);
-      // setAuthModalOpen(false);
-    } catch (error) {
-      console.error("Registration failed:", error);
-      throw error;
-    }
-  };
-
-  const logout = async () => {
-    try {
-      await authLogout();
-      setUser(null); // Clear user state
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
+  const logout = () => {
+    localStorage.removeItem('tg_session');
+    setUser(null);
+    setToken(null);
+    setIsAuthenticated(false);
   };
 
   const value = {
     user,
+    token,
+    isAuthenticated,
     loading,
+    isAdmin: user?.role === 'admin',
     login,
-    register,
     logout,
-    isAuthModalOpen,
-    openAuthModal: () => setAuthModalOpen(true),
-    closeAuthModal: () => setAuthModalOpen(false),
   };
 
   return (
@@ -73,7 +80,7 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
-};
+}
 
 export const useAuth = () => {
   const context = useContext(AuthContext);

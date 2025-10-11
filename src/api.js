@@ -87,7 +87,7 @@ export const getCampaignResults = (id, serverConfig = DEFAULT_SERVER_CONFIG) => 
 };
 
 export const stopCampaign = (id, serverConfig = DEFAULT_SERVER_CONFIG) => {
-  // Backend: POST /stop/:id
+  // UI-only in your current server, but we keep the call for future use
   return apiFetch(`/stop/${encodeURIComponent(id)}`, { method: 'POST' }, serverConfig);
 };
 
@@ -103,6 +103,13 @@ export const checkServerHealth = (serverConfig = DEFAULT_SERVER_CONFIG) => {
 /**
  * Build a payload accepted by your backend Campaign schema:
  * { urls: string[], dwellMs?: number, scroll?: boolean, actions?: [], userAgent?: string }
+ *
+ * @param {object} params
+ * @param {string|string[]} params.urls - newline string or string[]
+ * @param {number} params.dwellMs
+ * @param {boolean} params.scroll
+ * @param {object} [params.advancedSettings]
+ * @param {object} [params.user]
  */
 export const buildCampaignRequest = ({ urls, dwellMs, scroll, advancedSettings, user }) => {
   const list =
@@ -118,11 +125,13 @@ export const buildCampaignRequest = ({ urls, dwellMs, scroll, advancedSettings, 
     scroll: Boolean(scroll ?? CAMPAIGN_DEFAULTS.scroll),
   };
 
+  // Optionally pass through extras your server already accepts
   if (advancedSettings?.userAgent) payload.userAgent = advancedSettings.userAgent;
   if (advancedSettings?.actions && Array.isArray(advancedSettings.actions)) {
     payload.actions = advancedSettings.actions;
   }
 
+  // Attach user id (ignored by backend if not used)
   if (user?.id) payload.userId = user.id;
 
   return payload;

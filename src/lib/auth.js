@@ -1,74 +1,68 @@
-// Mock user database
-// In a real application, this would be a database call.
-let USERS = [
-  { 
-    id: 'usr_1', 
-    email: 'user@example.com', 
-    password: 'password123', 
-    name: 'Test User' 
-  }
+// Mock authentication functions
+// In a real application, these would make API calls to your backend.
+
+const users = [
+  {
+    id: 1,
+    email: 'user@example.com',
+    password: 'password123',
+    username: 'TestUser',
+  },
 ];
 
-const FAKE_DELAY = 500;
+let currentUser = null;
 
-// --- Mock Auth Service ---
-
-export const loginUser = (email, password) => {
+const login = (email, password) => {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
-      const user = USERS.find(u => u.email === email && u.password === password);
+      const user = users.find(
+        (u) => u.email === email && u.password === password
+      );
       if (user) {
-        const userData = { id: user.id, email: user.email, name: user.name };
-        localStorage.setItem('authUser', JSON.stringify(userData));
-        // Return object expected by AuthModal
-        resolve({ user: userData, sessionToken: 'fake-token-for-demo' });
+        currentUser = { id: user.id, email: user.email, username: user.username };
+        resolve(currentUser);
       } else {
-        reject(new Error('Invalid credentials. Please try again.'));
+        reject(new Error('Invalid email or password'));
       }
-    }, FAKE_DELAY);
+    }, 500);
   });
 };
 
-export const registerUser = ({ name, email, password }) => {
+const register = (email, password) => {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
-      if (USERS.some(u => u.email === email)) {
-        reject(new Error('An account with this email already exists.'));
+      if (users.find((u) => u.email === email)) {
+        reject(new Error('User with this email already exists'));
       } else {
         const newUser = {
-          id: `usr_${Date.now()}`,
-          name,
+          id: users.length + 1,
           email,
-          password, // In a real app, hash this!
+          password,
+          username: email.split('@')[0],
         };
-        USERS.push(newUser);
-        const userData = { id: newUser.id, email: newUser.email, name: newUser.name };
-        // Does not log in, just resolves with user data
-        resolve(userData);
+        users.push(newUser);
+        currentUser = { id: newUser.id, email: newUser.email, username: newUser.username };
+        resolve(currentUser);
       }
-    }, FAKE_DELAY);
+    }, 500);
   });
 };
 
-export const logout = () => {
+const logout = () => {
   return new Promise((resolve) => {
     setTimeout(() => {
-      localStorage.clear();
-      sessionStorage.clear();
-      resolve(true);
-    }, FAKE_DELAY);
+      currentUser = null;
+      resolve();
+    }, 200);
   });
 };
 
-export const getCurrentUser = () => {
+const getCurrentUser = () => {
   return new Promise((resolve) => {
     setTimeout(() => {
-      const storedUser = localStorage.getItem('authUser');
-      if (storedUser) {
-        resolve(JSON.parse(storedUser));
-      } else {
-        resolve(null);
-      }
-    }, FAKE_DELAY / 2); 
+      resolve(currentUser);
+    }, 200);
   });
 };
+
+export { login, register, logout, getCurrentUser };
