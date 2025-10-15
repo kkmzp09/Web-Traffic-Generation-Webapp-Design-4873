@@ -1,113 +1,174 @@
-import React, { useState, useEffect, useRef } from 'react';
+// src/components/Header.jsx
+import React, { useState } from 'react';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
-import { useAuth } from '../lib/authContext';
-import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../lib/authContext.jsx';
 
-const { 
-  FiMenu, FiX, FiSearch, FiBell, FiUser, FiLogOut, 
-  FiChevronDown, FiSettings, FiHelpCircle 
+const {
+  FiBell, FiUser, FiSearch, FiChevronDown, FiLogIn, FiUserPlus, FiSettings, FiLogOut, FiShield, FiMenu
 } = FiIcons;
 
-const Header = () => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const dropdownRef = useRef(null);
+export default function Header({ onMenuClick }) {
+  const { user, isAuthenticated, logout, openAuthModal } = useAuth();
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      navigate('/login');
-    } catch (error) {
-      console.error("Logout failed:", error);
-      // Defensive cleanup
-      const keysToRemove = ['authToken', 'accessToken', 'refreshToken', 'user', 'userId'];
-      keysToRemove.forEach(key => {
-        try {
-          localStorage.removeItem(key);
-          sessionStorage.removeItem(key);
-        } catch (e) {
-          // Ignore storage errors
-        }
-      });
-      window.location.href = '/#/login'; // Force redirect
-    }
+  const toggleProfileDropdown = () => setIsProfileDropdownOpen((v) => !v);
+
+  const handleLogin = () => {
+    openAuthModal('login');
+    setIsProfileDropdownOpen(false);
   };
 
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsDropdownOpen(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
+  const handleRegister = () => {
+    openAuthModal('register');
+    setIsProfileDropdownOpen(false);
+  };
 
-  const DropdownItem = ({ icon, text, onClick, className }) => (
-    <button
-      onClick={onClick}
-      className={`flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900 ${className}`}
-    >
-      <SafeIcon icon={icon} className="w-5 h-5 mr-3" />
-      <span>{text}</span>
-    </button>
-  );
+  const handleLogout = async () => {
+    await logout();
+    setIsProfileDropdownOpen(false);
+  };
+
+  const handleSettings = () => {
+    console.log('Settings clicked');
+    setIsProfileDropdownOpen(false);
+  };
 
   return (
-    <header className="bg-white shadow-md sticky top-0 z-40">
-      <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          <div className="flex items-center space-x-4">
-            <div className="text-2xl font-bold text-gray-800">
-              Trafficker
-            </div>
-            <div className="hidden md:flex items-center bg-gray-100 rounded-full px-4 py-2">
-              <SafeIcon icon={FiSearch} className="text-gray-500" />
-              <input 
-                type="text" 
-                placeholder="Search..." 
-                className="bg-transparent focus:outline-none ml-2 text-sm"
-              />
-            </div>
+    <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4 relative">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={onMenuClick}
+            className="lg:hidden p-2 rounded-lg hover:bg-gray-100 text-gray-600"
+          >
+            <SafeIcon icon={FiMenu} className="text-xl" />
+          </button>
+
+          <div className="relative hidden sm:block">
+            <SafeIcon
+              icon={FiSearch}
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+            />
+            <input
+              type="text"
+              placeholder="Search campaigns, analytics..."
+              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64 lg:w-80"
+            />
           </div>
+        </div>
 
-          <div className="flex items-center space-x-4">
-            <button className="p-2 rounded-full hover:bg-gray-100">
-              <SafeIcon icon={FiBell} className="h-6 w-6 text-gray-600" />
+        <div className="flex items-center space-x-2 sm:space-x-4">
+          <button className="sm:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
+            <SafeIcon icon={FiSearch} className="text-xl" />
+          </button>
+
+          <button className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg">
+            <SafeIcon icon={FiBell} className="text-xl" />
+            <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+              3
+            </span>
+          </button>
+
+          <div className="relative">
+            <button
+              onClick={toggleProfileDropdown}
+              className="flex items-center space-x-2 sm:space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                <SafeIcon icon={FiUser} className="text-white text-sm" />
+              </div>
+              <div className="text-left hidden sm:block">
+                <p className="text-sm font-medium text-gray-900">
+                  {isAuthenticated ? user?.name : 'Guest User'}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {isAuthenticated ? 'Premium User' : 'Not logged in'}
+                </p>
+              </div>
+              <SafeIcon
+                icon={FiChevronDown}
+                className={`text-gray-400 transition-transform hidden sm:block ${
+                  isProfileDropdownOpen ? 'rotate-180' : ''
+                }`}
+              />
             </button>
-            
-            <div className="relative" ref={dropdownRef}>
-              <button 
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center space-x-2 p-2 rounded-full hover:bg-gray-100"
-              >
-                <SafeIcon icon={FiUser} className="h-6 w-6 text-gray-600"/>
-                {user && (
-                  <span className="hidden md:inline text-sm font-medium text-gray-700">
-                    {user.email}
-                  </span>
-                )}
-                <SafeIcon icon={FiChevronDown} className="h-4 w-4 text-gray-600" />
-              </button>
 
-              {isDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 ring-1 ring-black ring-opacity-5">
-                  <DropdownItem icon={FiSettings} text="Settings" onClick={() => { navigate('/settings'); setIsDropdownOpen(false); }} />
-                  <DropdownItem icon={FiHelpCircle} text="Help" onClick={() => setIsDropdownOpen(false)} />
-                  <div className="border-t border-gray-100 my-1"></div>
-                  <DropdownItem icon={FiLogOut} text="Sign Out" onClick={handleLogout} className="text-red-600" />
-                </div>
-              )}
-            </div>
+            {isProfileDropdownOpen && (
+              <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                {!isAuthenticated ? (
+                  <>
+                    <div className="px-4 py-3 border-b border-gray-100">
+                      <p className="text-sm font-medium text-gray-900">Welcome to TrafficGen Pro</p>
+                      <p className="text-xs text-gray-500 mt-1">Sign in to access all features</p>
+                    </div>
+
+                    <button
+                      onClick={handleLogin}
+                      className="w-full px-4 py-3 text-left flex items-center space-x-3 hover:bg-gray-50 transition-colors"
+                    >
+                      <SafeIcon icon={FiLogIn} className="text-blue-600" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">Sign In</p>
+                        <p className="text-xs text-gray-500">Access your dashboard</p>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={handleRegister}
+                      className="w-full px-4 py-3 text-left flex items-center space-x-3 hover:bg-gray-50 transition-colors"
+                    >
+                      <SafeIcon icon={FiUserPlus} className="text-green-600" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">Create Account</p>
+                        <p className="text-xs text-gray-500">Start generating traffic</p>
+                      </div>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="px-4 py-3 border-b border-gray-100">
+                      <p className="text-sm font-medium text-gray-900">{user?.name}</p>
+                      <p className="text-xs text-gray-500 flex items-center space-x-1">
+                        <SafeIcon icon={FiShield} className="text-green-500" />
+                        <span>Premium Account</span>
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={handleSettings}
+                      className="w-full px-4 py-3 text-left flex items-center space-x-3 hover:bg-gray-50 transition-colors"
+                    >
+                      <SafeIcon icon={FiSettings} className="text-gray-600" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">Account Settings</p>
+                        <p className="text-xs text-gray-500">Manage your profile</p>
+                      </div>
+                    </button>
+
+                    <div className="border-t border-gray-100 mt-2 pt-2">
+                      <button
+                        onClick={handleLogout}
+                        className="w-full px-4 py-3 text-left flex items-center space-x-3 hover:bg-red-50 transition-colors text-red-600"
+                      >
+                        <SafeIcon icon={FiLogOut} className="text-red-600" />
+                        <div>
+                          <p className="text-sm font-medium">Sign Out</p>
+                          <p className="text-xs text-red-500">End your session</p>
+                        </div>
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {isProfileDropdownOpen && (
+        <div className="fixed inset-0 z-40" onClick={() => setIsProfileDropdownOpen(false)} />
+      )}
     </header>
   );
-};
-
-export default Header;
+}

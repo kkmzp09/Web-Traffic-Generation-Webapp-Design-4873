@@ -1,109 +1,117 @@
-const USERS_STORAGE_KEY = 'trafficker_users';
-const FAKE_DELAY = 500;
+// src/lib/auth.js
+// Frontend auth client that talks to the Linux Auth/DB API
+// Requires: VITE_AUTH_API_BASE in .env (e.g. https://auth.organitrafficboost.com)
 
-// Initialize users from localStorage or with a default user
-const initializeUsers = () => {
+const AUTH_API_BASE = import.meta.env?.VITE_AUTH_API_BASE;
+
+if (!AUTH_API_BASE) {
+  console.warn('VITE_AUTH_API_BASE is not set; login will fail with "failed to fetch".');
+}
+
+const STORAGE_KEY = 'authSession'; // { user, token, expiresAt }
+
+function saveSession(session) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+}
+function loadSession() {
   try {
-    const storedUsers = localStorage.getItem(USERS_STORAGE_KEY);
-    if (storedUsers) {
-      return JSON.parse(storedUsers);
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+function clearSession() {
+  localStorage.removeItem(STORAGE_KEY);
+}
+
+function authHeaders(token) {
+  const h = { 'Content-Type': 'application/json' };
+  if (token) h['Authorization'] = `Bearer ${token}`;
+  return h;
+}
+
+// ---- Public API used by AuthContext / components ----
+
+export async function loginUser(email, password) {
+  const res = await fetch(`${AUTH_API_BASE}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => '');
+    throw new Error(txt || `Login failed (HTTP ${res.status})`);
+  }
+  const data = await res.json();
+  // expected: { user, sessionToken, expiresAt }
+  const session = {
+    user: data.user,
+    token: data.sessionToken,
+    expiresAt: data.expiresAt,
+  };
+  saveSession(session);
+  return { user: session.user, sessionToken: session.token };
+}
+
+export async function registerUser({ name, email, password }) {
+  const res = await fetch(`${AUTH_API_BASE}/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, email, password }),
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => '');
+    throw new Error(txt || `Registration failed (HTTP ${res.status})`);
+  }
+  // server returns { user }
+  return await res.json();
+}
+
+export async function logout() {
+  // Best effort to inform server (if it exposes /auth/logout)
+  try {
+    const session = loadSession();
+    await fetch(`${AUTH_API_BASE}/auth/logout`, {
+      method: 'POST',
+      headers: authHeaders(session?.token),
+    });
+  } catch {
+    // ignore
+  } finally {
+    clearSession();
+  }
+  return true;
+}
+
+export async function getCurrentUser() {
+  // 1) Return cached user if token present
+  const session = loadSession();
+  if (session?.user && session?.token) return session.user;
+
+  // 2) Optionally verify by calling /auth/me (if you exposed it)
+  try {
+    const res = await fetch(`${AUTH_API_BASE}/auth/me`, {
+      method: 'GET',
+      headers: authHeaders(session?.token),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      // optional: refresh local cache
+      saveSession({
+        user: data.user,
+        token: session?.token,
+        expiresAt: session?.expiresAt,
+      });
+      return data.user;
     }
-  } catch (e) {
-    console.error('Failed to parse users from localStorage', e);
+  } catch {
+    // ignore
   }
-  
-  // Default user if nothing is in storage
-  const defaultUsers = [
-    { 
-      id: 'usr_1', 
-      email: 'user@example.com', 
-      password: 'password123', 
-      name: 'Test User' 
-    }
-  ];
-  
-  try {
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(defaultUsers));
-  } catch (e) {
-    console.error('Failed to save default users to localStorage', e);
-  }
-  
-  return defaultUsers;
-};
+  return null;
+}
 
-let USERS = initializeUsers();
-
-// Save users to localStorage
-const saveUsers = () => {
-  try {
-    localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(USERS));
-  } catch (e) {
-    console.error('Failed to save users to localStorage', e);
-  }
-};
-
-
-export const loginUser = (email, password) => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const user = USERS.find(u => u.email === email && u.password === password);
-      if (user) {
-        const userData = { id: user.id, email: user.email, name: user.name };
-        localStorage.setItem('authUser', JSON.stringify(userData));
-        resolve({ user: userData, sessionToken: 'fake-token-for-demo-user' });
-      } else {
-        reject(new Error('Invalid credentials. Please try again.'));
-      }
-    }, FAKE_DELAY);
-  });
-};
-
-export const registerUser = ({ name, email, password }) => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      if (USERS.some(u => u.email === email)) {
-        reject(new Error('An account with this email already exists.'));
-      } else {
-        const newName = name || email.split('@')[0];
-        const newUser = {
-          id: `usr_${Date.now()}`,
-          name: newName,
-          email,
-          password,
-        };
-        USERS.push(newUser);
-        saveUsers(); 
-        const userData = { id: newUser.id, email: newUser.email, name: newName };
-        resolve(userData);
-      }
-    }, FAKE_DELAY);
-  });
-};
-
-export const logout = () => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      localStorage.removeItem('authUser');
-      sessionStorage.clear();
-      resolve(true);
-    }, FAKE_DELAY);
-  });
-};
-
-export const getCurrentUser = () => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      try {
-        const storedUser = localStorage.getItem('authUser');
-        if (storedUser) {
-          resolve(JSON.parse(storedUser));
-        } else {
-          resolve(null);
-        }
-      } catch (e) {
-        console.error('Failed to get current user from localStorage', e);
-        resolve(null);
-      }
-    }, FAKE_DELAY / 2); 
-  });
-};
+// convenience for other code
+export function getStoredSession() {
+  return loadSession();
+}

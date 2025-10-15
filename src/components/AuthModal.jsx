@@ -1,104 +1,95 @@
-import React, { useState } from 'react';
+// src/components/AuthModal.jsx
+import React, { useState, useEffect } from 'react';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
-import { registerUser, loginUser } from '../lib/auth.js';
 import { useAuth } from '../lib/authContext.jsx';
 
-const { FiX, FiMail, FiLock, FiUser, FiEye, FiEyeOff, FiCheckCircle, FiAlertCircle } = FiIcons;
+const {
+  FiX, FiMail, FiLock, FiUser, FiEye, FiEyeOff, FiCheckCircle, FiAlertCircle
+} = FiIcons;
 
-const AuthModal = ({ isOpen, onClose, mode = 'login', onModeChange }) => {
-  const { login } = useAuth();
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
-  });
+export default function AuthModal() {
+  const {
+    isAuthModalOpen,
+    closeAuthModal,
+    authMode,
+    setAuthMode,
+    login,
+    register
+  } = useAuth();
+
+  const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState(false);
 
-  if (!isOpen) return null;
+  useEffect(() => {
+    if (!isAuthModalOpen) {
+      // reset on close
+      setFormData({ name: '', email: '', password: '', confirmPassword: '' });
+      setErrors({});
+      setSuccess(false);
+      setShowPassword(false);
+      setShowConfirmPassword(false);
+    }
+  }, [isAuthModalOpen]);
+
+  if (!isAuthModalOpen) return null;
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors({ ...errors, [name]: '' });
-    }
+    setFormData((p) => ({ ...p, [name]: value }));
+    if (errors[name]) setErrors((p) => ({ ...p, [name]: '' }));
   };
 
-  const validateForm = () => {
-    const newErrors = {};
-
-    if (mode === 'register' && !formData.name.trim()) {
-      newErrors.name = 'Name is required';
+  const validate = () => {
+    const errs = {};
+    if (authMode === 'register' && !formData.name.trim()) errs.name = 'Name is required';
+    if (!formData.email.trim()) errs.email = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) errs.email = 'Enter a valid email';
+    if (!formData.password) errs.password = 'Password is required';
+    else if (authMode === 'register' && formData.password.length < 6) errs.password = 'Min 6 characters';
+    if (authMode === 'register' && formData.password !== formData.confirmPassword) {
+      errs.confirmPassword = 'Passwords do not match';
     }
-
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
-    }
-
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (mode === 'register' && formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
-
-    if (mode === 'register' && formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!validateForm()) return;
+    if (!validate()) return;
 
     setIsLoading(true);
     setErrors({});
-    
     try {
-      if (mode === 'login') {
-        const result = await loginUser(formData.email, formData.password);
-        login(result.user, result.sessionToken);
+      if (authMode === 'login') {
+        await login(formData.email, formData.password);
         setSuccess(true);
         setTimeout(() => {
-          onClose();
           setSuccess(false);
-        }, 1500);
+          closeAuthModal();
+        }, 1200);
       } else {
-        await registerUser({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password
-        });
+        await register({ name: formData.name, email: formData.email, password: formData.password });
         setSuccess(true);
         setTimeout(() => {
-          onModeChange('login');
           setSuccess(false);
-          setFormData({ name: '', email: '', password: '', confirmPassword: '' });
-        }, 2000);
+          setAuthMode('login');
+          setFormData({ name: '', email: formData.email, password: '', confirmPassword: '' });
+        }, 1400);
       }
-    } catch (error) {
-      console.error('Auth error:', error);
-      setErrors({ general: error.message || 'Something went wrong. Please try again.' });
+    } catch (err) {
+      setErrors({ general: err.message || 'Authentication failed' });
     } finally {
       setIsLoading(false);
     }
   };
 
   const toggleMode = () => {
-    const newMode = mode === 'login' ? 'register' : 'login';
-    onModeChange(newMode);
+    setAuthMode(authMode === 'login' ? 'register' : 'login');
     setFormData({ name: '', email: '', password: '', confirmPassword: '' });
     setErrors({});
     setSuccess(false);
@@ -112,13 +103,10 @@ const AuthModal = ({ isOpen, onClose, mode = 'login', onModeChange }) => {
             <SafeIcon icon={FiCheckCircle} className="text-green-600 text-2xl" />
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            {mode === 'login' ? 'Welcome Back!' : 'Account Created!'}
+            {authMode === 'login' ? 'Welcome Back!' : 'Account Created!'}
           </h2>
           <p className="text-gray-600">
-            {mode === 'login' 
-              ? 'You have been successfully logged in.' 
-              : 'Your account has been created successfully. Please sign in.'
-            }
+            {authMode === 'login' ? 'You are signed in.' : 'Please sign in to continue.'}
           </p>
         </div>
       </div>
@@ -128,20 +116,15 @@ const AuthModal = ({ isOpen, onClose, mode = 'login', onModeChange }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-        {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-2xl font-bold text-gray-900">
-            {mode === 'login' ? 'Welcome Back' : 'Create Account'}
+            {authMode === 'login' ? 'Welcome Back' : 'Create Account'}
           </h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-          >
+          <button onClick={closeAuthModal} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
             <SafeIcon icon={FiX} className="text-gray-500" />
           </button>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {errors.general && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center space-x-2">
@@ -150,13 +133,11 @@ const AuthModal = ({ isOpen, onClose, mode = 'login', onModeChange }) => {
             </div>
           )}
 
-          {mode === 'register' && (
+          {authMode === 'register' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Full Name
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Full Name</label>
               <div className="relative">
-                <SafeIcon icon={FiUser} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <SafeIcon icon={FiUser} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
                   name="name"
@@ -173,11 +154,9 @@ const AuthModal = ({ isOpen, onClose, mode = 'login', onModeChange }) => {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Email Address
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
             <div className="relative">
-              <SafeIcon icon={FiMail} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <SafeIcon icon={FiMail} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="email"
                 name="email"
@@ -193,11 +172,9 @@ const AuthModal = ({ isOpen, onClose, mode = 'login', onModeChange }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Password
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
             <div className="relative">
-              <SafeIcon icon={FiLock} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <SafeIcon icon={FiLock} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type={showPassword ? 'text' : 'password'}
                 name="password"
@@ -210,8 +187,8 @@ const AuthModal = ({ isOpen, onClose, mode = 'login', onModeChange }) => {
               />
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
                 <SafeIcon icon={showPassword ? FiEyeOff : FiEye} />
               </button>
@@ -219,13 +196,11 @@ const AuthModal = ({ isOpen, onClose, mode = 'login', onModeChange }) => {
             {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
           </div>
 
-          {mode === 'register' && (
+          {authMode === 'register' && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Confirm Password
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
               <div className="relative">
-                <SafeIcon icon={FiLock} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <SafeIcon icon={FiLock} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                 <input
                   type={showConfirmPassword ? 'text' : 'password'}
                   name="confirmPassword"
@@ -238,13 +213,15 @@ const AuthModal = ({ isOpen, onClose, mode = 'login', onModeChange }) => {
                 />
                 <button
                   type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  onClick={() => setShowConfirmPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
                   <SafeIcon icon={showConfirmPassword ? FiEyeOff : FiEye} />
                 </button>
               </div>
-              {errors.confirmPassword && <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>}
+              {errors.confirmPassword && (
+                <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
+              )}
             </div>
           )}
 
@@ -256,22 +233,24 @@ const AuthModal = ({ isOpen, onClose, mode = 'login', onModeChange }) => {
             {isLoading ? (
               <div className="flex items-center justify-center space-x-2">
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                <span>{mode === 'login' ? 'Signing In...' : 'Creating Account...'}</span>
+                <span>{authMode === 'login' ? 'Signing In...' : 'Creating Account...'}</span>
               </div>
+            ) : authMode === 'login' ? (
+              'Sign In'
             ) : (
-              mode === 'login' ? 'Sign In' : 'Create Account'
+              'Create Account'
             )}
           </button>
 
           <div className="text-center">
             <p className="text-sm text-gray-600">
-              {mode === 'login' ? "Don't have an account? " : "Already have an account? "}
+              {authMode === 'login' ? "Don't have an account? " : 'Already have an account? '}
               <button
                 type="button"
                 onClick={toggleMode}
                 className="text-blue-600 hover:text-blue-700 font-medium"
               >
-                {mode === 'login' ? 'Sign up' : 'Sign in'}
+                {authMode === 'login' ? 'Sign up' : 'Sign in'}
               </button>
             </p>
           </div>
@@ -279,6 +258,4 @@ const AuthModal = ({ isOpen, onClose, mode = 'login', onModeChange }) => {
       </div>
     </div>
   );
-};
-
-export default AuthModal;
+}

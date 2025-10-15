@@ -1,79 +1,68 @@
+// src/lib/authContext.jsx
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { getCurrentUser, loginUser, registerUser, logout as authLogout } from './auth';
+import { getCurrentUser, loginUser, registerUser, logout as authLogout, getStoredSession } from './auth';
 
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(getStoredSession()?.user || null);
   const [loading, setLoading] = useState(true);
 
+  // modal state centralized here so App/Header/AuthModal can coordinate
+  const [isAuthModalOpen, setAuthModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState('login'); // 'login' | 'register'
+
   useEffect(() => {
-    const fetchUser = async () => {
+    (async () => {
       try {
-        const currentUser = await getCurrentUser();
-        setUser(currentUser);
-      } catch (error) {
-        console.error("Failed to fetch current user", error);
+        const current = await getCurrentUser();
+        setUser(current);
+      } catch {
         setUser(null);
       } finally {
         setLoading(false);
       }
-    };
-    fetchUser();
+    })();
   }, []);
 
-  const login = async ({ email, password }) => {
-    try {
-      const { user: loggedInUser } = await loginUser(email, password);
-      setUser(loggedInUser);
-      return loggedInUser;
-    } catch (error) {
-      console.error("Login failed:", error);
-      throw error;
-    }
+  const login = async (email, password) => {
+    const { user: loggedInUser } = await loginUser(email, password);
+    setUser(loggedInUser);
+    setAuthModalOpen(false);
+    return loggedInUser;
   };
 
   const register = async (userData) => {
-    try {
-      await registerUser(userData);
-      // Auto-login after successful registration
-      const { user: loggedInUser } = await loginUser(userData.email, userData.password);
-      setUser(loggedInUser);
-    } catch (error) {
-      console.error("Registration failed:", error);
-      throw error;
-    }
+    return registerUser(userData);
   };
 
   const logout = async () => {
-    try {
-      await authLogout();
-      setUser(null);
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
+    await authLogout();
+    setUser(null);
   };
 
   const value = {
     user,
     isAuthenticated: !!user,
     loading,
+
     login,
     register,
     logout,
+
+    // modal controls
+    isAuthModalOpen,
+    authMode,
+    openAuthModal: (mode = 'login') => { setAuthMode(mode); setAuthModalOpen(true); },
+    closeAuthModal: () => setAuthModalOpen(false),
+    setAuthMode,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within an AuthProvider');
+  return ctx;
 };

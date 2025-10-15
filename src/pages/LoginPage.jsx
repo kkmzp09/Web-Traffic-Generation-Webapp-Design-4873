@@ -1,108 +1,99 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/authContext';
-import { Navigate } from 'react-router-dom';
-import * as FiIcons from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
+import * as FiIcons from 'react-icons/fi';
 
-const { FiLogIn, FiUserPlus, FiMail, FiLock } = FiIcons;
+const { FiLogIn, FiUser, FiLock, FiAlertCircle } = FiIcons;
 
-const LoginPage = () => {
-  const { login, register, isAuthenticated } = useAuth();
-  const [isLoggingIn, setIsLoggingIn] = useState(true);
+export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(null);
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const { login, openAuthModal } = useAuth();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError(null);
+    setError('');
     setLoading(true);
     try {
-      if (isLoggingIn) {
-        await login({ email, password });
-      } else {
-        await register({ email, password });
-      }
+      await login(email, password);
+      navigate('/'); // Redirect to dashboard on successful login
     } catch (err) {
-      setError(err.message || 'An error occurred. Please try again.');
-    } finally {
+      setError(err.message || 'Failed to log in. Please check your credentials.');
       setLoading(false);
     }
   };
 
-  if (isAuthenticated) {
-    return <Navigate to="/" />;
-  }
-
-  const InputField = ({ icon, type, placeholder, value, onChange }) => (
-    <div className="relative">
-      <span className="absolute inset-y-0 left-0 flex items-center pl-3">
-        <SafeIcon icon={icon} className="h-5 w-5 text-gray-400" />
-      </span>
-      <input
-        type={type}
-        placeholder={placeholder}
-        value={value}
-        onChange={onChange}
-        className="w-full pl-10 pr-4 py-2 border rounded-lg text-gray-700 focus:ring-red-500 focus:border-red-500"
-        required
-      />
-    </div>
-  );
+  const handleRegisterClick = () => {
+    openAuthModal('register');
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center">
-      <div className="max-w-md w-full mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-800">Trafficker</h1>
-          <p className="text-gray-500 mt-2">
-            {isLoggingIn ? 'Welcome back! Please sign in.' : 'Create an account to get started.'}
-          </p>
+    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+      <div className="w-full max-w-md p-8 space-y-6 bg-white rounded-lg shadow-md">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold text-gray-900">Welcome Back</h1>
+          <p className="mt-2 text-gray-600">Log in to manage your traffic campaigns.</p>
         </div>
-        <div className="bg-white p-8 rounded-xl shadow-lg">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <InputField
-              icon={FiMail}
+
+        {error && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+            <div className="flex items-center space-x-2 text-red-800">
+              <SafeIcon icon={FiAlertCircle} />
+              <span className="font-medium">Error:</span>
+              <p className="text-sm">{error}</p>
+            </div>
+          </div>
+        )}
+
+        <form className="space-y-6" onSubmit={handleSubmit}>
+          <div className="relative">
+            <SafeIcon icon={FiUser} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
               type="email"
-              placeholder="Email address"
+              id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email address"
+              required
+              className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            <InputField
-              icon={FiLock}
+          </div>
+
+          <div className="relative">
+            <SafeIcon icon={FiLock} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
               type="password"
-              placeholder="Password"
+              id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
+              required
+              className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
-            {error && <p className="text-sm text-red-600">{error}</p>}
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:bg-red-400"
-              >
-                <SafeIcon icon={isLoggingIn ? FiLogIn : FiUserPlus} className="h-5 w-5 mr-2" />
-                {loading ? 'Processing...' : (isLoggingIn ? 'Sign In' : 'Register')}
-              </button>
-            </div>
-          </form>
-          <div className="mt-6 text-center">
+          </div>
+
+          <div>
             <button
-              onClick={() => {
-                setIsLoggingIn(!isLoggingIn);
-                setError(null);
-              }}
-              className="text-sm text-red-600 hover:text-red-500"
+              type="submit"
+              disabled={loading}
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
             >
-              {isLoggingIn ? 'Need an account? Register' : 'Already have an account? Sign In'}
+              {loading ? 'Logging in...' : 'Log In'}
+              {!loading && <SafeIcon icon={FiLogIn} className="ml-2" />}
             </button>
           </div>
-        </div>
+        </form>
+        <p className="text-sm text-center text-gray-600">
+          Don't have an account?{' '}
+          <button onClick={handleRegisterClick} className="font-medium text-blue-600 hover:text-blue-500">
+            Register
+          </button>
+        </p>
       </div>
     </div>
   );
-};
-
-export default LoginPage;
+}
