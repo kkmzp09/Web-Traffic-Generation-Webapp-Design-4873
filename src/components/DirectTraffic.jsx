@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { FiTarget, FiPlay, FiGlobe, FiUsers, FiClock, FiCheck, FiAlertTriangle, FiStopCircle, FiInfo } from 'react-icons/fi';
+import React, { useState, useEffect } from 'react';
+import { FiTarget, FiPlay, FiGlobe, FiUsers, FiClock, FiCheck, FiAlertTriangle, FiStopCircle, FiInfo, FiActivity, FiTrendingUp } from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
 import api from '../api';           // must export startRun() and health()
 import CONFIG from '../config';     // must export { API_BASE, REQUEST_TIMEOUT_MS }
+import CampaignHistory from './CampaignHistory';
 
 function DirectTraffic() {
   const [targetUrl, setTargetUrl] = useState('https://www.organitrafficboost.com');
@@ -12,8 +13,34 @@ function DirectTraffic() {
   const [isRunning, setIsRunning] = useState(false);
   const [error, setError]         = useState(null);
   const [campaignInfo, setCampaignInfo] = useState(null);
+  const [campaignResults, setCampaignResults] = useState(null);
+  const [pollingInterval, setPollingInterval] = useState(null);
 
   const displayUrl = (CONFIG.API_BASE || '').replace(/^(https?:\/\/)/, '');
+
+  // Poll for campaign results
+  useEffect(() => {
+    if (campaignInfo?.jobId && isRunning) {
+      const interval = setInterval(async () => {
+        try {
+          const results = await api.getResults(campaignInfo.jobId);
+          if (results) {
+            setCampaignResults(results);
+            // Stop polling if campaign is complete
+            if (results.completed >= results.total || results.status === 'completed') {
+              setIsRunning(false);
+              clearInterval(interval);
+            }
+          }
+        } catch (err) {
+          console.error('Failed to fetch results:', err);
+        }
+      }, 5000); // Poll every 5 seconds
+      
+      setPollingInterval(interval);
+      return () => clearInterval(interval);
+    }
+  }, [campaignInfo?.jobId, isRunning]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -68,11 +95,12 @@ function DirectTraffic() {
   };
 
   return (
-    <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
-      <div className="flex items-center mb-4">
-        <SafeIcon icon={FiTarget} className="text-2xl text-green-400" />
-        <h2 className="ml-3 text-xl font-semibold text-white">Direct Traffic</h2>
-      </div>
+    <div className="space-y-6">
+      <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
+        <div className="flex items-center mb-4">
+          <SafeIcon icon={FiTarget} className="text-2xl text-green-400" />
+          <h2 className="ml-3 text-xl font-semibold text-white">Direct Traffic</h2>
+        </div>
 
       <p className="text-gray-400 mb-2">
         API: <code className="text-sm bg-gray-700 px-2 py-1 rounded">{displayUrl || 'api.organitrafficboost.com'}</code>
@@ -197,6 +225,62 @@ function DirectTraffic() {
           </p>
         </div>
       )}
+
+      {campaignResults && (
+        <div className="mt-4 p-4 bg-blue-900/50 border border-blue-700 rounded-md">
+          <div className="flex items-center mb-3">
+            <SafeIcon icon={FiActivity} className="text-blue-400 mr-2" />
+            <h3 className="text-lg font-semibold text-blue-200">Campaign Progress</h3>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            <div className="bg-gray-700/50 p-3 rounded">
+              <p className="text-xs text-gray-400 mb-1">Total Visits</p>
+              <p className="text-2xl font-bold text-white">{campaignResults.total || visitors}</p>
+            </div>
+            <div className="bg-green-900/30 p-3 rounded">
+              <p className="text-xs text-gray-400 mb-1">Completed</p>
+              <p className="text-2xl font-bold text-green-400">{campaignResults.completed || 0}</p>
+            </div>
+            <div className="bg-yellow-900/30 p-3 rounded">
+              <p className="text-xs text-gray-400 mb-1">In Progress</p>
+              <p className="text-2xl font-bold text-yellow-400">{campaignResults.inProgress || 0}</p>
+            </div>
+            <div className="bg-red-900/30 p-3 rounded">
+              <p className="text-xs text-gray-400 mb-1">Failed</p>
+              <p className="text-2xl font-bold text-red-400">{campaignResults.failed || 0}</p>
+            </div>
+          </div>
+
+          {/* Progress Bar */}
+          <div className="mb-3">
+            <div className="flex justify-between text-xs text-gray-400 mb-1">
+              <span>Progress</span>
+              <span>{Math.round(((campaignResults.completed || 0) / (campaignResults.total || 1)) * 100)}%</span>
+            </div>
+            <div className="w-full bg-gray-700 rounded-full h-2">
+              <div 
+                className="bg-green-500 h-2 rounded-full transition-all duration-500"
+                style={{ width: `${((campaignResults.completed || 0) / (campaignResults.total || 1)) * 100}%` }}
+              ></div>
+            </div>
+          </div>
+
+          {/* Additional Stats */}
+          {campaignResults.pagesVisited && (
+            <div className="mt-3 pt-3 border-t border-blue-800">
+              <div className="flex items-center text-sm text-blue-300">
+                <SafeIcon icon={FiTrendingUp} className="mr-2" />
+                <span><strong>{campaignResults.pagesVisited}</strong> total pages visited (including internal links)</span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      </div>
+
+      {/* Campaign History */}
+      <CampaignHistory />
     </div>
   );
 }
