@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FiTarget, FiPlay, FiGlobe, FiUsers, FiClock, FiCheck, FiAlertTriangle } from 'react-icons/fi';
+import { FiTarget, FiPlay, FiGlobe, FiUsers, FiClock, FiCheck, FiAlertTriangle, FiStopCircle, FiInfo } from 'react-icons/fi';
 import SafeIcon from '../common/SafeIcon';
 import api from '../api';           // must export startRun() and health()
 import CONFIG from '../config';     // must export { API_BASE, REQUEST_TIMEOUT_MS }
@@ -7,8 +7,9 @@ import CONFIG from '../config';     // must export { API_BASE, REQUEST_TIMEOUT_M
 function DirectTraffic() {
   const [targetUrl, setTargetUrl] = useState('https://www.organitrafficboost.com');
   const [visitors, setVisitors]   = useState(10);
-  const [durationSec, setDurationSec] = useState(30); // UI input in seconds
+  const [durationMin, setDurationMin] = useState(0.5); // UI input in minutes (default 30 sec = 0.5 min)
   const [isLoading, setIsLoading] = useState(false);
+  const [isRunning, setIsRunning] = useState(false);
   const [error, setError]         = useState(null);
   const [campaignInfo, setCampaignInfo] = useState(null);
 
@@ -26,7 +27,8 @@ function DirectTraffic() {
     const finalUrl = hasProtocol ? trimmed : `https://${trimmed}`;
 
     const count = Math.max(1, Number.isFinite(+visitors) ? parseInt(visitors, 10) : 1);
-    const dwellMs = Math.max(1, Number.isFinite(+durationSec) ? parseInt(durationSec, 10) : 1) * 1000;
+    // Convert minutes to milliseconds
+    const dwellMs = Math.max(5000, Math.round(Number(durationMin) * 60 * 1000));
 
     // Build payload for the relay (/run) -> playwright
     const urls = Array.from({ length: count }, () => finalUrl);
@@ -39,8 +41,27 @@ function DirectTraffic() {
         count: result?.count ?? urls.length,
         status: result?.status || 'queued',
       });
+      setIsRunning(true);
     } catch (err) {
       setError(err?.message || 'Something went wrong starting the campaign.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleStop = async () => {
+    if (!campaignInfo?.jobId) return;
+    
+    try {
+      setIsLoading(true);
+      // Call stop API if available
+      if (api.stop) {
+        await api.stop(campaignInfo.jobId);
+      }
+      setIsRunning(false);
+      setCampaignInfo(prev => prev ? { ...prev, status: 'stopped' } : null);
+    } catch (err) {
+      setError('Failed to stop campaign: ' + (err?.message || 'Unknown error'));
     } finally {
       setIsLoading(false);
     }
@@ -75,7 +96,7 @@ function DirectTraffic() {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-2 gap-4 mb-4">
           <div>
             <label htmlFor="visitors" className="block text-sm font-medium text-gray-300 mb-1">
               <SafeIcon icon={FiUsers} className="inline-block mr-2" />
@@ -88,46 +109,83 @@ function DirectTraffic() {
               onChange={(e) => setVisitors(e.target.value)}
               className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-green-500"
               min="1"
+              max="100"
               required
-              disabled={isLoading}
+              disabled={isLoading || isRunning}
             />
           </div>
           <div>
             <label htmlFor="duration" className="block text-sm font-medium text-gray-300 mb-1">
               <SafeIcon icon={FiClock} className="inline-block mr-2" />
-              Duration (sec)
+              Duration (minutes)
             </label>
             <input
               type="number"
               id="duration"
-              value={durationSec}
-              onChange={(e) => setDurationSec(e.target.value)}
+              value={durationMin}
+              onChange={(e) => setDurationMin(e.target.value)}
               className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-green-500"
-              min="5"
+              min="0.1"
+              max="60"
+              step="0.1"
               required
-              disabled={isLoading}
+              disabled={isLoading || isRunning}
             />
           </div>
         </div>
 
-        <button
-          type="submit"
-          className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center transition-colors duration-200 disabled:bg-gray-500"
-          disabled={isLoading}
-        >
-          <SafeIcon icon={isLoading ? FiClock : FiPlay} className={`mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-          {isLoading ? 'Starting...' : 'Start Campaign'}
-        </button>
+        <div className="mb-6 p-3 bg-blue-900/30 border border-blue-700/50 rounded-md">
+          <p className="text-xs text-blue-300 flex items-start">
+            <SafeIcon icon={FiInfo} className="mr-2 mt-0.5 flex-shrink-0" />
+            <span>
+              <strong>Duration:</strong> Time each visitor spends on the page. 
+              <span className="block mt-1">Recommended: 0.5-5 minutes for natural traffic patterns.</span>
+            </span>
+          </p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <button
+            type="submit"
+            className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center transition-colors duration-200 disabled:bg-gray-500 disabled:cursor-not-allowed"
+            disabled={isLoading || isRunning}
+          >
+            <SafeIcon icon={isLoading ? FiClock : FiPlay} className={`mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+            {isLoading ? 'Starting...' : 'Start Campaign'}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleStop}
+            className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center transition-colors duration-200 disabled:bg-gray-500 disabled:cursor-not-allowed"
+            disabled={!isRunning || isLoading}
+          >
+            <SafeIcon icon={FiStopCircle} className="mr-2" />
+            Stop Campaign
+          </button>
+        </div>
       </form>
 
       {campaignInfo && (
-        <div className="mt-4 p-3 bg-green-900 border border-green-700 rounded-md text-green-200">
-          <p className="flex items-center">
-            <SafeIcon icon={FiCheck} className="mr-2 text-green-400" />
-            Campaign queued! <strong className="ml-1">jobId:</strong>&nbsp;{campaignInfo.jobId}
-            <span className="ml-3">| <strong>visits:</strong> {campaignInfo.count}</span>
-            <span className="ml-3">| <strong>status:</strong> {campaignInfo.status}</span>
-          </p>
+        <div className={`mt-4 p-4 border rounded-md ${
+          campaignInfo.status === 'stopped' 
+            ? 'bg-orange-900/50 border-orange-700 text-orange-200' 
+            : 'bg-green-900/50 border-green-700 text-green-200'
+        }`}>
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <p className="flex items-center font-semibold mb-2">
+                <SafeIcon icon={campaignInfo.status === 'stopped' ? FiStopCircle : FiCheck} className="mr-2" />
+                {campaignInfo.status === 'stopped' ? 'Campaign Stopped' : 'Campaign Running'}
+              </p>
+              <div className="text-sm space-y-1">
+                <p><strong>Job ID:</strong> {campaignInfo.jobId}</p>
+                <p><strong>Visitors:</strong> {campaignInfo.count}</p>
+                <p><strong>Status:</strong> <span className="capitalize">{campaignInfo.status}</span></p>
+                <p><strong>Duration per visit:</strong> {durationMin} {durationMin === 1 ? 'minute' : 'minutes'}</p>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
