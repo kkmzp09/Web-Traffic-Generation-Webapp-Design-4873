@@ -7,33 +7,41 @@ const { FiFileText, FiDownload, FiEye, FiCreditCard, FiCalendar, FiDollarSign } 
 const Invoice = () => {
   const [invoices] = useState([
     {
-      id: 'INV-2024-001',
-      date: '2024-01-15',
-      amount: 29.00,
+      id: 'INV-2024-010',
+      date: '2024-10-18',
+      amount: 100.00,
       status: 'paid',
-      description: 'Premium Plan - January 2024'
+      description: 'Professional Plan - 5,000 visits'
     },
     {
-      id: 'INV-2023-012',
-      date: '2023-12-15',
-      amount: 29.00,
+      id: 'INV-2024-009',
+      date: '2024-09-18',
+      amount: 100.00,
       status: 'paid',
-      description: 'Premium Plan - December 2023'
+      description: 'Professional Plan - 5,000 visits'
     },
     {
-      id: 'INV-2023-011',
-      date: '2023-11-15',
-      amount: 29.00,
+      id: 'INV-2024-008',
+      date: '2024-08-18',
+      amount: 100.00,
       status: 'paid',
-      description: 'Premium Plan - November 2023'
+      description: 'Professional Plan - 5,000 visits'
+    },
+    {
+      id: 'INV-2024-007',
+      date: '2024-07-18',
+      amount: 50.00,
+      status: 'paid',
+      description: 'Starter Plan - 2,000 visits'
     }
   ]);
 
   const [billingInfo] = useState({
-    nextBilling: '2024-02-15',
-    plan: 'Premium Plan',
-    amount: 29.00,
-    currency: 'USD'
+    nextBilling: '2024-11-18',
+    plan: 'Professional Plan',
+    amount: 100.00,
+    currency: 'USD',
+    visits: '5,000'
   });
 
   const getStatusColor = (status) => {
@@ -90,7 +98,7 @@ const Invoice = () => {
                       ${billingInfo.amount}/{billingInfo.currency === 'USD' ? 'month' : 'mo'}
                     </span>
                   </div>
-                  <p className="text-sm text-blue-700">Unlimited traffic campaigns</p>
+                  <p className="text-sm text-blue-700">{billingInfo.visits} visits per month</p>
                 </div>
 
                 <div className="space-y-2">
@@ -119,7 +127,7 @@ const Invoice = () => {
                   <SafeIcon icon={FiDollarSign} className="w-5 h-5 text-green-600" />
                   <div>
                     <p className="text-sm text-gray-600">Total Paid</p>
-                    <p className="font-semibold text-gray-900">$87.00</p>
+                    <p className="font-semibold text-gray-900">$350.00</p>
                   </div>
                 </div>
                 
@@ -127,7 +135,7 @@ const Invoice = () => {
                   <SafeIcon icon={FiCalendar} className="w-5 h-5 text-blue-600" />
                   <div>
                     <p className="text-sm text-gray-600">Member Since</p>
-                    <p className="font-semibold text-gray-900">Nov 2023</p>
+                    <p className="font-semibold text-gray-900">July 2024</p>
                   </div>
                 </div>
                 
