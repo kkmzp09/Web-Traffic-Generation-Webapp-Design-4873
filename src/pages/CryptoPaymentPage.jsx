@@ -8,8 +8,7 @@ export default function CryptoPaymentPage() {
   const location = useLocation();
   const selectedPlan = location.state?.selectedPlan || 'professional';
   
-  const [paymentStep, setPaymentStep] = useState('select'); // select, qr, upload, processing, success
-  const [selectedCrypto, setSelectedCrypto] = useState('');
+  const [paymentStep, setPaymentStep] = useState('qr'); // qr, upload, processing, success
   const [screenshot, setScreenshot] = useState(null);
   const [transactionHash, setTransactionHash] = useState('');
   const [error, setError] = useState('');
@@ -19,9 +18,6 @@ export default function CryptoPaymentPage() {
     starter: {
       name: 'Starter Plan',
       priceINR: 50,
-      priceUSD: 0.60,
-      priceBTC: 0.000009,
-      priceETH: 0.00024,
       priceUSDT: 0.60,
       visits: '2,000',
       features: [
@@ -35,9 +31,6 @@ export default function CryptoPaymentPage() {
     professional: {
       name: 'Professional Plan',
       priceINR: 100,
-      priceUSD: 1.20,
-      priceBTC: 0.000018,
-      priceETH: 0.00048,
       priceUSDT: 1.20,
       visits: '5,000',
       features: [
@@ -54,44 +47,19 @@ export default function CryptoPaymentPage() {
 
   const currentPlan = plans[selectedPlan];
 
-  // Crypto wallet addresses - Replace with your actual wallet addresses
-  const cryptoWallets = {
-    bitcoin: {
-      name: 'Bitcoin (BTC)',
-      address: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh', // Replace with your BTC address
-      qrCode: '/images/crypto-qr-btc.png', // Add your BTC QR code
-      icon: SiBitcoin,
-      color: 'text-orange-500',
-      bgColor: 'bg-orange-100',
-      network: 'Bitcoin Network',
-      price: currentPlan.priceBTC
-    },
-    ethereum: {
-      name: 'Ethereum (ETH)',
-      address: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb', // Replace with your ETH address
-      qrCode: '/images/crypto-qr-eth.png', // Add your ETH QR code
-      icon: SiEthereum,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100',
-      network: 'Ethereum Network (ERC-20)',
-      price: currentPlan.priceETH
-    },
-    usdt: {
-      name: 'USDT (Tether)',
-      address: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb', // Replace with your USDT address (usually same as ETH)
-      qrCode: '/images/crypto-qr-usdt.png', // Add your USDT QR code
-      icon: () => <span className="font-bold text-2xl">₮</span>,
-      color: 'text-green-600',
-      bgColor: 'bg-green-100',
-      network: 'Ethereum Network (ERC-20)',
-      price: currentPlan.priceUSDT
-    }
+  // USDT BEP-20 wallet address - Replace with your actual Binance Smart Chain address
+  const usdtWallet = {
+    name: 'USDT (Tether)',
+    address: 'YOUR_BSC_WALLET_ADDRESS_HERE', // Replace with your BEP-20 address
+    qrCode: '/images/crypto-qr-usdt-bep20.png', // Add your USDT BEP-20 QR code
+    network: 'Binance Smart Chain (BEP-20)',
+    networkShort: 'BSC (BEP-20)',
+    price: currentPlan.priceUSDT,
+    symbol: 'USDT'
   };
 
-  const currentCrypto = cryptoWallets[selectedCrypto];
-
   const handleCopyAddress = () => {
-    navigator.clipboard.writeText(currentCrypto.address);
+    navigator.clipboard.writeText(usdtWallet.address);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -135,8 +103,12 @@ export default function CryptoPaymentPage() {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Crypto Payment</h1>
-          <p className="text-gray-600">Secure cryptocurrency payment for your subscription</p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">USDT Payment</h1>
+          <p className="text-gray-600">Pay with USDT (Tether) on Binance Smart Chain (BEP-20)</p>
+          <div className="mt-4 inline-flex items-center gap-2 bg-yellow-50 border border-yellow-200 rounded-lg px-4 py-2">
+            <FiAlertCircle className="text-yellow-600" />
+            <span className="text-sm font-medium text-yellow-900">Only BEP-20 network supported</span>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-2 gap-8">
@@ -168,94 +140,36 @@ export default function CryptoPaymentPage() {
               ))}
             </div>
 
-            {selectedCrypto && (
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <div className="flex justify-between items-center text-lg font-bold">
-                  <span>Amount to Pay:</span>
-                  <span className="text-blue-600">
-                    {currentCrypto.price} {selectedCrypto.toUpperCase()}
-                  </span>
-                </div>
-                <div className="text-sm text-gray-600 mt-1 text-right">
-                  ≈ ${currentPlan.priceUSD} USD
-                </div>
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <div className="flex justify-between items-center text-lg font-bold">
+                <span>Amount to Pay:</span>
+                <span className="text-green-600">
+                  ${usdtWallet.price} USDT
+                </span>
               </div>
-            )}
+              <div className="text-sm text-gray-600 mt-1 text-right">
+                on Binance Smart Chain (BEP-20)
+              </div>
+            </div>
           </div>
 
           {/* Right Side - Payment Process */}
           <div className="space-y-6">
-            {/* Step 1: Select Cryptocurrency */}
-            {paymentStep === 'select' && (
+            {/* Step 1: Show Wallet Address & QR */}
+            {paymentStep === 'qr' && (
               <div className="bg-white rounded-2xl shadow-lg p-6">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                    <span className="text-blue-600 font-bold">1</span>
+                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                    <span className="text-green-600 font-bold">1</span>
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900">Select Cryptocurrency</h3>
-                </div>
-
-                <div className="space-y-4">
-                  {Object.entries(cryptoWallets).map(([key, crypto]) => {
-                    const Icon = crypto.icon;
-                    return (
-                      <button
-                        key={key}
-                        onClick={() => {
-                          setSelectedCrypto(key);
-                          setPaymentStep('qr');
-                        }}
-                        className="w-full p-4 border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:shadow-md transition text-left"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className={`w-12 h-12 ${crypto.bgColor} rounded-full flex items-center justify-center`}>
-                            <Icon className={`${crypto.color} text-2xl`} />
-                          </div>
-                          <div className="flex-1">
-                            <div className="font-bold text-gray-900">{crypto.name}</div>
-                            <div className="text-sm text-gray-600">{crypto.network}</div>
-                          </div>
-                          <div className="text-right">
-                            <div className="font-bold text-gray-900">{crypto.price}</div>
-                            <div className="text-sm text-gray-600">{key.toUpperCase()}</div>
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex gap-3">
-                    <FiAlertCircle className="text-blue-600 mt-1 flex-shrink-0" />
-                    <div className="text-sm text-blue-800">
-                      <p className="font-semibold mb-1">Important:</p>
-                      <ul className="list-disc list-inside space-y-1">
-                        <li>Select your preferred cryptocurrency</li>
-                        <li>Make sure to send the exact amount</li>
-                        <li>Use the correct network to avoid loss of funds</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Step 2: Show Wallet Address & QR */}
-            {paymentStep === 'qr' && currentCrypto && (
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                    <span className="text-blue-600 font-bold">2</span>
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900">Send {currentCrypto.name}</h3>
+                  <h3 className="text-xl font-bold text-gray-900">Send USDT (BEP-20)</h3>
                 </div>
 
                 <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6 mb-6">
                   <div className="bg-white rounded-lg p-4 inline-block mx-auto block mb-4">
                     <img 
-                      src={currentCrypto.qrCode} 
-                      alt={`${currentCrypto.name} QR Code`}
+                      src={usdtWallet.qrCode} 
+                      alt="USDT BEP-20 QR Code"
                       className="w-64 h-64 mx-auto"
                       onError={(e) => {
                         e.target.style.display = 'none';
@@ -268,24 +182,25 @@ export default function CryptoPaymentPage() {
                   </div>
                   
                   <div className="text-center">
-                    <p className="text-sm text-gray-600 mb-2">Wallet Address:</p>
+                    <p className="text-sm text-gray-600 mb-2">BSC Wallet Address (BEP-20):</p>
                     <div className="bg-white rounded-lg p-3 mb-3">
                       <p className="font-mono text-xs break-all text-gray-900 mb-2">
-                        {currentCrypto.address}
+                        {usdtWallet.address}
                       </p>
                       <button
                         onClick={handleCopyAddress}
-                        className="flex items-center gap-2 mx-auto text-blue-600 hover:text-blue-700 text-sm font-medium"
+                        className="flex items-center gap-2 mx-auto text-green-600 hover:text-green-700 text-sm font-medium"
                       >
                         <FiCopy />
                         {copied ? 'Copied!' : 'Copy Address'}
                       </button>
                     </div>
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                      <p className="text-sm font-semibold text-yellow-900 mb-1">Amount to Send:</p>
-                      <p className="text-lg font-bold text-yellow-900">
-                        {currentCrypto.price} {selectedCrypto.toUpperCase()}
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                      <p className="text-sm font-semibold text-green-900 mb-1">Amount to Send:</p>
+                      <p className="text-lg font-bold text-green-900">
+                        ${usdtWallet.price} USDT
                       </p>
+                      <p className="text-xs text-green-700 mt-1">on Binance Smart Chain (BEP-20)</p>
                     </div>
                   </div>
                 </div>
@@ -296,42 +211,32 @@ export default function CryptoPaymentPage() {
                     <div className="text-sm text-red-800">
                       <p className="font-semibold mb-1">⚠️ Important Instructions:</p>
                       <ul className="list-disc list-inside space-y-1">
-                        <li>Send exactly {currentCrypto.price} {selectedCrypto.toUpperCase()}</li>
-                        <li>Use {currentCrypto.network}</li>
+                        <li>Send exactly ${usdtWallet.price} USDT</li>
+                        <li>MUST use Binance Smart Chain (BEP-20) network</li>
+                        <li>DO NOT use ERC-20, TRC-20 or other networks</li>
                         <li>Wait for transaction confirmation</li>
                         <li>Take screenshot of successful transaction</li>
-                        <li>Save your transaction hash/ID</li>
+                        <li>Save your transaction hash/TxID</li>
                       </ul>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => {
-                      setPaymentStep('select');
-                      setSelectedCrypto('');
-                    }}
-                    className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg hover:bg-gray-300 transition font-semibold"
-                  >
-                    Change Crypto
-                  </button>
-                  <button
-                    onClick={() => setPaymentStep('upload')}
-                    className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition font-semibold"
-                  >
-                    I've Sent Payment
-                  </button>
-                </div>
+                <button
+                  onClick={() => setPaymentStep('upload')}
+                  className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition font-semibold"
+                >
+                  I've Sent Payment
+                </button>
               </div>
             )}
 
-            {/* Step 3: Upload Proof */}
+            {/* Step 2: Upload Proof */}
             {paymentStep === 'upload' && (
               <div className="bg-white rounded-2xl shadow-lg p-6">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                    <span className="text-blue-600 font-bold">3</span>
+                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                    <span className="text-green-600 font-bold">2</span>
                   </div>
                   <h3 className="text-xl font-bold text-gray-900">Upload Payment Proof</h3>
                 </div>
