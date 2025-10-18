@@ -10,6 +10,26 @@
   # Node version
   environment = { NODE_VERSION = "18" }
 
+# Production context (main branch)
+[context.production]
+  command = "npm run build"
+  publish = "dist"
+
+# Development context (dev branch)
+[context.dev]
+  command = "npm run build"
+  publish = "dist"
+
+# Branch deploy context (all other branches)
+[context.branch-deploy]
+  command = "npm run build"
+  publish = "dist"
+
+# Deploy previews (pull requests)
+[context.deploy-preview]
+  command = "npm run build"
+  publish = "dist"
+
 # Redirect rules for SPA (Single Page Application)
 # This ensures all routes are handled by your React app
 [[redirects]]

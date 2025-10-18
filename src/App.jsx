@@ -1,6 +1,6 @@
 // src/App.jsx
 import React, { useState } from 'react';
-import { HashRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './lib/authContext';
 
 import Sidebar from './components/Sidebar';
