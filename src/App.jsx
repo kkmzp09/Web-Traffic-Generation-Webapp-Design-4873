@@ -15,6 +15,8 @@ import Analytics from './components/Analytics';
 import Settings from './components/Settings';
 import QuickStart from './components/QuickStart';
 import LoginPage from './pages/LoginPage.jsx';
+import LandingPage from './pages/LandingPage.jsx';
+import Invoice from './components/Invoice';
 
 // --- Auth gate that matches your current context (user + loading) ---
 function RequireAuth({ children }) {
@@ -58,15 +60,20 @@ function AppShell() {
   return (
     <>
       <Routes>
+        {/* Public Landing Page - Now the default homepage */}
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/home" element={<LandingPage />} />
+        
         <Route path="/login" element={<LoginPage onAuthClick={handleAuthClick} />} />
 
         <Route element={<MainLayout onAuthClick={handleAuthClick} />}>
           <Route path="/quick-start" element={<QuickStart />} />
-          <Route path="/" element={<RequireAuth><Dashboard /></RequireAuth>} />
+          <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
           <Route path="/direct-traffic" element={<RequireAuth><DirectTraffic /></RequireAuth>} />
           <Route path="/seo-traffic" element={<RequireAuth><SeoTraffic /></RequireAuth>} />
           <Route path="/analytics" element={<RequireAuth><Analytics /></RequireAuth>} />
           <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
+          <Route path="/invoice" element={<RequireAuth><Invoice /></RequireAuth>} />
         </Route>
 
         {/* Catch-all */}

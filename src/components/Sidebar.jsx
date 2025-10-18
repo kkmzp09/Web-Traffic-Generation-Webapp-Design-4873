@@ -15,7 +15,7 @@ export default function Sidebar() {
   const { user, logout } = useAuth();
 
   const navigationItems = [
-    { name: 'Dashboard', href: '/', icon: FiHome, description: 'Overview & analytics' },
+    { name: 'Dashboard', href: '/dashboard', icon: FiHome, description: 'Overview & analytics' },
     { name: 'Direct Traffic', href: '/direct-traffic', icon: FiZap, description: 'Run direct campaigns' },
     { name: 'SEO Traffic', href: '/seo-traffic', icon: FiSearch, description: 'Run SEO campaigns' },
     { name: 'Settings', href: '/settings', icon: FiSettings, description: 'Profile management' },
@@ -23,7 +23,7 @@ export default function Sidebar() {
   ];
 
   const isActive = (href) => {
-    if (href === '/' && (location.pathname === '/' || location.pathname === '/dashboard')) return true;
+    if (href === '/dashboard' && location.pathname === '/dashboard') return true;
     return location.pathname === href;
   };
 
