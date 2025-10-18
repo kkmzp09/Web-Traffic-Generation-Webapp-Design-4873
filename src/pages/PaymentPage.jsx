@@ -43,9 +43,9 @@ export default function PaymentPage() {
 
   const currentPlan = plans[selectedPlan];
 
-  // Replace this with your actual UPI QR code image URL or base64
-  const upiQRCode = 'https://via.placeholder.com/300x300?text=Your+UPI+QR+Code';
-  const upiId = 'yourname@upi'; // Replace with your actual UPI ID
+  // Your actual UPI QR code
+  const upiQRCode = '/images/upi-qr-code.jpeg';
+  const upiId = 'yourname@upi'; // Replace with your actual UPI ID (e.g., 9876543210@paytm)
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
