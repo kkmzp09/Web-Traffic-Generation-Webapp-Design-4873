@@ -45,7 +45,7 @@ export default function PaymentPage() {
 
   // Your actual UPI QR code
   const upiQRCode = '/images/upi-qr-code.jpeg';
-  const upiId = 'yourname@upi'; // Replace with your actual UPI ID (e.g., 9876543210@paytm)
+  const upiId = 'kkmzp09@okhdfcbank'; // HDFC Bank UPI ID
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
