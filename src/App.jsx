@@ -17,6 +17,7 @@ import QuickStart from './components/QuickStart';
 import LoginPage from './pages/LoginPage.jsx';
 import LandingPage from './pages/LandingPage.jsx';
 import PaymentPage from './pages/PaymentPage.jsx';
+import CryptoPaymentPage from './pages/CryptoPaymentPage.jsx';
 import Invoice from './components/Invoice';
 
 // --- Auth gate that matches your current context (user + loading) ---
@@ -65,6 +66,7 @@ function AppShell() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/home" element={<LandingPage />} />
         <Route path="/payment" element={<PaymentPage />} />
+        <Route path="/crypto-payment" element={<CryptoPaymentPage />} />
         
         <Route path="/login" element={<LoginPage onAuthClick={handleAuthClick} />} />
 

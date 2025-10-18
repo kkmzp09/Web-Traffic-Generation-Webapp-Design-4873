@@ -5,9 +5,13 @@ import { FaChartLine, FaUsers, FaRocket, FaCheckCircle, FaArrowRight } from 'rea
 export default function LandingPage() {
   const navigate = useNavigate();
 
-  const handleGetStarted = (plan) => {
+  const handleGetStarted = (plan, paymentMethod = 'upi') => {
     // Navigate to payment page with selected plan
-    navigate('/payment', { state: { selectedPlan: plan } });
+    if (paymentMethod === 'crypto') {
+      navigate('/crypto-payment', { state: { selectedPlan: plan } });
+    } else {
+      navigate('/payment', { state: { selectedPlan: plan } });
+    }
   };
 
   return (
@@ -161,12 +165,20 @@ export default function LandingPage() {
                 </ul>
               </div>
 
-              <button
-                onClick={() => handleGetStarted('starter')}
-                className="w-full bg-blue-600 text-white py-4 rounded-lg hover:bg-blue-700 transition font-semibold text-lg"
-              >
-                Get Started
-              </button>
+              <div className="space-y-3">
+                <button
+                  onClick={() => handleGetStarted('starter', 'upi')}
+                  className="w-full bg-blue-600 text-white py-4 rounded-lg hover:bg-blue-700 transition font-semibold text-lg"
+                >
+                  Pay with UPI
+                </button>
+                <button
+                  onClick={() => handleGetStarted('starter', 'crypto')}
+                  className="w-full bg-gradient-to-r from-orange-500 to-purple-600 text-white py-4 rounded-lg hover:from-orange-600 hover:to-purple-700 transition font-semibold text-lg"
+                >
+                  Pay with Crypto
+                </button>
+              </div>
             </div>
 
             {/* Professional Plan */}
@@ -221,12 +233,20 @@ export default function LandingPage() {
                 </ul>
               </div>
 
-              <button
-                onClick={() => handleGetStarted('professional')}
-                className="w-full bg-white text-blue-600 py-4 rounded-lg hover:bg-gray-100 transition font-semibold text-lg"
-              >
-                Get Started
-              </button>
+              <div className="space-y-3">
+                <button
+                  onClick={() => handleGetStarted('professional', 'upi')}
+                  className="w-full bg-white text-blue-600 py-4 rounded-lg hover:bg-gray-100 transition font-semibold text-lg"
+                >
+                  Pay with UPI
+                </button>
+                <button
+                  onClick={() => handleGetStarted('professional', 'crypto')}
+                  className="w-full bg-gradient-to-r from-orange-500 to-purple-600 text-white py-4 rounded-lg hover:from-orange-600 hover:to-purple-700 transition font-semibold text-lg border-2 border-white"
+                >
+                  Pay with Crypto
+                </button>
+              </div>
             </div>
           </div>
 
