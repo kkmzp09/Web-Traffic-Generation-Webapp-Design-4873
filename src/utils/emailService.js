@@ -1,34 +1,22 @@
-// Email service - Browser-safe version
-// NOTE: In production, these functions should call your backend API
-// The backend will then use Resend to send emails
-
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:3000';
-const FROM_EMAIL = import.meta.env.VITE_FROM_EMAIL || 'onboarding@resend.dev';
-const COMPANY_NAME = import.meta.env.VITE_COMPANY_NAME || 'TrafficGenPro';
-const SUPPORT_EMAIL = import.meta.env.VITE_SUPPORT_EMAIL || 'support@trafficgenpro.com';
+// Email service - Uses backend API
+const API_BASE = import.meta.env.VITE_API_BASE || 'https://api.organitrafficboost.com';
 
 // Welcome Email
 export const sendWelcomeEmail = async ({ to, userName, dashboardUrl }) => {
   try {
-    // In production, this should call your backend API:
-    // const response = await fetch(`${API_BASE}/api/emails/welcome`, {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ to, userName, dashboardUrl })
-    // });
+    const response = await fetch(`${API_BASE}/api/email/welcome`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to, userName, dashboardUrl })
+    });
     
-    // For now, simulate success (for testing UI)
-    console.log('📧 Welcome email would be sent to:', to);
-    console.log('Email data:', { userName, dashboardUrl });
+    const data = await response.json();
     
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to send email');
+    }
     
-    return { 
-      success: true, 
-      message: `Welcome email sent to ${to}`,
-      data: { to, subject: `Welcome to ${COMPANY_NAME}!` }
-    };
+    return { success: true, data };
   } catch (error) {
     console.error('Email error:', error);
     return { success: false, error: error.message };
@@ -38,11 +26,21 @@ export const sendWelcomeEmail = async ({ to, userName, dashboardUrl }) => {
 // Password Reset Email
 export const sendPasswordResetEmail = async ({ to, userName, resetLink }) => {
   try {
-    console.log('📧 Password reset email would be sent to:', to);
-    console.log('Reset link:', resetLink);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    return { success: true, message: `Password reset email sent to ${to}`, data: { to } };
+    const response = await fetch(`${API_BASE}/api/email/password-reset`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to, userName, resetLink })
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to send email');
+    }
+    
+    return { success: true, data };
   } catch (error) {
+    console.error('Email error:', error);
     return { success: false, error: error.message };
   }
 };
@@ -50,11 +48,21 @@ export const sendPasswordResetEmail = async ({ to, userName, resetLink }) => {
 // Payment Confirmation Email
 export const sendPaymentConfirmationEmail = async ({ to, userName, planName, amount, transactionId, visits }) => {
   try {
-    console.log('📧 Payment confirmation email would be sent to:', to);
-    console.log('Payment details:', { planName, amount, transactionId, visits });
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    return { success: true, message: `Payment confirmation sent to ${to}`, data: { to } };
+    const response = await fetch(`${API_BASE}/api/email/payment-confirmation`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to, userName, planName, amount, transactionId, visits })
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to send email');
+    }
+    
+    return { success: true, data };
   } catch (error) {
+    console.error('Email error:', error);
     return { success: false, error: error.message };
   }
 };
@@ -62,11 +70,21 @@ export const sendPaymentConfirmationEmail = async ({ to, userName, planName, amo
 // Payment Pending Email
 export const sendPaymentPendingEmail = async ({ to, userName, planName, amount }) => {
   try {
-    console.log('📧 Payment pending email would be sent to:', to);
-    console.log('Payment details:', { planName, amount });
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    return { success: true, message: `Payment pending notification sent to ${to}`, data: { to } };
+    const response = await fetch(`${API_BASE}/api/email/payment-pending`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to, userName, planName, amount })
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to send email');
+    }
+    
+    return { success: true, data };
   } catch (error) {
+    console.error('Email error:', error);
     return { success: false, error: error.message };
   }
 };
@@ -74,11 +92,21 @@ export const sendPaymentPendingEmail = async ({ to, userName, planName, amount }
 // Campaign Started Email
 export const sendCampaignStartedEmail = async ({ to, userName, campaignName, visits, startDate, trackingUrl }) => {
   try {
-    console.log('📧 Campaign started email would be sent to:', to);
-    console.log('Campaign details:', { campaignName, visits, startDate });
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    return { success: true, message: `Campaign notification sent to ${to}`, data: { to } };
+    const response = await fetch(`${API_BASE}/api/email/campaign-started`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ to, userName, campaignName, visits, startDate, trackingUrl })
+    });
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.error || 'Failed to send email');
+    }
+    
+    return { success: true, data };
   } catch (error) {
+    console.error('Email error:', error);
     return { success: false, error: error.message };
   }
 };
