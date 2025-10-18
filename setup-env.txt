@@ -1,0 +1,18 @@
+# Copy this content to create your .env file manually
+
+# Resend Email Configuration
+VITE_RESEND_API_KEY=re_eE8M7nZN_3WkVKAQ1mdMLSsnma4QjnhQB
+VITE_FROM_EMAIL=onboarding@resend.dev
+VITE_SUPPORT_EMAIL=support@trafficgenpro.com
+VITE_COMPANY_NAME=TrafficGenPro
+
+# API Base URL
+VITE_API_BASE=https://api.organitrafficboost.com
+VITE_REQUEST_TIMEOUT_MS=30000
+
+# Instructions:
+# 1. Create a new file named ".env" in the project root
+# 2. Copy all the lines above into that file
+# 3. Save the file
+# 4. Restart your dev server (npm run dev)
+# 5. Delete this setup-env.txt file after setup
