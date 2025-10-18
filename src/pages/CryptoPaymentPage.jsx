@@ -47,11 +47,11 @@ export default function CryptoPaymentPage() {
 
   const currentPlan = plans[selectedPlan];
 
-  // USDT BEP-20 wallet address - Replace with your actual Binance Smart Chain address
+  // USDT BEP-20 wallet address - Binance Smart Chain
   const usdtWallet = {
     name: 'USDT (Tether)',
-    address: 'YOUR_BSC_WALLET_ADDRESS_HERE', // Replace with your BEP-20 address
-    qrCode: '/images/crypto-qr-usdt-bep20.png', // Add your USDT BEP-20 QR code
+    address: '0x1170849Aa57ea1AE3306D9951550244D6eAA3E29', // BSC BEP-20 address
+    qrCode: '/images/crypto-qr-usdt-bep20.png',
     network: 'Binance Smart Chain (BEP-20)',
     networkShort: 'BSC (BEP-20)',
     price: currentPlan.priceUSDT,
