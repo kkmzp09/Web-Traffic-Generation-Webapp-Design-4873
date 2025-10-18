@@ -20,7 +20,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(email, password);
-      navigate('/'); // Redirect to dashboard on successful login
+      navigate('/dashboard'); // Redirect to dashboard on successful login
     } catch (err) {
       setError(err.message || 'Failed to log in. Please check your credentials.');
       setLoading(false);
