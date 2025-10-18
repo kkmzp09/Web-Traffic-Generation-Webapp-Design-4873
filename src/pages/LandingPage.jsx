@@ -6,8 +6,8 @@ export default function LandingPage() {
   const navigate = useNavigate();
 
   const handleGetStarted = (plan) => {
-    // Navigate to login/signup with plan info
-    navigate('/login', { state: { selectedPlan: plan } });
+    // Navigate to payment page with selected plan
+    navigate('/payment', { state: { selectedPlan: plan } });
   };
 
   return (

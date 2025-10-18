@@ -16,6 +16,7 @@ import Settings from './components/Settings';
 import QuickStart from './components/QuickStart';
 import LoginPage from './pages/LoginPage.jsx';
 import LandingPage from './pages/LandingPage.jsx';
+import PaymentPage from './pages/PaymentPage.jsx';
 import Invoice from './components/Invoice';
 
 // --- Auth gate that matches your current context (user + loading) ---
@@ -63,6 +64,7 @@ function AppShell() {
         {/* Public Landing Page - Now the default homepage */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/home" element={<LandingPage />} />
+        <Route path="/payment" element={<PaymentPage />} />
         
         <Route path="/login" element={<LoginPage onAuthClick={handleAuthClick} />} />
 
