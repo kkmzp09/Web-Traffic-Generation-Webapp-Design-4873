@@ -17,30 +17,54 @@ export default function CryptoPaymentPage() {
   const plans = {
     starter: {
       name: 'Starter Plan',
-      priceINR: 50,
-      priceUSDT: 0.60,
+      priceINR: 1250,
+      priceUSDT: 15,
+      visits: '500',
+      features: [
+        '500 high-quality visits per month',
+        'Basic geo-targeting',
+        'Real-time analytics',
+        'Email support',
+        'Campaign management'
+      ]
+    },
+    growth: {
+      name: 'Growth Plan',
+      priceINR: 2900,
+      priceUSDT: 35,
       visits: '2,000',
       features: [
         '2,000 high-quality visits per month',
-        'Geo-targeting options',
-        'Real-time analytics dashboard',
-        '24/7 customer support',
-        'Campaign management tools'
+        'Advanced geo-targeting',
+        'Priority email support',
+        'Multiple campaigns',
+        'Traffic scheduling'
       ]
     },
     professional: {
       name: 'Professional Plan',
-      priceINR: 100,
-      priceUSDT: 1.20,
+      priceINR: 4900,
+      priceUSDT: 59,
       visits: '5,000',
       features: [
         '5,000 high-quality visits per month',
-        'Advanced geo-targeting',
         'Priority traffic delivery',
         'Advanced analytics & reporting',
         'Priority 24/7 support',
-        'Multiple campaign management',
         'Custom traffic sources'
+      ]
+    },
+    business: {
+      name: 'Business Plan',
+      priceINR: 8200,
+      priceUSDT: 99,
+      visits: '15,000',
+      features: [
+        '15,000 high-quality visits per month',
+        'Fastest traffic delivery',
+        'Dedicated account manager',
+        'Unlimited campaigns',
+        'API access'
       ]
     }
   };

@@ -15,28 +15,50 @@ export default function PaymentPage() {
   const plans = {
     starter: {
       name: 'Starter Plan',
-      price: 50,
+      price: 1250,
+      visits: '500',
+      features: [
+        '500 high-quality visits per month',
+        'Basic geo-targeting',
+        'Real-time analytics',
+        'Email support',
+        'Campaign management'
+      ]
+    },
+    growth: {
+      name: 'Growth Plan',
+      price: 2900,
       visits: '2,000',
       features: [
         '2,000 high-quality visits per month',
-        'Geo-targeting options',
-        'Real-time analytics dashboard',
-        '24/7 customer support',
-        'Campaign management tools'
+        'Advanced geo-targeting',
+        'Priority email support',
+        'Multiple campaigns',
+        'Traffic scheduling'
       ]
     },
     professional: {
       name: 'Professional Plan',
-      price: 100,
+      price: 4900,
       visits: '5,000',
       features: [
         '5,000 high-quality visits per month',
-        'Advanced geo-targeting',
         'Priority traffic delivery',
         'Advanced analytics & reporting',
         'Priority 24/7 support',
-        'Multiple campaign management',
         'Custom traffic sources'
+      ]
+    },
+    business: {
+      name: 'Business Plan',
+      price: 8200,
+      visits: '15,000',
+      features: [
+        '15,000 high-quality visits per month',
+        'Fastest traffic delivery',
+        'Dedicated account manager',
+        'Unlimited campaigns',
+        'API access'
       ]
     }
   };
