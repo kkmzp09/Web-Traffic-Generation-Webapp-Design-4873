@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { FiCheckCircle, FiUpload, FiAlertCircle, FiCreditCard, FiClock } from 'react-icons/fi';
+import { useSubscription } from '../lib/subscriptionContext';
+import { useAuth } from '../lib/authContext';
 
 export default function PaymentPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
+  const { activateSubscription } = useSubscription();
   const selectedPlan = location.state?.selectedPlan || 'professional';
   
   const [paymentStep, setPaymentStep] = useState('qr'); // qr, upload, processing, success
@@ -14,6 +18,7 @@ export default function PaymentPage() {
 
   const plans = {
     starter: {
+      id: 'starter',
       name: 'Starter Plan',
       price: 1250,
       visits: '500',
@@ -26,6 +31,7 @@ export default function PaymentPage() {
       ]
     },
     growth: {
+      id: 'growth',
       name: 'Growth Plan',
       price: 2900,
       visits: '2,000',
@@ -38,6 +44,7 @@ export default function PaymentPage() {
       ]
     },
     professional: {
+      id: 'professional',
       name: 'Professional Plan',
       price: 4900,
       visits: '5,000',
@@ -50,6 +57,7 @@ export default function PaymentPage() {
       ]
     },
     business: {
+      id: 'business',
       name: 'Business Plan',
       price: 8200,
       visits: '15,000',
@@ -100,6 +108,14 @@ export default function PaymentPage() {
     // Simulate API call to submit payment proof
     // In real implementation, this would upload to your backend
     setTimeout(() => {
+      // Activate subscription
+      if (user) {
+        activateSubscription(currentPlan, {
+          method: 'UPI',
+          transactionId: transactionId,
+          screenshot: screenshot.name
+        });
+      }
       setPaymentStep('success');
     }, 2000);
   };

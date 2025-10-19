@@ -2,10 +2,12 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthProvider, useAuth } from './lib/authContext';
+import { SubscriptionProvider } from './lib/subscriptionContext';
 
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import AuthModal from './components/AuthModal';
+import SubscriptionGuard from './components/SubscriptionGuard';
 
 // Pages
 import Dashboard from './components/Dashboard';
@@ -77,8 +79,8 @@ function AppShell() {
         <Route element={<MainLayout onAuthClick={handleAuthClick} />}>
           <Route path="/quick-start" element={<QuickStart />} />
           <Route path="/dashboard" element={<RequireAuth><Dashboard /></RequireAuth>} />
-          <Route path="/direct-traffic" element={<RequireAuth><DirectTraffic /></RequireAuth>} />
-          <Route path="/seo-traffic" element={<RequireAuth><SeoTraffic /></RequireAuth>} />
+          <Route path="/direct-traffic" element={<RequireAuth><SubscriptionGuard><DirectTraffic /></SubscriptionGuard></RequireAuth>} />
+          <Route path="/seo-traffic" element={<RequireAuth><SubscriptionGuard><SeoTraffic /></SubscriptionGuard></RequireAuth>} />
           <Route path="/analytics" element={<RequireAuth><Analytics /></RequireAuth>} />
           <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
           <Route path="/invoice" element={<RequireAuth><Invoice /></RequireAuth>} />
@@ -103,7 +105,9 @@ export default function App() {
   return (
     <Router>
       <AuthProvider>
-        <AppShell />
+        <SubscriptionProvider>
+          <AppShell />
+        </SubscriptionProvider>
       </AuthProvider>
     </Router>
   );
