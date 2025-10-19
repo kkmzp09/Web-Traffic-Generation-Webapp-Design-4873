@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
 
-const { FiFileText, FiDownload, FiEye, FiCreditCard, FiCalendar, FiDollarSign } = FiIcons;
+const { FiFileText, FiDownload, FiEye, FiCreditCard, FiCalendar, FiDollarSign, FiRefreshCw } = FiIcons;
 
 const Invoice = () => {
+  const navigate = useNavigate();
   const [invoices] = useState([
     {
       id: 'INV-2024-010',
@@ -63,6 +65,11 @@ const Invoice = () => {
     alert(`Viewing invoice ${invoiceId}...`);
   };
 
+  const handleManageSubscription = () => {
+    // Navigate to payment page to upgrade/change plan
+    navigate('/payment');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="p-6">
@@ -112,8 +119,12 @@ const Invoice = () => {
                   </div>
                 </div>
 
-                <button className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200">
-                  Manage Subscription
+                <button 
+                  onClick={handleManageSubscription}
+                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center justify-center space-x-2"
+                >
+                  <SafeIcon icon={FiRefreshCw} className="w-4 h-4" />
+                  <span>Manage Subscription</span>
                 </button>
               </div>
             </div>
