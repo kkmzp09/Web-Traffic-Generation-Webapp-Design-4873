@@ -9,9 +9,9 @@ export default function PaymentPage() {
   const location = useLocation();
   const { user } = useAuth();
   const { activateSubscription } = useSubscription();
-  const selectedPlan = location.state?.selectedPlan || 'professional';
   
-  const [paymentStep, setPaymentStep] = useState('qr'); // qr, upload, processing, success
+  const [selectedPlan, setSelectedPlan] = useState(location.state?.selectedPlan || 'professional');
+  const [paymentStep, setPaymentStep] = useState('select'); // select, qr, upload, processing, success
   const [screenshot, setScreenshot] = useState(null);
   const [transactionId, setTransactionId] = useState('');
   const [error, setError] = useState('');
@@ -120,11 +120,80 @@ export default function PaymentPage() {
     }, 2000);
   };
 
+  // Plan Selection Step
+  if (paymentStep === 'select') {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">Choose Your Plan</h1>
+            <p className="text-gray-600">Select the perfect plan for your traffic generation needs</p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {Object.entries(plans).map(([key, plan]) => (
+              <div
+                key={key}
+                className={`bg-white rounded-2xl shadow-lg p-6 border-2 transition-all cursor-pointer hover:shadow-xl ${
+                  selectedPlan === key ? 'border-blue-600 ring-2 ring-blue-200' : 'border-gray-200'
+                }`}
+                onClick={() => setSelectedPlan(key)}
+              >
+                <div className="text-center mb-4">
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">{plan.name}</h3>
+                  <div className="text-3xl font-bold text-blue-600">₹{plan.price}</div>
+                  <div className="text-sm text-gray-600">/month</div>
+                </div>
+
+                <div className="bg-blue-50 rounded-lg p-3 mb-4">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-blue-900">{plan.visits}</div>
+                    <div className="text-xs text-blue-700">visits/month</div>
+                  </div>
+                </div>
+
+                <div className="space-y-2 mb-4">
+                  {plan.features.slice(0, 3).map((feature, idx) => (
+                    <div key={idx} className="flex items-start gap-2">
+                      <FiCheckCircle className="text-green-500 mt-0.5 flex-shrink-0 text-sm" />
+                      <span className="text-xs text-gray-700">{feature}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {selectedPlan === key && (
+                  <div className="bg-blue-600 text-white text-center py-2 rounded-lg text-sm font-medium">
+                    Selected
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <div className="text-center">
+            <button
+              onClick={() => setPaymentStep('qr')}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl font-semibold text-lg hover:from-blue-700 hover:to-purple-700 transition-all shadow-lg"
+            >
+              Continue to Payment
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
+          <button
+            onClick={() => setPaymentStep('select')}
+            className="text-blue-600 hover:text-blue-700 mb-4 inline-flex items-center gap-2"
+          >
+            ← Change Plan
+          </button>
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Complete Your Payment</h1>
           <p className="text-gray-600">Secure UPI payment for your subscription</p>
         </div>
