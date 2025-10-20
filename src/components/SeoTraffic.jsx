@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
 
-const { FiSearch, FiPlay, FiTarget, FiGlobe, FiTrendingUp, FiBarChart } = FiIcons;
+const { FiSearch, FiPlay, FiTarget, FiGlobe, FiTrendingUp, FiBarChart, FiRefreshCw, FiCheckCircle, FiAlertCircle } = FiIcons;
 
 const SeoTraffic = () => {
   const [campaignData, setCampaignData] = useState({
@@ -14,6 +14,10 @@ const SeoTraffic = () => {
   });
 
   const [isRunning, setIsRunning] = useState(false);
+  const [isSearchingKeywords, setIsSearchingKeywords] = useState(false);
+  const [rankedKeywords, setRankedKeywords] = useState([]);
+  const [selectedKeywords, setSelectedKeywords] = useState([]);
+  const [keywordSearchError, setKeywordSearchError] = useState(null);
   const [campaigns, setCampaigns] = useState([
     {
       id: 1,
@@ -32,6 +36,70 @@ const SeoTraffic = () => {
     setCampaignData(prev => ({
       ...prev,
       [name]: value
+    }));
+    
+    // Clear keyword data when URL changes
+    if (name === 'url') {
+      setRankedKeywords([]);
+      setSelectedKeywords([]);
+      setKeywordSearchError(null);
+    }
+  };
+
+  const searchRankedKeywords = async () => {
+    if (!campaignData.url) {
+      setKeywordSearchError('Please enter a website URL first');
+      return;
+    }
+
+    setIsSearchingKeywords(true);
+    setKeywordSearchError(null);
+    setRankedKeywords([]);
+
+    try {
+      // Simulate API call to keyword research service
+      // In production, this would call a real SEO API like SEMrush, Ahrefs, or your own backend
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      // Extract domain from URL
+      const domain = campaignData.url.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+
+      // Mock keyword data - In production, fetch from real SEO API
+      const mockKeywords = [
+        { keyword: `${domain.split('.')[0]} services`, position: 3, volume: 1200, difficulty: 45 },
+        { keyword: `best ${domain.split('.')[0]}`, position: 7, volume: 890, difficulty: 52 },
+        { keyword: `${domain.split('.')[0]} online`, position: 12, volume: 650, difficulty: 38 },
+        { keyword: `${domain.split('.')[0]} reviews`, position: 15, volume: 540, difficulty: 41 },
+        { keyword: `top ${domain.split('.')[0]}`, position: 18, volume: 420, difficulty: 48 },
+        { keyword: `${domain.split('.')[0]} near me`, position: 22, volume: 380, difficulty: 35 },
+        { keyword: `${domain.split('.')[0]} pricing`, position: 25, volume: 290, difficulty: 33 },
+        { keyword: `${domain.split('.')[0]} alternatives`, position: 28, volume: 210, difficulty: 44 }
+      ];
+
+      setRankedKeywords(mockKeywords);
+    } catch (error) {
+      setKeywordSearchError('Failed to fetch keyword data. Please try again.');
+      console.error('Keyword search error:', error);
+    } finally {
+      setIsSearchingKeywords(false);
+    }
+  };
+
+  const toggleKeywordSelection = (keyword) => {
+    setSelectedKeywords(prev => {
+      if (prev.includes(keyword)) {
+        return prev.filter(k => k !== keyword);
+      } else {
+        return [...prev, keyword];
+      }
+    });
+  };
+
+  const applySelectedKeywords = () => {
+    const keywordsString = selectedKeywords.join(', ');
+    setCampaignData(prev => ({
+      ...prev,
+      keywords: keywordsString
     }));
   };
 
@@ -103,11 +171,73 @@ const SeoTraffic = () => {
                     name="url"
                     value={campaignData.url}
                     onChange={handleInputChange}
-                    placeholder="https://example.com"
+                    placeholder="https://www.yourdomain.com"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                     disabled={isRunning}
                   />
+                  <button
+                    type="button"
+                    onClick={searchRankedKeywords}
+                    disabled={!campaignData.url || isSearchingKeywords || isRunning}
+                    className="mt-2 w-full flex items-center justify-center space-x-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    <SafeIcon icon={isSearchingKeywords ? FiRefreshCw : FiSearch} className={`w-4 h-4 ${isSearchingKeywords ? 'animate-spin' : ''}`} />
+                    <span>{isSearchingKeywords ? 'Searching Keywords...' : 'Find Ranked Keywords'}</span>
+                  </button>
                 </div>
+
+                {/* Keyword Search Error */}
+                {keywordSearchError && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center space-x-2">
+                    <SafeIcon icon={FiAlertCircle} className="w-4 h-4 text-red-600" />
+                    <p className="text-sm text-red-700">{keywordSearchError}</p>
+                  </div>
+                )}
+
+                {/* Ranked Keywords Results */}
+                {rankedKeywords.length > 0 && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-semibold text-gray-900">Ranked Keywords Found</h3>
+                      <span className="text-xs text-blue-600">{rankedKeywords.length} keywords</span>
+                    </div>
+                    <div className="space-y-2 max-h-64 overflow-y-auto">
+                      {rankedKeywords.map((kw, index) => (
+                        <div
+                          key={index}
+                          onClick={() => toggleKeywordSelection(kw.keyword)}
+                          className={`p-3 rounded-lg cursor-pointer transition-all ${
+                            selectedKeywords.includes(kw.keyword)
+                              ? 'bg-green-100 border-2 border-green-500'
+                              : 'bg-white border border-gray-200 hover:border-blue-400'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-gray-900">{kw.keyword}</p>
+                              <div className="flex items-center space-x-3 mt-1 text-xs text-gray-600">
+                                <span>Rank: #{kw.position}</span>
+                                <span>Vol: {kw.volume}/mo</span>
+                                <span>Diff: {kw.difficulty}%</span>
+                              </div>
+                            </div>
+                            {selectedKeywords.includes(kw.keyword) && (
+                              <SafeIcon icon={FiCheckCircle} className="w-5 h-5 text-green-600" />
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {selectedKeywords.length > 0 && (
+                      <button
+                        onClick={applySelectedKeywords}
+                        className="mt-3 w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                      >
+                        Apply {selectedKeywords.length} Selected Keyword{selectedKeywords.length !== 1 ? 's' : ''}
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -117,7 +247,7 @@ const SeoTraffic = () => {
                     name="keywords"
                     value={campaignData.keywords}
                     onChange={handleInputChange}
-                    placeholder="web development, programming, coding"
+                    placeholder="Click 'Find Ranked Keywords' or enter manually"
                     rows="3"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                     disabled={isRunning}
