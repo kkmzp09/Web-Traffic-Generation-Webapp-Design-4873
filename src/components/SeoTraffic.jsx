@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
+import { useAuth } from '../lib/authContext';
+import { useSubscription } from '../lib/subscriptionContext';
 
 const { FiSearch, FiPlay, FiTarget, FiGlobe, FiTrendingUp, FiBarChart, FiRefreshCw, FiCheckCircle, FiAlertCircle } = FiIcons;
 
 const SeoTraffic = () => {
+  const { user } = useAuth();
+  const { subscription, updateSubscription } = useSubscription();
+  
   const [campaignData, setCampaignData] = useState({
     url: '',
     keywords: '',
@@ -18,18 +23,22 @@ const SeoTraffic = () => {
   const [rankedKeywords, setRankedKeywords] = useState([]);
   const [selectedKeywords, setSelectedKeywords] = useState([]);
   const [keywordSearchError, setKeywordSearchError] = useState(null);
-  const [campaigns, setCampaigns] = useState([
-    {
-      id: 1,
-      name: 'SEO Campaign 1',
-      url: 'https://example.com',
-      keywords: 'web development, programming',
-      status: 'completed',
-      traffic: 200,
-      success: 92.5,
-      created: '2024-01-15'
+  const [campaigns, setCampaigns] = useState([]);
+
+  // Load campaigns from localStorage
+  useEffect(() => {
+    if (user) {
+      loadCampaigns();
     }
-  ]);
+  }, [user]);
+
+  const loadCampaigns = () => {
+    if (!user) return;
+    const allCampaigns = JSON.parse(localStorage.getItem(`campaigns_${user.id}`) || '[]');
+    // Filter only SEO campaigns
+    const seoCampaigns = allCampaigns.filter(c => c.type === 'seo');
+    setCampaigns(seoCampaigns);
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -139,19 +148,38 @@ const SeoTraffic = () => {
       const result = await response.json();
 
       if (result.success || result.jobId) {
-        // Add campaign to list
+        // Save campaign to localStorage
         const newCampaign = {
-          id: campaigns.length + 1,
+          id: result.jobId || Date.now().toString(),
+          type: 'seo',
           name: `SEO Campaign ${campaigns.length + 1}`,
           url: campaignData.url,
           keywords: campaignData.keywords,
+          searchEngine: campaignData.searchEngine,
           status: 'running',
-          traffic: campaignData.trafficAmount,
-          success: 0,
-          created: new Date().toISOString().split('T')[0],
-          jobId: result.jobId
+          visitors: campaignData.trafficAmount,
+          duration: campaignData.duration,
+          timestamp: new Date().toISOString(),
+          jobId: result.jobId,
+          results: null
         };
+        
+        // Save to localStorage
+        const allCampaigns = JSON.parse(localStorage.getItem(`campaigns_${user.id}`) || '[]');
+        allCampaigns.unshift(newCampaign);
+        localStorage.setItem(`campaigns_${user.id}`, JSON.stringify(allCampaigns));
+        
+        // Update local state
         setCampaigns(prev => [newCampaign, ...prev]);
+        
+        // Update subscription visits
+        if (subscription && updateSubscription) {
+          const newUsedVisits = (subscription.usedVisits || 0) + campaignData.trafficAmount;
+          updateSubscription({
+            usedVisits: newUsedVisits
+          });
+          console.log(`✅ Subscription updated: ${campaignData.trafficAmount} visits allocated, total used: ${newUsedVisits}`);
+        }
         
         alert(`SEO Campaign started! Job ID: ${result.jobId}\n\nThe campaign will:\n1. Search for your keywords on ${campaignData.searchEngine}\n2. Find your website in results\n3. Click and visit your site\n4. Browse naturally for ${campaignData.duration} seconds\n5. Navigate to internal pages`);
       } else {
