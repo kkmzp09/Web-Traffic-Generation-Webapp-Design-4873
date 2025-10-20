@@ -104,12 +104,32 @@ function DirectTraffic() {
     try {
       const result = await api.startRun({ urls, dwellMs, scroll: true });
       // Relay returns: { via:'relay', status:'queued', jobId:'...', count:n }
-      setCampaignInfo({
+      const jobInfo = {
         jobId: result?.jobId || 'accepted',
         count: result?.count ?? urls.length,
         status: result?.status || 'queued',
-      });
+      };
+      setCampaignInfo(jobInfo);
       setIsRunning(true);
+      
+      // Save campaign as running immediately
+      if (user) {
+        const campaignData = {
+          id: jobInfo.jobId,
+          type: 'direct',
+          url: finalUrl,
+          visitors: count,
+          duration: durationMin,
+          status: 'running',
+          timestamp: new Date().toISOString(),
+          results: null
+        };
+        
+        const existingCampaigns = JSON.parse(localStorage.getItem(`campaigns_${user.id}`) || '[]');
+        existingCampaigns.unshift(campaignData);
+        localStorage.setItem(`campaigns_${user.id}`, JSON.stringify(existingCampaigns));
+        console.log('Campaign started and saved:', campaignData);
+      }
     } catch (err) {
       setError(err?.message || 'Something went wrong starting the campaign.');
     } finally {

@@ -28,19 +28,40 @@ const Dashboard = () => {
     loadDashboardStats();
     loadInvoices();
     loadRecentActivity();
-  }, [user]);
+    
+    // Refresh stats every 5 seconds to show real-time updates
+    const interval = setInterval(() => {
+      loadDashboardStats();
+    }, 5000);
+    
+    return () => clearInterval(interval);
+  }, [user, subscription]);
 
   const loadDashboardStats = () => {
     if (!user) return;
     
     // Load from localStorage
     const campaigns = JSON.parse(localStorage.getItem(`campaigns_${user.id}`) || '[]');
-    const activeCampaigns = campaigns.filter(c => c.status === 'active');
+    
+    // Count running campaigns (status can be 'running', 'active', or 'queued')
+    const activeCampaigns = campaigns.filter(c => 
+      c.status === 'running' || c.status === 'active' || c.status === 'queued'
+    );
+    
+    // Also check if there are any campaigns started in the last 10 minutes that might still be running
+    const now = Date.now();
+    const recentRunningCampaigns = campaigns.filter(c => {
+      if (c.status === 'completed') return false;
+      const campaignTime = new Date(c.timestamp).getTime();
+      const timeDiff = now - campaignTime;
+      return timeDiff < 10 * 60 * 1000; // Within last 10 minutes
+    });
+    
     const totalTraffic = subscription ? subscription.usedVisits : 0;
     
     setStats({
       totalCampaigns: campaigns.length,
-      activeCampaigns: activeCampaigns.length,
+      activeCampaigns: Math.max(activeCampaigns.length, recentRunningCampaigns.length),
       totalTraffic: totalTraffic,
       successRate: campaigns.length > 0 ? 96.8 : 0
     });
