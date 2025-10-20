@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { FiCheckCircle, FiUpload, FiAlertCircle, FiCreditCard, FiClock } from 'react-icons/fi';
+import { FiCheckCircle, FiUpload, FiAlertCircle, FiCreditCard, FiClock, FiTag, FiX } from 'react-icons/fi';
 import { useSubscription } from '../lib/subscriptionContext';
 import { useAuth } from '../lib/authContext';
+import { validateDiscountCode, calculateDiscount } from '../lib/discountCodes';
 
 export default function PaymentPage() {
   const navigate = useNavigate();
@@ -15,6 +16,11 @@ export default function PaymentPage() {
   const [screenshot, setScreenshot] = useState(null);
   const [transactionId, setTransactionId] = useState('');
   const [error, setError] = useState('');
+  
+  // Discount code state
+  const [discountCode, setDiscountCode] = useState('');
+  const [appliedDiscount, setAppliedDiscount] = useState(null);
+  const [discountError, setDiscountError] = useState('');
 
   const plans = {
     starter: {
@@ -72,10 +78,34 @@ export default function PaymentPage() {
   };
 
   const currentPlan = plans[selectedPlan];
+  
+  // Calculate final price with discount
+  const priceInfo = appliedDiscount 
+    ? calculateDiscount(currentPlan.price, appliedDiscount.discount)
+    : { originalPrice: currentPlan.price, finalPrice: currentPlan.price, discountAmount: 0, isFree: false };
 
   // Your actual UPI QR code
   const upiQRCode = '/images/upi-qr-code.jpeg';
   const upiId = 'kkmzp09@okhdfcbank'; // HDFC Bank UPI ID
+
+  const handleApplyDiscount = () => {
+    setDiscountError('');
+    const discount = validateDiscountCode(discountCode);
+    
+    if (!discount) {
+      setDiscountError('Invalid discount code');
+      return;
+    }
+    
+    setAppliedDiscount(discount);
+    setDiscountError('');
+  };
+
+  const handleRemoveDiscount = () => {
+    setAppliedDiscount(null);
+    setDiscountCode('');
+    setDiscountError('');
+  };
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
@@ -170,6 +200,63 @@ export default function PaymentPage() {
             ))}
           </div>
 
+          {/* Discount Code Section */}
+          <div className="max-w-md mx-auto mb-8">
+            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+              <div className="flex items-center gap-2 mb-4">
+                <FiTag className="text-blue-600" />
+                <h3 className="font-semibold text-gray-900">Have a discount code?</h3>
+              </div>
+              
+              {!appliedDiscount ? (
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={discountCode}
+                    onChange={(e) => setDiscountCode(e.target.value.toUpperCase())}
+                    placeholder="Enter code (e.g., SAVE10)"
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <button
+                    onClick={handleApplyDiscount}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                  >
+                    Apply
+                  </button>
+                </div>
+              ) : (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <FiCheckCircle className="text-green-600" />
+                        <span className="font-semibold text-green-900">Code Applied!</span>
+                      </div>
+                      <p className="text-sm text-green-700">{appliedDiscount.description}</p>
+                      <p className="text-lg font-bold text-green-900 mt-2">
+                        {appliedDiscount.discount}% OFF
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleRemoveDiscount}
+                      className="text-red-600 hover:text-red-700 p-2"
+                      title="Remove discount"
+                    >
+                      <FiX className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              )}
+              
+              {discountError && (
+                <div className="mt-2 text-sm text-red-600 flex items-center gap-1">
+                  <FiAlertCircle className="w-4 h-4" />
+                  {discountError}
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="text-center">
             <button
               onClick={() => setPaymentStep('qr')}
@@ -205,10 +292,33 @@ export default function PaymentPage() {
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-bold text-gray-900">{currentPlan.name}</h2>
                 <div className="text-right">
-                  <div className="text-3xl font-bold text-blue-600">₹{currentPlan.price}</div>
-                  <div className="text-sm text-gray-600">/month</div>
+                  {appliedDiscount && priceInfo.discountAmount > 0 ? (
+                    <>
+                      <div className="text-lg text-gray-400 line-through">₹{priceInfo.originalPrice}</div>
+                      <div className="text-3xl font-bold text-green-600">₹{priceInfo.finalPrice}</div>
+                      <div className="text-xs text-green-600 font-medium">{appliedDiscount.discount}% OFF</div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="text-3xl font-bold text-blue-600">₹{currentPlan.price}</div>
+                      <div className="text-sm text-gray-600">/month</div>
+                    </>
+                  )}
                 </div>
               </div>
+              
+              {appliedDiscount && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3 mb-4">
+                  <div className="flex items-center gap-2">
+                    <FiTag className="text-green-600" />
+                    <div>
+                      <p className="text-sm font-medium text-green-900">{appliedDiscount.description}</p>
+                      <p className="text-xs text-green-700">You save ₹{priceInfo.discountAmount}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
               <div className="bg-blue-50 rounded-lg p-4 mb-4">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-blue-900">{currentPlan.visits} Visits</div>
@@ -227,18 +337,60 @@ export default function PaymentPage() {
               ))}
             </div>
 
-            <div className="mt-6 pt-6 border-t border-gray-200">
+            <div className="mt-6 pt-6 border-t border-gray-200 space-y-2">
+              {appliedDiscount && priceInfo.discountAmount > 0 && (
+                <>
+                  <div className="flex justify-between items-center text-sm text-gray-600">
+                    <span>Original Price:</span>
+                    <span className="line-through">₹{priceInfo.originalPrice}</span>
+                  </div>
+                  <div className="flex justify-between items-center text-sm text-green-600">
+                    <span>Discount ({appliedDiscount.discount}%):</span>
+                    <span>-₹{priceInfo.discountAmount}</span>
+                  </div>
+                </>
+              )}
               <div className="flex justify-between items-center text-lg font-bold">
                 <span>Total Amount:</span>
-                <span className="text-blue-600">₹{currentPlan.price}</span>
+                <span className={appliedDiscount ? "text-green-600" : "text-blue-600"}>
+                  {priceInfo.isFree ? 'FREE' : `₹${priceInfo.finalPrice}`}
+                </span>
               </div>
             </div>
           </div>
 
           {/* Right Side - Payment Process */}
           <div className="space-y-6">
+            {/* Free Subscription - Skip Payment */}
+            {paymentStep === 'qr' && priceInfo.isFree && (
+              <div className="bg-white rounded-2xl shadow-lg p-6">
+                <div className="text-center py-8">
+                  <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <FiCheckCircle className="w-10 h-10 text-green-600" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">100% Discount Applied!</h3>
+                  <p className="text-gray-600 mb-6">Your subscription is completely free with this code</p>
+                  <button
+                    onClick={() => {
+                      if (user) {
+                        activateSubscription(currentPlan, {
+                          method: 'Discount Code',
+                          transactionId: `FREE-${Date.now()}`,
+                          discountCode: discountCode
+                        });
+                      }
+                      setPaymentStep('success');
+                    }}
+                    className="bg-gradient-to-r from-green-600 to-green-700 text-white px-8 py-3 rounded-xl font-semibold hover:from-green-700 hover:to-green-800 transition-all"
+                  >
+                    Activate Free Subscription
+                  </button>
+                </div>
+              </div>
+            )}
+            
             {/* Step 1: QR Code */}
-            {paymentStep === 'qr' && (
+            {paymentStep === 'qr' && !priceInfo.isFree && (
               <div className="bg-white rounded-2xl shadow-lg p-6">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
