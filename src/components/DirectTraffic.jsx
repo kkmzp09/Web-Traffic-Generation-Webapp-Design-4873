@@ -49,9 +49,9 @@ function DirectTraffic() {
     if (subscription && updateSubscription) {
       const newUsedVisits = (subscription.usedVisits || 0) + completedVisits;
       updateSubscription({
-        ...subscription,
         usedVisits: newUsedVisits
       });
+      console.log(`✅ Updated subscription: ${completedVisits} visits used, total: ${newUsedVisits}`);
     }
 
     console.log('Campaign saved:', campaignData);
@@ -129,6 +129,15 @@ function DirectTraffic() {
         existingCampaigns.unshift(campaignData);
         localStorage.setItem(`campaigns_${user.id}`, JSON.stringify(existingCampaigns));
         console.log('Campaign started and saved:', campaignData);
+        
+        // Update subscription immediately with requested visits
+        if (subscription && updateSubscription) {
+          const newUsedVisits = (subscription.usedVisits || 0) + count;
+          updateSubscription({
+            usedVisits: newUsedVisits
+          });
+          console.log(`✅ Subscription updated: ${count} visits allocated, total used: ${newUsedVisits}`);
+        }
       }
     } catch (err) {
       setError(err?.message || 'Something went wrong starting the campaign.');
