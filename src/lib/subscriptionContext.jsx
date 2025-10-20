@@ -164,6 +164,21 @@ export const SubscriptionProvider = ({ children }) => {
     return subscription.remainingVisits >= requiredVisits;
   };
 
+  const updateSubscription = (updatedData) => {
+    if (!user) return;
+    
+    const updated = {
+      ...subscription,
+      ...updatedData,
+      remainingVisits: updatedData.totalVisits 
+        ? updatedData.totalVisits - (updatedData.usedVisits || 0)
+        : (subscription?.totalVisits || 0) - (updatedData.usedVisits || 0)
+    };
+
+    localStorage.setItem(`subscription_${user.id}`, JSON.stringify(updated));
+    setSubscription(updated);
+  };
+
   const value = {
     subscription,
     loading,
@@ -173,7 +188,8 @@ export const SubscriptionProvider = ({ children }) => {
     useVisits,
     cancelSubscription,
     renewSubscription,
-    loadSubscription
+    loadSubscription,
+    updateSubscription
   };
 
   return (
