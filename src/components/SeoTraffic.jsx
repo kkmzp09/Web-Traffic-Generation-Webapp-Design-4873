@@ -57,28 +57,29 @@ const SeoTraffic = () => {
     setRankedKeywords([]);
 
     try {
-      // Simulate API call to keyword research service
-      // In production, this would call a real SEO API like SEMrush, Ahrefs, or your own backend
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const response = await fetch('https://api.organitrafficboost.com/api/seo/keywords', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          domain: campaignData.url
+        })
+      });
 
-      // Extract domain from URL
-      const domain = campaignData.url.replace(/^https?:\/\//, '').replace(/\/.*$/, '');
+      const data = await response.json();
 
-      // Mock keyword data - In production, fetch from real SEO API
-      const mockKeywords = [
-        { keyword: `${domain.split('.')[0]} services`, position: 3, volume: 1200, difficulty: 45 },
-        { keyword: `best ${domain.split('.')[0]}`, position: 7, volume: 890, difficulty: 52 },
-        { keyword: `${domain.split('.')[0]} online`, position: 12, volume: 650, difficulty: 38 },
-        { keyword: `${domain.split('.')[0]} reviews`, position: 15, volume: 540, difficulty: 41 },
-        { keyword: `top ${domain.split('.')[0]}`, position: 18, volume: 420, difficulty: 48 },
-        { keyword: `${domain.split('.')[0]} near me`, position: 22, volume: 380, difficulty: 35 },
-        { keyword: `${domain.split('.')[0]} pricing`, position: 25, volume: 290, difficulty: 33 },
-        { keyword: `${domain.split('.')[0]} alternatives`, position: 28, volume: 210, difficulty: 44 }
-      ];
-
-      setRankedKeywords(mockKeywords);
+      if (data.success && data.keywords) {
+        if (data.keywords.length === 0) {
+          setKeywordSearchError('No ranked keywords found for this domain. Try a different website or enter keywords manually.');
+        } else {
+          setRankedKeywords(data.keywords);
+        }
+      } else {
+        setKeywordSearchError(data.error || 'Failed to fetch keyword data');
+      }
     } catch (error) {
-      setKeywordSearchError('Failed to fetch keyword data. Please try again.');
+      setKeywordSearchError('Failed to connect to keyword research service. Please try again.');
       console.error('Keyword search error:', error);
     } finally {
       setIsSearchingKeywords(false);
