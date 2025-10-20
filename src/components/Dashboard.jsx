@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
 import { useAuth } from '../lib/authContext';
+import { useSubscription } from '../lib/subscriptionContext';
+import SubscriptionStatus from './SubscriptionStatus';
 
 const { 
   FiTrendingUp, FiUsers, FiPlay, FiBarChart, FiTarget, FiZap, FiActivity,
@@ -11,26 +13,53 @@ const {
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const { subscription } = useSubscription();
   const [stats, setStats] = useState({
     totalCampaigns: 0,
     activeCampaigns: 0,
     totalTraffic: 0,
     successRate: 0
   });
+  const [invoices, setInvoices] = useState([]);
+  const [recentActivity, setRecentActivity] = useState([]);
 
   useEffect(() => {
     // Load dashboard stats
     loadDashboardStats();
-  }, []);
+    loadInvoices();
+    loadRecentActivity();
+  }, [user]);
 
   const loadDashboardStats = () => {
-    // Mock data for now - replace with actual API calls
+    if (!user) return;
+    
+    // Load from localStorage
+    const campaigns = JSON.parse(localStorage.getItem(`campaigns_${user.id}`) || '[]');
+    const activeCampaigns = campaigns.filter(c => c.status === 'active');
+    const totalTraffic = subscription ? subscription.usedVisits : 0;
+    
     setStats({
-      totalCampaigns: 24,
-      activeCampaigns: 3,
-      totalTraffic: 47820,
-      successRate: 96.8
+      totalCampaigns: campaigns.length,
+      activeCampaigns: activeCampaigns.length,
+      totalTraffic: totalTraffic,
+      successRate: campaigns.length > 0 ? 96.8 : 0
     });
+  };
+
+  const loadInvoices = () => {
+    if (!user) return;
+    const stored = localStorage.getItem(`invoices_${user.id}`);
+    if (stored) {
+      setInvoices(JSON.parse(stored));
+    }
+  };
+
+  const loadRecentActivity = () => {
+    if (!user) return;
+    const stored = localStorage.getItem(`activity_${user.id}`);
+    if (stored) {
+      setRecentActivity(JSON.parse(stored));
+    }
   };
 
   const StatCard = ({ title, value, subtitle, icon, color, trend, className = "" }) => (
@@ -98,6 +127,11 @@ const Dashboard = () => {
           </div>
         </div>
 
+        {/* Subscription Status */}
+        <div className="mb-8">
+          <SubscriptionStatus />
+        </div>
+
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatCard
@@ -106,7 +140,6 @@ const Dashboard = () => {
             subtitle="Lifetime campaigns created"
             icon={FiTarget}
             color="bg-gradient-to-r from-blue-500 to-blue-600"
-            trend="+12% this month"
           />
           
           <StatCard
@@ -115,25 +148,25 @@ const Dashboard = () => {
             subtitle="Currently running"
             icon={FiPlay}
             color="bg-gradient-to-r from-green-500 to-green-600"
-            trend="3 running now"
+            trend={stats.activeCampaigns > 0 ? `${stats.activeCampaigns} running now` : null}
           />
           
           <StatCard
-            title="Total Traffic"
+            title="Visits Used"
             value={stats.totalTraffic.toLocaleString()}
-            subtitle="Visits generated"
+            subtitle={subscription ? `of ${subscription.totalVisits.toLocaleString()} total` : 'No active subscription'}
             icon={FiTrendingUp}
             color="bg-gradient-to-r from-purple-500 to-purple-600"
-            trend="+24% this week"
+            trend={subscription ? `${subscription.remainingVisits.toLocaleString()} remaining` : null}
           />
           
           <StatCard
-            title="Success Rate"
-            value={`${stats.successRate}%`}
-            subtitle="Average completion rate"
+            title="Invoices"
+            value={invoices.length}
+            subtitle="Total invoices"
             icon={FiBarChart}
             color="bg-gradient-to-r from-orange-500 to-orange-600"
-            trend="+2.1% improvement"
+            trend={invoices.length > 0 ? `₹${invoices.reduce((sum, inv) => sum + inv.amount, 0).toFixed(2)} paid` : null}
           />
         </div>
 
