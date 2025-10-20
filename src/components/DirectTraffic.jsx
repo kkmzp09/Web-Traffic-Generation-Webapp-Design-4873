@@ -6,7 +6,7 @@ import CONFIG from '../config';     // must export { API_BASE, REQUEST_TIMEOUT_M
 import CampaignHistory from './CampaignHistory';
 
 function DirectTraffic() {
-  const [targetUrl, setTargetUrl] = useState('https://www.organitrafficboost.com');
+  const [targetUrl, setTargetUrl] = useState('https://www.yourdomain.com');
   const [visitors, setVisitors]   = useState(10);
   const [durationMin, setDurationMin] = useState(0.5); // UI input in minutes (default 30 sec = 0.5 min)
   const [isLoading, setIsLoading] = useState(false);
@@ -102,16 +102,12 @@ function DirectTraffic() {
           <h2 className="ml-3 text-xl font-semibold text-white">Direct Traffic</h2>
         </div>
 
-      <p className="text-gray-400 mb-2">
-        API: <code className="text-sm bg-gray-700 px-2 py-1 rounded">{displayUrl || 'api.organitrafficboost.com'}</code>
-      </p>
-
-      <form onSubmit={handleSubmit}>
-        <div className="mb-4">
-          <label htmlFor="targetUrl" className="block text-sm font-medium text-gray-300 mb-1">
-            <SafeIcon icon={FiGlobe} className="inline-block mr-2" />
-            Target URL
-          </label>
+        <form onSubmit={handleSubmit}>
+          <div className="mb-4">
+            <label htmlFor="targetUrl" className="block text-sm font-medium text-gray-300 mb-1">
+              <SafeIcon icon={FiGlobe} className="inline-block mr-2" />
+              Target URL
+            </label>
           <input
             type="url"
             id="targetUrl"
