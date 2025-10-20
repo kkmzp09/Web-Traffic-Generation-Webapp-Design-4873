@@ -104,26 +104,65 @@ const SeoTraffic = () => {
     }));
   };
 
-  const handleRunCampaign = () => {
+  const handleRunCampaign = async () => {
     if (!campaignData.url || !campaignData.keywords) return;
     
     setIsRunning(true);
-    // Simulate campaign running
-    setTimeout(() => {
-      setIsRunning(false);
-      // Add new campaign to list
-      const newCampaign = {
-        id: campaigns.length + 1,
-        name: `SEO Campaign ${campaigns.length + 1}`,
-        url: campaignData.url,
-        keywords: campaignData.keywords,
-        status: 'completed',
-        traffic: campaignData.trafficAmount,
-        success: Math.random() * 10 + 85, // Random success rate 85-95%
-        created: new Date().toISOString().split('T')[0]
+    
+    try {
+      // Split keywords into array
+      const keywordList = campaignData.keywords.split(',').map(k => k.trim()).filter(k => k);
+      
+      // Prepare SEO traffic payload
+      const seoPayload = {
+        targetUrl: campaignData.url,
+        keywords: keywordList,
+        searchEngine: campaignData.searchEngine,
+        visitsPerKeyword: Math.ceil(campaignData.trafficAmount / keywordList.length),
+        dwellTimeSeconds: campaignData.duration,
+        naturalBrowsing: true,
+        scrollBehavior: true,
+        clickInternalLinks: true
       };
-      setCampaigns(prev => [newCampaign, ...prev]);
-    }, 7000);
+
+      console.log('Starting SEO campaign:', seoPayload);
+
+      // Call your Playwright API for SEO traffic
+      const response = await fetch('https://api.organitrafficboost.com/seo-traffic', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(seoPayload)
+      });
+
+      const result = await response.json();
+
+      if (result.success || result.jobId) {
+        // Add campaign to list
+        const newCampaign = {
+          id: campaigns.length + 1,
+          name: `SEO Campaign ${campaigns.length + 1}`,
+          url: campaignData.url,
+          keywords: campaignData.keywords,
+          status: 'running',
+          traffic: campaignData.trafficAmount,
+          success: 0,
+          created: new Date().toISOString().split('T')[0],
+          jobId: result.jobId
+        };
+        setCampaigns(prev => [newCampaign, ...prev]);
+        
+        alert(`SEO Campaign started! Job ID: ${result.jobId}\n\nThe campaign will:\n1. Search for your keywords on ${campaignData.searchEngine}\n2. Find your website in results\n3. Click and visit your site\n4. Browse naturally for ${campaignData.duration} seconds\n5. Navigate to internal pages`);
+      } else {
+        throw new Error(result.error || 'Failed to start campaign');
+      }
+    } catch (error) {
+      console.error('Campaign error:', error);
+      alert('Failed to start SEO campaign: ' + error.message);
+    } finally {
+      setIsRunning(false);
+    }
   };
 
   const getStatusColor = (status) => {
