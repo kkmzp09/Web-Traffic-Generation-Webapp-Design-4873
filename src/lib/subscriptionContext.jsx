@@ -1,6 +1,7 @@
 // src/lib/subscriptionContext.jsx
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useAuth } from './authContext';
+import { sendPaymentConfirmationEmail } from '../utils/emailService';
 
 const SubscriptionContext = createContext(null);
 
@@ -38,9 +39,12 @@ export const SubscriptionProvider = ({ children }) => {
     }
   };
 
-  const activateSubscription = (plan, paymentDetails) => {
+  const activateSubscription = async (plan, paymentDetails) => {
+    const timestamp = Date.now();
+    const invoiceId = `INV-${new Date().getFullYear()}-${String(timestamp).slice(-6)}`;
+    
     const newSubscription = {
-      id: `sub_${Date.now()}`,
+      id: `sub_${timestamp}`,
       userId: user.id,
       plan: plan.name,
       planId: plan.id,
@@ -48,17 +52,57 @@ export const SubscriptionProvider = ({ children }) => {
       usedVisits: 0,
       remainingVisits: parseInt(plan.visits.replace(/,/g, '')),
       price: plan.price,
+      finalPrice: paymentDetails.finalPrice || plan.price,
+      discount: paymentDetails.discount || 0,
+      discountCode: paymentDetails.discountCode || null,
       status: 'active',
       startDate: new Date().toISOString(),
       endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
       paymentMethod: paymentDetails.method,
       transactionId: paymentDetails.transactionId,
+      invoiceId: invoiceId,
       autoRenew: true
     };
 
-    // Save to localStorage
+    // Generate invoice
+    const invoice = {
+      id: invoiceId,
+      subscriptionId: newSubscription.id,
+      userId: user.id,
+      date: new Date().toISOString(),
+      amount: newSubscription.finalPrice,
+      originalAmount: plan.price,
+      discount: paymentDetails.discount || 0,
+      discountCode: paymentDetails.discountCode || null,
+      status: 'paid',
+      description: `${plan.name} - ${plan.visits} visits`,
+      paymentMethod: paymentDetails.method,
+      transactionId: paymentDetails.transactionId
+    };
+
+    // Save subscription to localStorage
     localStorage.setItem(`subscription_${user.id}`, JSON.stringify(newSubscription));
     setSubscription(newSubscription);
+
+    // Save invoice to localStorage
+    const existingInvoices = JSON.parse(localStorage.getItem(`invoices_${user.id}`) || '[]');
+    existingInvoices.unshift(invoice); // Add to beginning
+    localStorage.setItem(`invoices_${user.id}`, JSON.stringify(existingInvoices));
+
+    // Send confirmation email
+    try {
+      await sendPaymentConfirmationEmail({
+        to: user.email,
+        userName: user.name,
+        planName: plan.name,
+        amount: `₹${newSubscription.finalPrice}`,
+        transactionId: paymentDetails.transactionId,
+        visits: plan.visits
+      });
+      console.log('✅ Subscription confirmation email sent');
+    } catch (error) {
+      console.error('❌ Failed to send confirmation email:', error);
+    }
 
     return newSubscription;
   };

@@ -137,13 +137,16 @@ export default function PaymentPage() {
     
     // Simulate API call to submit payment proof
     // In real implementation, this would upload to your backend
-    setTimeout(() => {
+    setTimeout(async () => {
       // Activate subscription
       if (user) {
-        activateSubscription(currentPlan, {
+        await activateSubscription(currentPlan, {
           method: 'UPI',
           transactionId: transactionId,
-          screenshot: screenshot.name
+          screenshot: screenshot.name,
+          finalPrice: priceInfo.finalPrice,
+          discount: appliedDiscount?.discount || 0,
+          discountCode: discountCode || null
         });
       }
       setPaymentStep('success');
@@ -371,12 +374,14 @@ export default function PaymentPage() {
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">100% Discount Applied!</h3>
                   <p className="text-gray-600 mb-6">Your subscription is completely free with this code</p>
                   <button
-                    onClick={() => {
+                    onClick={async () => {
                       if (user) {
-                        activateSubscription(currentPlan, {
+                        await activateSubscription(currentPlan, {
                           method: 'Discount Code',
                           transactionId: `FREE-${Date.now()}`,
-                          discountCode: discountCode
+                          discountCode: discountCode,
+                          finalPrice: 0,
+                          discount: 100
                         });
                       }
                       setPaymentStep('success');

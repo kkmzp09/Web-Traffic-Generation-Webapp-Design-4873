@@ -1,50 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
+import { useAuth } from '../lib/authContext';
+import { useSubscription } from '../lib/subscriptionContext';
 
 const { FiFileText, FiDownload, FiEye, FiCreditCard, FiCalendar, FiDollarSign, FiRefreshCw } = FiIcons;
 
 const Invoice = () => {
   const navigate = useNavigate();
-  const [invoices] = useState([
-    {
-      id: 'INV-2024-010',
-      date: '2024-10-18',
-      amount: 100.00,
-      status: 'paid',
-      description: 'Professional Plan - 5,000 visits'
-    },
-    {
-      id: 'INV-2024-009',
-      date: '2024-09-18',
-      amount: 100.00,
-      status: 'paid',
-      description: 'Professional Plan - 5,000 visits'
-    },
-    {
-      id: 'INV-2024-008',
-      date: '2024-08-18',
-      amount: 100.00,
-      status: 'paid',
-      description: 'Professional Plan - 5,000 visits'
-    },
-    {
-      id: 'INV-2024-007',
-      date: '2024-07-18',
-      amount: 50.00,
-      status: 'paid',
-      description: 'Starter Plan - 2,000 visits'
-    }
-  ]);
+  const { user } = useAuth();
+  const { subscription } = useSubscription();
+  const [invoices, setInvoices] = useState([]);
+  const [totalPaid, setTotalPaid] = useState(0);
 
-  const [billingInfo] = useState({
-    nextBilling: '2024-11-18',
-    plan: 'Professional Plan',
-    amount: 100.00,
-    currency: 'USD',
-    visits: '5,000'
-  });
+  // Load invoices from localStorage
+  useEffect(() => {
+    if (user) {
+      const stored = localStorage.getItem(`invoices_${user.id}`);
+      if (stored) {
+        const loadedInvoices = JSON.parse(stored);
+        setInvoices(loadedInvoices);
+        
+        // Calculate total paid
+        const total = loadedInvoices.reduce((sum, inv) => sum + inv.amount, 0);
+        setTotalPaid(total);
+      }
+    }
+  }, [user]);
+
+  // Get billing info from subscription
+  const billingInfo = subscription ? {
+    nextBilling: new Date(subscription.endDate).toLocaleDateString(),
+    plan: subscription.plan,
+    amount: subscription.finalPrice,
+    currency: 'INR',
+    visits: subscription.totalVisits.toLocaleString()
+  } : null;
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -97,36 +89,42 @@ const Invoice = () => {
                 <h2 className="text-lg font-semibold text-gray-900">Current Plan</h2>
               </div>
 
-              <div className="space-y-4">
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-blue-900">{billingInfo.plan}</span>
-                    <span className="text-lg font-bold text-blue-900">
-                      ${billingInfo.amount}/{billingInfo.currency === 'USD' ? 'month' : 'mo'}
-                    </span>
+              {billingInfo ? (
+                <>
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-blue-900">{billingInfo.plan}</span>
+                      <span className="text-lg font-bold text-blue-900">
+                        ₹{billingInfo.amount}/month
+                      </span>
+                    </div>
+                    <p className="text-sm text-blue-700">{billingInfo.visits} visits per month</p>
                   </div>
-                  <p className="text-sm text-blue-700">{billingInfo.visits} visits per month</p>
-                </div>
 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Next billing date:</span>
-                    <span className="font-medium text-gray-900">{billingInfo.nextBilling}</span>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Next billing date:</span>
+                      <span className="font-medium text-gray-900">{billingInfo.nextBilling}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-600">Amount:</span>
+                      <span className="font-medium text-gray-900">₹{billingInfo.amount}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Amount:</span>
-                    <span className="font-medium text-gray-900">${billingInfo.amount}</span>
-                  </div>
+                </>
+              ) : (
+                <div className="text-center py-4 text-gray-500">
+                  No active subscription
                 </div>
+              )}
 
-                <button 
-                  onClick={handleManageSubscription}
-                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center justify-center space-x-2"
-                >
-                  <SafeIcon icon={FiRefreshCw} className="w-4 h-4" />
-                  <span>Manage Subscription</span>
-                </button>
-              </div>
+              <button 
+                onClick={handleManageSubscription}
+                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center justify-center space-x-2 mt-4"
+              >
+                <SafeIcon icon={FiRefreshCw} className="w-4 h-4" />
+                <span>Manage Subscription</span>
+              </button>
             </div>
 
             {/* Quick Stats */}
@@ -138,7 +136,7 @@ const Invoice = () => {
                   <SafeIcon icon={FiDollarSign} className="w-5 h-5 text-green-600" />
                   <div>
                     <p className="text-sm text-gray-600">Total Paid</p>
-                    <p className="font-semibold text-gray-900">$350.00</p>
+                    <p className="font-semibold text-gray-900">₹{totalPaid.toFixed(2)}</p>
                   </div>
                 </div>
                 
@@ -146,7 +144,9 @@ const Invoice = () => {
                   <SafeIcon icon={FiCalendar} className="w-5 h-5 text-blue-600" />
                   <div>
                     <p className="text-sm text-gray-600">Member Since</p>
-                    <p className="font-semibold text-gray-900">July 2024</p>
+                    <p className="font-semibold text-gray-900">
+                      {subscription ? new Date(subscription.startDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'N/A'}
+                    </p>
                   </div>
                 </div>
                 
@@ -183,6 +183,11 @@ const Invoice = () => {
                         <div>
                           <h3 className="font-medium text-gray-900">{invoice.id}</h3>
                           <p className="text-sm text-gray-600">{invoice.description}</p>
+                          {invoice.discountCode && (
+                            <p className="text-xs text-green-600 mt-1">
+                              Discount: {invoice.discount}% ({invoice.discountCode})
+                            </p>
+                          )}
                         </div>
                       </div>
                       <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(invoice.status)}`}>
@@ -194,11 +199,11 @@ const Invoice = () => {
                       <div className="flex items-center space-x-6 text-sm">
                         <div>
                           <p className="text-gray-500">Date</p>
-                          <p className="font-medium text-gray-900">{invoice.date}</p>
+                          <p className="font-medium text-gray-900">{new Date(invoice.date).toLocaleDateString()}</p>
                         </div>
                         <div>
                           <p className="text-gray-500">Amount</p>
-                          <p className="font-medium text-gray-900">${invoice.amount.toFixed(2)}</p>
+                          <p className="font-medium text-gray-900">₹{invoice.amount.toFixed(2)}</p>
                         </div>
                       </div>
                       
