@@ -77,10 +77,30 @@ const Dashboard = () => {
 
   const loadRecentActivity = () => {
     if (!user) return;
-    const stored = localStorage.getItem(`activity_${user.id}`);
-    if (stored) {
-      setRecentActivity(JSON.parse(stored));
-    }
+    const campaigns = JSON.parse(localStorage.getItem(`campaigns_${user.id}`) || '[]');
+    
+    // Convert campaigns to activity format with time ago
+    const activities = campaigns.slice(0, 5).map(campaign => {
+      const timestamp = new Date(campaign.timestamp);
+      const now = new Date();
+      const diffMs = now - timestamp;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHours = Math.floor(diffMs / 3600000);
+      const diffDays = Math.floor(diffMs / 86400000);
+      
+      let timeAgo;
+      if (diffMins < 1) timeAgo = 'Just now';
+      else if (diffMins < 60) timeAgo = `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
+      else if (diffHours < 24) timeAgo = `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+      else timeAgo = `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+      
+      return {
+        ...campaign,
+        timeAgo
+      };
+    });
+    
+    setRecentActivity(activities);
   };
 
   const StatCard = ({ title, value, subtitle, icon, color, trend, className = "" }) => (
@@ -234,44 +254,56 @@ const Dashboard = () => {
             </div>
             
             <div className="space-y-4">
-              <div className="flex items-start space-x-3 p-3 bg-blue-50 rounded-lg">
-                <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">Direct traffic campaign started</p>
-                  <p className="text-xs text-gray-500 mt-1">Campaign "Website Boost" - 500 visits</p>
-                  <p className="text-xs text-blue-600 mt-1">5 minutes ago</p>
+              {recentActivity.length > 0 ? (
+                <>
+                  {recentActivity.slice(0, 3).map((activity, index) => (
+                    <div key={index} className={`flex items-start space-x-3 p-3 rounded-lg ${
+                      activity.status === 'completed' ? 'bg-green-50' :
+                      activity.status === 'running' ? 'bg-blue-50' : 'bg-purple-50'
+                    }`}>
+                      <div className={`w-2 h-2 rounded-full mt-2 ${
+                        activity.status === 'completed' ? 'bg-green-500' :
+                        activity.status === 'running' ? 'bg-blue-500' : 'bg-purple-500'
+                      }`}></div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium text-gray-900">
+                          {activity.type === 'direct' ? 'Direct' : 'SEO'} traffic campaign {activity.status}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          {activity.url} - {activity.visitors} visits
+                        </p>
+                        <p className={`text-xs mt-1 ${
+                          activity.status === 'completed' ? 'text-green-600' :
+                          activity.status === 'running' ? 'text-blue-600' : 'text-purple-600'
+                        }`}>
+                          {activity.timeAgo}
+                        </p>
+                      </div>
+                      <SafeIcon icon={
+                        activity.status === 'completed' ? FiCheckCircle :
+                        activity.status === 'running' ? FiPlay : FiClock
+                      } className={`w-4 h-4 mt-1 ${
+                        activity.status === 'completed' ? 'text-green-600' :
+                        activity.status === 'running' ? 'text-blue-600' : 'text-purple-600'
+                      }`} />
+                    </div>
+                  ))}
+                  <div className="text-center pt-4">
+                    <Link 
+                      to="/analytics" 
+                      className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      View all activity →
+                    </Link>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <SafeIcon icon={FiActivity} className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-sm text-gray-500">No recent activity</p>
+                  <p className="text-xs text-gray-400 mt-1">Start a campaign to see activity here</p>
                 </div>
-                <SafeIcon icon={FiPlay} className="w-4 h-4 text-blue-600 mt-1" />
-              </div>
-              
-              <div className="flex items-start space-x-3 p-3 bg-green-50 rounded-lg">
-                <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">SEO campaign completed</p>
-                  <p className="text-xs text-gray-500 mt-1">Campaign "Organic Growth" - 100% success rate</p>
-                  <p className="text-xs text-green-600 mt-1">2 hours ago</p>
-                </div>
-                <SafeIcon icon={FiCheckCircle} className="w-4 h-4 text-green-600 mt-1" />
-              </div>
-              
-              <div className="flex items-start space-x-3 p-3 bg-purple-50 rounded-lg">
-                <div className="w-2 h-2 bg-purple-500 rounded-full mt-2"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900">New campaign scheduled</p>
-                  <p className="text-xs text-gray-500 mt-1">Campaign "Daily Traffic" - Starts in 1 hour</p>
-                  <p className="text-xs text-purple-600 mt-1">1 hour ago</p>
-                </div>
-                <SafeIcon icon={FiClock} className="w-4 h-4 text-purple-600 mt-1" />
-              </div>
-              
-              <div className="text-center pt-4">
-                <Link 
-                  to="/analytics" 
-                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                >
-                  View all activity →
-                </Link>
-              </div>
+              )}
             </div>
           </div>
 
