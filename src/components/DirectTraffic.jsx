@@ -4,8 +4,12 @@ import SafeIcon from '../common/SafeIcon';
 import api from '../api';           // must export startRun() and health()
 import CONFIG from '../config';     // must export { API_BASE, REQUEST_TIMEOUT_MS }
 import CampaignHistory from './CampaignHistory';
+import { useAuth } from '../lib/authContext';
+import { useSubscription } from '../lib/subscriptionContext';
 
 function DirectTraffic() {
+  const { user } = useAuth();
+  const { subscription, updateSubscription } = useSubscription();
   const [targetUrl, setTargetUrl] = useState('https://www.yourdomain.com');
   const [visitors, setVisitors]   = useState(10);
   const [durationMin, setDurationMin] = useState(0.5); // UI input in minutes (default 30 sec = 0.5 min)
@@ -17,6 +21,41 @@ function DirectTraffic() {
   const [pollingInterval, setPollingInterval] = useState(null);
 
   const displayUrl = (CONFIG.API_BASE || '').replace(/^(https?:\/\/)/, '');
+
+  // Save campaign data when complete
+  const saveCampaignData = (results) => {
+    if (!user) return;
+
+    const completedVisits = results.completed || results.total || visitors;
+    
+    // Save campaign to localStorage
+    const campaignData = {
+      id: campaignInfo.jobId,
+      type: 'direct',
+      url: targetUrl,
+      visitors: completedVisits,
+      duration: durationMin,
+      status: 'completed',
+      timestamp: new Date().toISOString(),
+      results: results
+    };
+
+    // Get existing campaigns
+    const existingCampaigns = JSON.parse(localStorage.getItem(`campaigns_${user.id}`) || '[]');
+    existingCampaigns.unshift(campaignData);
+    localStorage.setItem(`campaigns_${user.id}`, JSON.stringify(existingCampaigns));
+
+    // Update subscription usage
+    if (subscription && updateSubscription) {
+      const newUsedVisits = (subscription.usedVisits || 0) + completedVisits;
+      updateSubscription({
+        ...subscription,
+        usedVisits: newUsedVisits
+      });
+    }
+
+    console.log('Campaign saved:', campaignData);
+  };
 
   // Poll for campaign results
   useEffect(() => {
@@ -30,6 +69,8 @@ function DirectTraffic() {
             if (results.completed >= results.total || results.status === 'completed') {
               setIsRunning(false);
               clearInterval(interval);
+              // Save campaign data
+              saveCampaignData(results);
             }
           }
         } catch (err) {
@@ -40,7 +81,7 @@ function DirectTraffic() {
       setPollingInterval(interval);
       return () => clearInterval(interval);
     }
-  }, [campaignInfo?.jobId, isRunning]);
+  }, [campaignInfo?.jobId, isRunning, user, subscription]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
