@@ -105,36 +105,36 @@ const DomainAnalytics = () => {
       </div>
 
       {/* Analytics Results */}
-      {analytics && analytics.overview && (
+      {analytics && (
         <div className="space-y-6">
           {/* Overview Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <MetricCard
-              title="Organic Keywords"
-              value={analytics.overview.organicKeywords?.toLocaleString() || '0'}
+              title="Total Keywords"
+              value={analytics.totalKeywords?.toLocaleString() || '0'}
               subtitle="Ranking keywords"
               icon={FiTarget}
               color="bg-blue-500"
             />
             <MetricCard
-              title="Organic Traffic"
-              value={analytics.overview.organicTraffic?.toLocaleString() || '0'}
-              subtitle="Monthly visits"
+              title="Top Keywords"
+              value={analytics.topKeywords?.length || '0'}
+              subtitle="Showing top results"
               icon={FiTrendingUp}
               color="bg-green-500"
             />
             <MetricCard
-              title="Visibility Score"
-              value={analytics.overview.visibility || '0'}
-              subtitle="Out of 100"
-              icon={FiGlobe}
+              title="Competitors"
+              value={analytics.competitors?.length || '0'}
+              subtitle="Top competitors"
+              icon={FiUsers}
               color="bg-purple-500"
             />
             <MetricCard
-              title="Backlinks"
-              value={analytics.backlinks?.backlinks?.toLocaleString() || '0'}
-              subtitle="Total backlinks"
-              icon={FiLink}
+              title="Domain"
+              value={analytics.domain || 'N/A'}
+              subtitle="Analyzed domain"
+              icon={FiGlobe}
               color="bg-orange-500"
             />
           </div>
