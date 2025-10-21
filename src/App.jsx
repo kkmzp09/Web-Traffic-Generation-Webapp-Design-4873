@@ -23,6 +23,7 @@ import CryptoPaymentPage from './pages/CryptoPaymentPage.jsx';
 import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx';
 import ResetPasswordPage from './pages/ResetPasswordPage.jsx';
 import Invoice from './components/Invoice';
+import DomainAnalytics from './components/DomainAnalytics';
 
 // --- Auth gate that matches your current context (user + loading) ---
 function RequireAuth({ children }) {
@@ -82,6 +83,7 @@ function AppShell() {
           <Route path="/direct-traffic" element={<RequireAuth><SubscriptionGuard><DirectTraffic /></SubscriptionGuard></RequireAuth>} />
           <Route path="/seo-traffic" element={<RequireAuth><SubscriptionGuard><SeoTraffic /></SubscriptionGuard></RequireAuth>} />
           <Route path="/analytics" element={<RequireAuth><Analytics /></RequireAuth>} />
+          <Route path="/domain-analytics" element={<RequireAuth><DomainAnalytics /></RequireAuth>} />
           <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
           <Route path="/invoice" element={<RequireAuth><Invoice /></RequireAuth>} />
         </Route>

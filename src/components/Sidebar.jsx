@@ -6,7 +6,7 @@ import * as FiIcons from 'react-icons/fi';
 import { useAuth } from '../lib/authContext';
 
 const {
-  FiHome, FiTrendingUp, FiSettings, FiFileText, FiZap, FiSearch, FiUser, FiLogOut
+  FiHome, FiTrendingUp, FiSettings, FiFileText, FiZap, FiSearch, FiUser, FiLogOut, FiBarChart2
 } = FiIcons;
 
 export default function Sidebar() {
@@ -18,6 +18,7 @@ export default function Sidebar() {
     { name: 'Dashboard', href: '/dashboard', icon: FiHome, description: 'Overview & analytics' },
     { name: 'Direct Traffic', href: '/direct-traffic', icon: FiZap, description: 'Run direct campaigns' },
     { name: 'SEO Traffic', href: '/seo-traffic', icon: FiSearch, description: 'Run SEO campaigns' },
+    { name: 'Domain Analytics', href: '/domain-analytics', icon: FiBarChart2, description: 'SEO insights & data' },
     { name: 'Settings', href: '/settings', icon: FiSettings, description: 'Profile management' },
     { name: 'Invoice', href: '/invoice', icon: FiFileText, description: 'Billing & invoices' },
   ];
