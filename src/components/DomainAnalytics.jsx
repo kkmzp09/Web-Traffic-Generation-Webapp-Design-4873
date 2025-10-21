@@ -24,7 +24,8 @@ const DomainAnalytics = () => {
     setAnalytics(null);
 
     try {
-      const response = await fetch('https://api.organitrafficboost.com/api/seo/domain-analytics', {
+      const apiBase = import.meta.env.VITE_API_BASE || 'https://api.organitrafficboost.com';
+      const response = await fetch(`${apiBase}/api/seo/domain-analytics`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ domain: domain.replace(/^https?:\/\//, '').replace(/\/$/, '') }),
