@@ -7,10 +7,22 @@ const DATAFORSEO_LOGIN = process.env.DATAFORSEO_LOGIN;
 const DATAFORSEO_PASSWORD = process.env.DATAFORSEO_PASSWORD;
 const DATAFORSEO_API_BASE = 'https://api.dataforseo.com';
 
+// Check credentials on startup
+if (!DATAFORSEO_LOGIN || !DATAFORSEO_PASSWORD) {
+  console.warn('⚠️  DATAFORSEO_LOGIN or DATAFORSEO_PASSWORD not set in .env');
+  console.warn('   DataForSEO features will return mock data');
+}
+
 // Basic Auth for DataForSEO
 const authHeader = () => {
+  if (!DATAFORSEO_LOGIN || !DATAFORSEO_PASSWORD) {
+    return {};
+  }
   const credentials = Buffer.from(`${DATAFORSEO_LOGIN}:${DATAFORSEO_PASSWORD}`).toString('base64');
-  return { Authorization: `Basic ${credentials}` };
+  return { 
+    'Authorization': `Basic ${credentials}`,
+    'Content-Type': 'application/json'
+  };
 };
 
 // ============================================
@@ -18,6 +30,24 @@ const authHeader = () => {
 // ============================================
 
 export async function getDomainOverview(domain, location = 'United States') {
+  // Return mock data if credentials not set
+  if (!DATAFORSEO_LOGIN || !DATAFORSEO_PASSWORD) {
+    return {
+      success: true,
+      data: {
+        domain: domain,
+        metrics: {},
+        organicKeywords: 1250,
+        organicTraffic: 5000,
+        organicCost: 2500,
+        paidKeywords: 50,
+        paidTraffic: 500,
+        visibility: 75,
+        isMockData: true
+      }
+    };
+  }
+
   try {
     const response = await axios.post(
       `${DATAFORSEO_API_BASE}/v3/dataforseo_labs/google/domain_overview/live`,
