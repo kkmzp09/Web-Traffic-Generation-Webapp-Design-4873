@@ -3,26 +3,38 @@
 
 import axios from 'axios';
 
+const DATAFORSEO_API_KEY = process.env.DATAFORSEO_API_KEY;
 const DATAFORSEO_LOGIN = process.env.DATAFORSEO_LOGIN;
 const DATAFORSEO_PASSWORD = process.env.DATAFORSEO_PASSWORD;
 const DATAFORSEO_API_BASE = 'https://api.dataforseo.com';
 
 // Check credentials on startup
-if (!DATAFORSEO_LOGIN || !DATAFORSEO_PASSWORD) {
-  console.warn('⚠️  DATAFORSEO_LOGIN or DATAFORSEO_PASSWORD not set in .env');
+if (!DATAFORSEO_API_KEY && (!DATAFORSEO_LOGIN || !DATAFORSEO_PASSWORD)) {
+  console.warn('⚠️  DATAFORSEO_API_KEY or DATAFORSEO_LOGIN/PASSWORD not set in .env');
   console.warn('   DataForSEO features will return mock data');
 }
 
-// Basic Auth for DataForSEO
+// Auth header for DataForSEO - supports both API Key and Basic Auth
 const authHeader = () => {
-  if (!DATAFORSEO_LOGIN || !DATAFORSEO_PASSWORD) {
-    return {};
+  // Option 1: API Key (preferred)
+  if (DATAFORSEO_API_KEY) {
+    return { 
+      'Authorization': `Bearer ${DATAFORSEO_API_KEY}`,
+      'Content-Type': 'application/json'
+    };
   }
-  const credentials = Buffer.from(`${DATAFORSEO_LOGIN}:${DATAFORSEO_PASSWORD}`).toString('base64');
-  return { 
-    'Authorization': `Basic ${credentials}`,
-    'Content-Type': 'application/json'
-  };
+  
+  // Option 2: Basic Auth (login + password)
+  if (DATAFORSEO_LOGIN && DATAFORSEO_PASSWORD) {
+    const credentials = Buffer.from(`${DATAFORSEO_LOGIN}:${DATAFORSEO_PASSWORD}`).toString('base64');
+    return { 
+      'Authorization': `Basic ${credentials}`,
+      'Content-Type': 'application/json'
+    };
+  }
+  
+  // No credentials
+  return {};
 };
 
 // ============================================
@@ -31,7 +43,7 @@ const authHeader = () => {
 
 export async function getDomainOverview(domain, location = 'United States') {
   // Return mock data if credentials not set
-  if (!DATAFORSEO_LOGIN || !DATAFORSEO_PASSWORD) {
+  if (!DATAFORSEO_API_KEY && (!DATAFORSEO_LOGIN || !DATAFORSEO_PASSWORD)) {
     return {
       success: true,
       data: {
