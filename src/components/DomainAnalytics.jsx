@@ -22,9 +22,14 @@ const DomainAnalytics = () => {
   // Load history and stats on mount
   useEffect(() => {
     const userId = user?.id || user?.userId;
+    console.log('DomainAnalytics mounted, user:', user);
+    console.log('User ID:', userId);
     if (userId) {
+      console.log('Loading history and stats...');
       loadHistory();
       loadStats();
+    } else {
+      console.log('No user ID found, skipping history load');
     }
   }, [user]);
 
@@ -35,11 +40,16 @@ const DomainAnalytics = () => {
     setHistoryLoading(true);
     try {
       const apiBase = import.meta.env.VITE_API_BASE || 'https://api.organitrafficboost.com';
+      console.log('Fetching history from:', `${apiBase}/api/seo/analytics-history?userId=${userId}&limit=10`);
       const response = await fetch(`${apiBase}/api/seo/analytics-history?userId=${userId}&limit=10`);
       const data = await response.json();
+      console.log('History response:', data);
       
       if (data.success) {
+        console.log('Setting history:', data.analyses);
         setHistory(data.analyses || []);
+      } else {
+        console.log('History fetch failed:', data.error);
       }
     } catch (err) {
       console.error('Load History Error:', err);
