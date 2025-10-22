@@ -1,17 +1,66 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
+import { useAuth } from '../context/AuthContext';
 
 const { 
   FiSearch, FiTrendingUp, FiTarget, FiGlobe, FiBarChart2, FiLink, 
-  FiUsers, FiLoader, FiAlertCircle, FiCheckCircle 
+  FiUsers, FiLoader, FiAlertCircle, FiCheckCircle, FiClock, FiTrash2, FiRefreshCw 
 } = FiIcons;
 
 const DomainAnalytics = () => {
+  const { user } = useAuth();
   const [domain, setDomain] = useState('');
   const [loading, setLoading] = useState(false);
   const [analytics, setAnalytics] = useState(null);
   const [error, setError] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [showHistory, setShowHistory] = useState(true);
+  const [stats, setStats] = useState(null);
+
+  // Load history and stats on mount
+  useEffect(() => {
+    if (user?.userId) {
+      loadHistory();
+      loadStats();
+    }
+  }, [user]);
+
+  const loadHistory = async () => {
+    if (!user?.userId) return;
+    
+    setHistoryLoading(true);
+    try {
+      const apiBase = import.meta.env.VITE_API_BASE || 'https://api.organitrafficboost.com';
+      const response = await fetch(`${apiBase}/api/seo/analytics-history?userId=${user.userId}&limit=10`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setHistory(data.analyses || []);
+      }
+    } catch (err) {
+      console.error('Load History Error:', err);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  const loadStats = async () => {
+    if (!user?.userId) return;
+    
+    try {
+      const apiBase = import.meta.env.VITE_API_BASE || 'https://api.organitrafficboost.com';
+      const response = await fetch(`${apiBase}/api/seo/analytics-stats?userId=${user.userId}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        setStats(data.stats);
+      }
+    } catch (err) {
+      console.error('Load Stats Error:', err);
+    }
+  };
 
   const analyzeDomain = async () => {
     if (!domain) {
@@ -28,13 +77,20 @@ const DomainAnalytics = () => {
       const response = await fetch(`${apiBase}/api/seo/domain-analytics`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ domain: domain.replace(/^https?:\/\//, '').replace(/\/$/, '') }),
+        body: JSON.stringify({ 
+          domain: domain.replace(/^https?:\/\//, '').replace(/\/$/, ''),
+          userId: user?.userId,
+          saveResult: true
+        }),
       });
 
       const data = await response.json();
 
       if (data.success) {
         setAnalytics(data);
+        // Reload history to show new analysis
+        loadHistory();
+        loadStats();
       } else {
         setError(data.error || 'Failed to fetch analytics');
       }
@@ -43,6 +99,58 @@ const DomainAnalytics = () => {
       console.error('Analytics Error:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadSavedAnalysis = async (analysisId) => {
+    setLoading(true);
+    try {
+      const apiBase = import.meta.env.VITE_API_BASE || 'https://api.organitrafficboost.com';
+      const response = await fetch(`${apiBase}/api/seo/analysis/${analysisId}?userId=${user.userId}`);
+      const data = await response.json();
+      
+      if (data.success && data.analysis) {
+        // Convert saved analysis to display format
+        const savedData = {
+          success: true,
+          domain: data.analysis.domain,
+          totalKeywords: data.analysis.total_keywords,
+          topKeywords: data.analysis.top_keywords,
+          competitors: data.analysis.competitors,
+          backlinks: data.analysis.backlinks,
+          overview: {
+            organicTraffic: data.analysis.organic_traffic,
+            visibility: data.analysis.visibility_score
+          },
+          analyzedAt: data.analysis.analyzed_at,
+          fromHistory: true
+        };
+        setAnalytics(savedData);
+        setDomain(data.analysis.domain);
+      }
+    } catch (err) {
+      console.error('Load Saved Analysis Error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteAnalysis = async (analysisId) => {
+    if (!confirm('Are you sure you want to delete this analysis?')) return;
+    
+    try {
+      const apiBase = import.meta.env.VITE_API_BASE || 'https://api.organitrafficboost.com';
+      const response = await fetch(`${apiBase}/api/seo/analysis/${analysisId}?userId=${user.userId}`, {
+        method: 'DELETE'
+      });
+      const data = await response.json();
+      
+      if (data.success) {
+        loadHistory();
+        loadStats();
+      }
+    } catch (err) {
+      console.error('Delete Analysis Error:', err);
     }
   };
 
@@ -62,6 +170,87 @@ const DomainAnalytics = () => {
           </div>
         </div>
       </div>
+
+      {/* Stats Cards */}
+      {stats && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <div className="flex items-center gap-3">
+              <SafeIcon icon={FiGlobe} className="w-8 h-8 text-blue-600" />
+              <div>
+                <p className="text-2xl font-bold text-gray-900">{stats.total_domains || 0}</p>
+                <p className="text-sm text-gray-600">Domains Analyzed</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <div className="flex items-center gap-3">
+              <SafeIcon icon={FiBarChart2} className="w-8 h-8 text-green-600" />
+              <div>
+                <p className="text-2xl font-bold text-gray-900">{stats.total_analyses || 0}</p>
+                <p className="text-sm text-gray-600">Total Analyses</p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+            <div className="flex items-center gap-3">
+              <SafeIcon icon={FiClock} className="w-8 h-8 text-purple-600" />
+              <div>
+                <p className="text-sm font-medium text-gray-900">
+                  {stats.last_analysis ? new Date(stats.last_analysis).toLocaleDateString() : 'N/A'}
+                </p>
+                <p className="text-sm text-gray-600">Last Analysis</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Recent History */}
+      {history.length > 0 && showHistory && (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <SafeIcon icon={FiClock} className="w-5 h-5" />
+              Recent Analyses
+            </h2>
+            <button
+              onClick={() => setShowHistory(false)}
+              className="text-sm text-gray-500 hover:text-gray-700"
+            >
+              Hide
+            </button>
+          </div>
+          <div className="space-y-2">
+            {history.slice(0, 5).map((item) => (
+              <div
+                key={item.id}
+                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
+                onClick={() => loadSavedAnalysis(item.id)}
+              >
+                <div className="flex-1">
+                  <p className="font-medium text-gray-900">{item.domain}</p>
+                  <p className="text-sm text-gray-500">
+                    {item.total_keywords?.toLocaleString()} keywords • 
+                    {new Date(item.analyzed_at).toLocaleDateString()} {new Date(item.analyzed_at).toLocaleTimeString()}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteAnalysis(item.id);
+                    }}
+                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  >
+                    <SafeIcon icon={FiTrash2} className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Search Box */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
@@ -107,6 +296,35 @@ const DomainAnalytics = () => {
       {/* Analytics Results */}
       {analytics && (
         <div className="space-y-6">
+          {/* Result Header with Badge */}
+          {analytics.fromHistory && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <SafeIcon icon={FiClock} className="w-5 h-5 text-blue-600" />
+                <div>
+                  <p className="font-medium text-blue-900">Viewing Saved Analysis</p>
+                  <p className="text-sm text-blue-700">
+                    Analyzed on {new Date(analytics.analyzedAt).toLocaleDateString()} at {new Date(analytics.analyzedAt).toLocaleTimeString()}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => analyzeDomain()}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium flex items-center gap-2"
+              >
+                <SafeIcon icon={FiRefreshCw} className="w-4 h-4" />
+                Re-analyze
+              </button>
+            </div>
+          )}
+          
+          {analytics.saved && !analytics.fromHistory && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-2">
+              <SafeIcon icon={FiCheckCircle} className="w-5 h-5 text-green-600" />
+              <p className="text-sm text-green-800">Analysis saved successfully!</p>
+            </div>
+          )}
+
           {/* Overview Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <MetricCard

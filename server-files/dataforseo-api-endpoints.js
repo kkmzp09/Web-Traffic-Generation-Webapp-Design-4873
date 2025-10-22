@@ -10,6 +10,16 @@ import {
   getFullDomainAnalytics,
 } from './dataforseo-service.js';
 
+import {
+  saveAnalyticsResult,
+  getUserAnalyticsHistory,
+  getDomainHistory,
+  getAnalysisById,
+  deleteAnalysis,
+  getUserAnalyticsStats,
+  getLatestAnalysis
+} from './domain-analytics-db.js';
+
 // ============================================
 // API ENDPOINTS
 // ============================================
@@ -101,16 +111,25 @@ export function setupDataForSEORoutes(app) {
     }
   });
 
-  // Full Domain Analytics (Combined)
+  // Full Domain Analytics (Combined) - Now saves to database
   app.post('/api/seo/domain-analytics', async (req, res) => {
     try {
-      const { domain, location } = req.body;
+      const { domain, location, userId, saveResult = true } = req.body;
       
       if (!domain) {
         return res.status(400).json({ success: false, error: 'Domain is required' });
       }
       
+      // Fetch analytics from DataForSEO
       const result = await getFullDomainAnalytics(domain, location);
+      
+      // Save to database if requested and userId provided
+      if (saveResult && userId && result.success) {
+        const saveResponse = await saveAnalyticsResult(userId, domain, result);
+        result.savedAnalysisId = saveResponse.id;
+        result.saved = saveResponse.success;
+      }
+      
       res.json(result);
     } catch (error) {
       console.error('Domain Analytics API Error:', error);
@@ -118,7 +137,114 @@ export function setupDataForSEORoutes(app) {
     }
   });
 
+  // Get user's analytics history
+  app.get('/api/seo/analytics-history', async (req, res) => {
+    try {
+      const { userId, limit, offset } = req.query;
+      
+      if (!userId) {
+        return res.status(400).json({ success: false, error: 'User ID is required' });
+      }
+      
+      const result = await getUserAnalyticsHistory(userId, parseInt(limit) || 50, parseInt(offset) || 0);
+      res.json(result);
+    } catch (error) {
+      console.error('Analytics History API Error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // Get domain-specific history
+  app.get('/api/seo/domain-history/:domain', async (req, res) => {
+    try {
+      const { domain } = req.params;
+      const { userId, limit } = req.query;
+      
+      if (!userId) {
+        return res.status(400).json({ success: false, error: 'User ID is required' });
+      }
+      
+      const result = await getDomainHistory(userId, domain, parseInt(limit) || 10);
+      res.json(result);
+    } catch (error) {
+      console.error('Domain History API Error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // Get single analysis by ID
+  app.get('/api/seo/analysis/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { userId } = req.query;
+      
+      if (!userId) {
+        return res.status(400).json({ success: false, error: 'User ID is required' });
+      }
+      
+      const result = await getAnalysisById(userId, id);
+      res.json(result);
+    } catch (error) {
+      console.error('Get Analysis API Error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // Delete analysis
+  app.delete('/api/seo/analysis/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { userId } = req.query;
+      
+      if (!userId) {
+        return res.status(400).json({ success: false, error: 'User ID is required' });
+      }
+      
+      const result = await deleteAnalysis(userId, id);
+      res.json(result);
+    } catch (error) {
+      console.error('Delete Analysis API Error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // Get user analytics stats
+  app.get('/api/seo/analytics-stats', async (req, res) => {
+    try {
+      const { userId } = req.query;
+      
+      if (!userId) {
+        return res.status(400).json({ success: false, error: 'User ID is required' });
+      }
+      
+      const result = await getUserAnalyticsStats(userId);
+      res.json(result);
+    } catch (error) {
+      console.error('Analytics Stats API Error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
+  // Get latest analysis for a domain
+  app.get('/api/seo/latest-analysis/:domain', async (req, res) => {
+    try {
+      const { domain } = req.params;
+      const { userId } = req.query;
+      
+      if (!userId) {
+        return res.status(400).json({ success: false, error: 'User ID is required' });
+      }
+      
+      const result = await getLatestAnalysis(userId, domain);
+      res.json(result);
+    } catch (error) {
+      console.error('Latest Analysis API Error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
   console.log('✅ DataForSEO API routes registered');
+  console.log('✅ Analytics history routes registered');
 }
 
 // ============================================
