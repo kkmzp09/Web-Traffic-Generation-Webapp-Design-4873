@@ -87,27 +87,37 @@ export async function logout() {
 export async function getCurrentUser() {
   // 1) Return cached user if token present
   const session = loadSession();
-  if (session?.user && session?.token) return session.user;
-
-  // 2) Optionally verify by calling /auth/me (if you exposed it)
-  try {
-    const res = await fetch(`${AUTH_API_BASE}/auth/me`, {
-      method: 'GET',
-      headers: authHeaders(session?.token),
-    });
-    if (res.ok) {
-      const data = await res.json();
-      // optional: refresh local cache
-      saveSession({
-        user: data.user,
-        token: session?.token,
-        expiresAt: session?.expiresAt,
-      });
-      return data.user;
+  if (session?.user && session?.token) {
+    // Check if session is expired
+    if (session.expiresAt && new Date(session.expiresAt) > new Date()) {
+      return session.user;
     }
-  } catch {
-    // ignore
   }
+
+  // 2) Optionally verify by calling /auth/me (if endpoint exists)
+  if (session?.token) {
+    try {
+      const res = await fetch(`${AUTH_API_BASE}/auth/me`, {
+        method: 'GET',
+        headers: authHeaders(session?.token),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        // optional: refresh local cache
+        saveSession({
+          user: data.user,
+          token: session?.token,
+          expiresAt: session?.expiresAt,
+        });
+        return data.user;
+      }
+    } catch (err) {
+      // /auth/me endpoint doesn't exist or failed, fall back to cached session
+      console.log('Auth verification skipped, using cached session');
+      if (session?.user) return session.user;
+    }
+  }
+  
   return null;
 }
 
