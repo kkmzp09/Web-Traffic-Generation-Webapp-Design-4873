@@ -21,19 +21,21 @@ const DomainAnalytics = () => {
 
   // Load history and stats on mount
   useEffect(() => {
-    if (user?.userId) {
+    const userId = user?.id || user?.userId;
+    if (userId) {
       loadHistory();
       loadStats();
     }
   }, [user]);
 
   const loadHistory = async () => {
-    if (!user?.userId) return;
+    const userId = user?.id || user?.userId;
+    if (!userId) return;
     
     setHistoryLoading(true);
     try {
       const apiBase = import.meta.env.VITE_API_BASE || 'https://api.organitrafficboost.com';
-      const response = await fetch(`${apiBase}/api/seo/analytics-history?userId=${user.userId}&limit=10`);
+      const response = await fetch(`${apiBase}/api/seo/analytics-history?userId=${userId}&limit=10`);
       const data = await response.json();
       
       if (data.success) {
@@ -47,11 +49,12 @@ const DomainAnalytics = () => {
   };
 
   const loadStats = async () => {
-    if (!user?.userId) return;
+    const userId = user?.id || user?.userId;
+    if (!userId) return;
     
     try {
       const apiBase = import.meta.env.VITE_API_BASE || 'https://api.organitrafficboost.com';
-      const response = await fetch(`${apiBase}/api/seo/analytics-stats?userId=${user.userId}`);
+      const response = await fetch(`${apiBase}/api/seo/analytics-stats?userId=${userId}`);
       const data = await response.json();
       
       if (data.success) {
@@ -79,7 +82,7 @@ const DomainAnalytics = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           domain: domain.replace(/^https?:\/\//, '').replace(/\/$/, ''),
-          userId: user?.userId,
+          userId: user?.id || user?.userId,
           saveResult: true
         }),
       });
@@ -105,8 +108,9 @@ const DomainAnalytics = () => {
   const loadSavedAnalysis = async (analysisId) => {
     setLoading(true);
     try {
+      const userId = user?.id || user?.userId;
       const apiBase = import.meta.env.VITE_API_BASE || 'https://api.organitrafficboost.com';
-      const response = await fetch(`${apiBase}/api/seo/analysis/${analysisId}?userId=${user.userId}`);
+      const response = await fetch(`${apiBase}/api/seo/analysis/${analysisId}?userId=${userId}`);
       const data = await response.json();
       
       if (data.success && data.analysis) {
@@ -139,8 +143,9 @@ const DomainAnalytics = () => {
     if (!confirm('Are you sure you want to delete this analysis?')) return;
     
     try {
+      const userId = user?.id || user?.userId;
       const apiBase = import.meta.env.VITE_API_BASE || 'https://api.organitrafficboost.com';
-      const response = await fetch(`${apiBase}/api/seo/analysis/${analysisId}?userId=${user.userId}`, {
+      const response = await fetch(`${apiBase}/api/seo/analysis/${analysisId}?userId=${userId}`, {
         method: 'DELETE'
       });
       const data = await response.json();
