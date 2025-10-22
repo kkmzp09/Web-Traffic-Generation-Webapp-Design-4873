@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../lib/authContext';
 
 const { 
   FiSearch, FiTrendingUp, FiTarget, FiGlobe, FiBarChart2, FiLink, 
