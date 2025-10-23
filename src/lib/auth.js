@@ -2,10 +2,12 @@
 // Frontend auth client that talks to the Linux Auth/DB API
 // Requires: VITE_AUTH_API_BASE in .env (e.g. https://auth.organitrafficboost.com)
 
-const AUTH_API_BASE = import.meta.env?.VITE_AUTH_API_BASE;
+const AUTH_API_BASE = import.meta.env?.VITE_AUTH_API_BASE || 'https://auth.organitrafficboost.com';
 
-if (!AUTH_API_BASE) {
-  console.warn('VITE_AUTH_API_BASE is not set; login will fail with "failed to fetch".');
+console.log('🔍 AUTH_API_BASE loaded:', AUTH_API_BASE);
+
+if (!import.meta.env?.VITE_AUTH_API_BASE) {
+  console.warn('VITE_AUTH_API_BASE is not set; using fallback:', AUTH_API_BASE);
 }
 
 const STORAGE_KEY = 'authSession'; // { user, token, expiresAt }
