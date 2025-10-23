@@ -7,7 +7,7 @@ import { useAuth } from '../lib/authContext';
 
 const {
   FiHome, FiTrendingUp, FiSettings, FiFileText, FiZap, FiSearch, FiUser, FiLogOut, FiBarChart2,
-  FiTarget, FiCheckCircle, FiLink, FiActivity
+  FiTarget, FiCheckCircle, FiLink, FiActivity, FiCode
 } = FiIcons;
 
 export default function Sidebar() {
@@ -21,6 +21,7 @@ export default function Sidebar() {
     { name: 'SEO Traffic', href: '/seo-traffic', icon: FiSearch, description: 'Run SEO campaigns' },
     { name: 'Domain Analytics', href: '/domain-analytics', icon: FiBarChart2, description: 'SEO insights & data' },
     { name: 'SEO Automation', href: '/seo-dashboard', icon: FiActivity, description: 'AI-powered SEO fixes' },
+    { name: 'Widget Setup', href: '/widget-installation', icon: FiCode, description: 'Install auto-fix widget' },
     { name: 'Keyword Tracker', href: '/keyword-tracker', icon: FiTarget, description: 'Track keyword rankings' },
     { name: 'On-Page SEO', href: '/onpage-seo', icon: FiCheckCircle, description: 'Analyze & optimize pages' },
     { name: 'Settings', href: '/settings', icon: FiSettings, description: 'Profile management' },

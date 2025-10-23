@@ -303,36 +303,87 @@ router.post('/generate-fixes/:scanId', async (req, res) => {
 
 /**
  * POST /api/seo/apply-fix/:fixId
- * Mark a fix as applied (1-click apply)
+ * Apply fix via widget or mark as applied
  */
 router.post('/apply-fix/:fixId', async (req, res) => {
   try {
     const { fixId } = req.params;
-    const { method = 'one_click' } = req.body;
+    const { method = 'one_click', siteId } = req.body;
 
-    // Update fix as applied
-    await pool.query(
-      `UPDATE seo_fixes 
-       SET applied = true, 
-           applied_at = NOW(), 
-           applied_method = $1
-       WHERE id = $2`,
-      [method, fixId]
-    );
-
-    // Update related issue as fixed
-    await pool.query(
-      `UPDATE seo_issues 
-       SET fix_status = 'fixed', 
-           fixed_at = NOW()
-       WHERE id = (SELECT issue_id FROM seo_fixes WHERE id = $1)`,
+    // Get fix details
+    const fixResult = await pool.query(
+      `SELECT f.*, s.domain FROM seo_fixes f
+       JOIN seo_scans s ON f.scan_id = s.id
+       WHERE f.id = $1`,
       [fixId]
     );
 
-    res.json({
-      success: true,
-      message: 'Fix applied successfully'
-    });
+    if (fixResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'Fix not found'
+      });
+    }
+
+    const fix = fixResult.rows[0];
+
+    // Check if widget is installed for this domain
+    const widgetResult = await pool.query(
+      `SELECT * FROM widget_installations 
+       WHERE domain = $1 AND status = 'active'
+       LIMIT 1`,
+      [fix.domain]
+    );
+
+    if (widgetResult.rows.length > 0 && method !== 'manual') {
+      // Queue fix for widget application
+      const widget = widgetResult.rows[0];
+      
+      await pool.query(
+        `INSERT INTO widget_fix_queue 
+         (site_id, fix_id, fix_type, fix_data)
+         VALUES ($1, $2, $3, $4)`,
+        [
+          widget.site_id,
+          fixId,
+          fix.fix_type,
+          {
+            optimized_content: fix.optimized_content,
+            original_content: fix.original_content
+          }
+        ]
+      );
+
+      res.json({
+        success: true,
+        message: 'Fix queued for automatic application',
+        method: 'widget'
+      });
+    } else {
+      // Manual application - just mark as applied
+      await pool.query(
+        `UPDATE seo_fixes 
+         SET applied = true, 
+             applied_at = NOW(), 
+             applied_method = $1
+         WHERE id = $2`,
+        [method, fixId]
+      );
+
+      await pool.query(
+        `UPDATE seo_issues 
+         SET fix_status = 'fixed', 
+             fixed_at = NOW()
+         WHERE id = (SELECT issue_id FROM seo_fixes WHERE id = $1)`,
+        [fixId]
+      );
+
+      res.json({
+        success: true,
+        message: 'Fix marked as applied',
+        method: 'manual'
+      });
+    }
 
   } catch (error) {
     console.error('Apply fix error:', error);

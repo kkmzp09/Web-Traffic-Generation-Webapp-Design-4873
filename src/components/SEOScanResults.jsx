@@ -15,6 +15,7 @@ export default function SEOScanResults() {
   const [loading, setLoading] = useState(true);
   const [generatingFixes, setGeneratingFixes] = useState(false);
   const [applyingFix, setApplyingFix] = useState(null);
+  const [applyingAll, setApplyingAll] = useState(false);
 
   useEffect(() => {
     if (scanId) {
@@ -91,6 +92,53 @@ export default function SEOScanResults() {
       alert('Failed to apply fix');
     } finally {
       setApplyingFix(null);
+    }
+  };
+
+  const applyAllFixes = async () => {
+    const unappliedFixes = fixes.filter(f => !f.applied);
+    
+    if (unappliedFixes.length === 0) {
+      alert('No fixes to apply!');
+      return;
+    }
+
+    if (!confirm(`Apply all ${unappliedFixes.length} fix(es) at once?`)) return;
+
+    try {
+      setApplyingAll(true);
+      let successCount = 0;
+      let failCount = 0;
+
+      for (const fix of unappliedFixes) {
+        try {
+          const response = await fetch(
+            `https://api.organitrafficboost.com/api/seo/apply-fix/${fix.id}`,
+            { 
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ method: 'bulk_apply' })
+            }
+          );
+          const data = await response.json();
+          
+          if (data.success) {
+            successCount++;
+          } else {
+            failCount++;
+          }
+        } catch (error) {
+          failCount++;
+        }
+      }
+
+      alert(`Applied ${successCount} fix(es) successfully!${failCount > 0 ? ` ${failCount} failed.` : ''}`);
+      loadScanResults();
+    } catch (error) {
+      console.error('Error applying all fixes:', error);
+      alert('Failed to apply fixes');
+    } finally {
+      setApplyingAll(false);
     }
   };
 
@@ -220,7 +268,28 @@ export default function SEOScanResults() {
         {/* AI Fixes */}
         {fixes.length > 0 && (
           <div className="bg-white rounded-2xl shadow-lg p-6 mb-8 border border-green-100">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">AI-Generated Fixes</h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">AI-Generated Fixes</h2>
+              {fixes.filter(f => !f.applied).length > 0 && (
+                <button
+                  onClick={applyAllFixes}
+                  disabled={applyingAll}
+                  className="px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 flex items-center gap-2 font-semibold transition-all shadow-md"
+                >
+                  {applyingAll ? (
+                    <>
+                      <FiRefreshCw className="w-5 h-5 animate-spin" />
+                      Applying All...
+                    </>
+                  ) : (
+                    <>
+                      <FiCheckCircle className="w-5 h-5" />
+                      Apply All Fixes ({fixes.filter(f => !f.applied).length})
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
             <div className="space-y-4">
               {fixes.map((fix) => (
                 <FixCard
