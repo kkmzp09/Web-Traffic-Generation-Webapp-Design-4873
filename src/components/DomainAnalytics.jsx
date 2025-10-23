@@ -257,7 +257,7 @@ const DomainAnalytics = () => {
       )}
 
       {/* Recent History */}
-      {history.length > 0 && showHistory && (
+      {showHistory && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -287,6 +287,20 @@ const DomainAnalytics = () => {
               </button>
             </div>
           </div>
+          
+          {historyLoading ? (
+            <div className="text-center py-8">
+              <SafeIcon icon={FiLoader} className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-2" />
+              <p className="text-gray-600">Loading history...</p>
+            </div>
+          ) : history.length === 0 ? (
+            <div className="text-center py-8 bg-gray-50 rounded-lg">
+              <SafeIcon icon={FiClock} className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+              <p className="text-gray-600 font-medium">No analyses yet</p>
+              <p className="text-sm text-gray-500 mt-1">Analyze a domain to see it here</p>
+              <p className="text-xs text-gray-400 mt-2">Debug: User ID = {user?.id || user?.userId || 'Not found'}</p>
+            </div>
+          ) : (
           <div className="space-y-2">
             {history.slice(0, 5).map((item) => {
               const isSelected = selectedForComparison.find(a => a.id === item.id);
@@ -332,6 +346,7 @@ const DomainAnalytics = () => {
               );
             })}
           </div>
+          )}
         </div>
       )}
 
