@@ -72,7 +72,11 @@ export default function SEOScanResults() {
       setApplyingFix(fixId);
       const response = await fetch(
         `https://api.organitrafficboost.com/api/seo/apply-fix/${fixId}`,
-        { method: 'POST' }
+        { 
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ method: 'one_click' })
+        }
       );
       const data = await response.json();
 
