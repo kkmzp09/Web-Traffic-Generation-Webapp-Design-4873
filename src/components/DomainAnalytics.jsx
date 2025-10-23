@@ -3,11 +3,12 @@ import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
 import { useAuth } from '../lib/authContext';
 import { exportToCSV, exportToPDF } from '../utils/exportUtils';
+import DomainComparison from './DomainComparison';
 
 const { 
   FiSearch, FiTrendingUp, FiTarget, FiGlobe, FiBarChart2, FiLink, 
   FiUsers, FiLoader, FiAlertCircle, FiCheckCircle, FiClock, FiTrash2, FiRefreshCw,
-  FiDownload, FiFileText 
+  FiDownload, FiFileText, FiGitCompare 
 } = FiIcons;
 
 const DomainAnalytics = () => {
@@ -20,6 +21,8 @@ const DomainAnalytics = () => {
   const [historyLoading, setHistoryLoading] = useState(false);
   const [showHistory, setShowHistory] = useState(true);
   const [stats, setStats] = useState(null);
+  const [selectedForComparison, setSelectedForComparison] = useState([]);
+  const [showComparison, setShowComparison] = useState(false);
 
   // Load history and stats on mount
   useEffect(() => {
@@ -171,7 +174,37 @@ const DomainAnalytics = () => {
     }
   };
 
+  // Comparison functions
+  const toggleComparisonSelection = (analysis) => {
+    setSelectedForComparison(prev => {
+      const isSelected = prev.find(a => a.id === analysis.id);
+      if (isSelected) {
+        return prev.filter(a => a.id !== analysis.id);
+      } else if (prev.length < 3) {
+        return [...prev, analysis];
+      }
+      return prev;
+    });
+  };
+
+  const openComparison = () => {
+    if (selectedForComparison.length >= 2) {
+      setShowComparison(true);
+    }
+  };
+
   return (
+    <>
+      {showComparison && (
+        <DomainComparison
+          analyses={selectedForComparison}
+          onClose={() => {
+            setShowComparison(false);
+            setSelectedForComparison([]);
+          }}
+        />
+      )}
+      
     <div className="min-h-screen bg-gray-50 p-6">
       {/* Header */}
       <div className="mb-8">
@@ -230,27 +263,59 @@ const DomainAnalytics = () => {
             <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
               <SafeIcon icon={FiClock} className="w-5 h-5" />
               Recent Analyses
+              {selectedForComparison.length > 0 && (
+                <span className="text-sm font-normal text-blue-600">
+                  ({selectedForComparison.length} selected)
+                </span>
+              )}
             </h2>
-            <button
-              onClick={() => setShowHistory(false)}
-              className="text-sm text-gray-500 hover:text-gray-700"
-            >
-              Hide
-            </button>
+            <div className="flex items-center gap-2">
+              {selectedForComparison.length >= 2 && (
+                <button
+                  onClick={openComparison}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+                >
+                  <SafeIcon icon={FiGitCompare} className="w-4 h-4" />
+                  Compare ({selectedForComparison.length})
+                </button>
+              )}
+              <button
+                onClick={() => setShowHistory(false)}
+                className="text-sm text-gray-500 hover:text-gray-700"
+              >
+                Hide
+              </button>
+            </div>
           </div>
           <div className="space-y-2">
-            {history.slice(0, 5).map((item) => (
+            {history.slice(0, 5).map((item) => {
+              const isSelected = selectedForComparison.find(a => a.id === item.id);
+              return (
               <div
                 key={item.id}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer"
-                onClick={() => loadSavedAnalysis(item.id)}
+                className={`flex items-center justify-between p-3 rounded-lg transition-colors cursor-pointer ${
+                  isSelected ? 'bg-blue-50 border-2 border-blue-300' : 'bg-gray-50 hover:bg-gray-100'
+                }`}
               >
-                <div className="flex-1">
-                  <p className="font-medium text-gray-900">{item.domain}</p>
-                  <p className="text-sm text-gray-500">
-                    {item.total_keywords?.toLocaleString()} keywords • 
-                    {new Date(item.analyzed_at).toLocaleDateString()} {new Date(item.analyzed_at).toLocaleTimeString()}
-                  </p>
+                <div className="flex items-center gap-3 flex-1" onClick={() => loadSavedAnalysis(item.id)}>
+                  <input
+                    type="checkbox"
+                    checked={!!isSelected}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      toggleComparisonSelection(item);
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                    disabled={!isSelected && selectedForComparison.length >= 3}
+                  />
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">{item.domain}</p>
+                    <p className="text-sm text-gray-500">
+                      {item.total_keywords?.toLocaleString()} keywords • 
+                      {new Date(item.analyzed_at).toLocaleDateString()} {new Date(item.analyzed_at).toLocaleTimeString()}
+                    </p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -264,7 +329,8 @@ const DomainAnalytics = () => {
                   </button>
                 </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
@@ -490,6 +556,7 @@ const DomainAnalytics = () => {
         </div>
       )}
     </div>
+    </>
   );
 };
 
