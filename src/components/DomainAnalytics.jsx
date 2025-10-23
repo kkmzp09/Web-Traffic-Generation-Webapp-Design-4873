@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
 import { useAuth } from '../lib/authContext';
+import { exportToCSV, exportToPDF } from '../utils/exportUtils';
 
 const { 
   FiSearch, FiTrendingUp, FiTarget, FiGlobe, FiBarChart2, FiLink, 
-  FiUsers, FiLoader, FiAlertCircle, FiCheckCircle, FiClock, FiTrash2, FiRefreshCw 
+  FiUsers, FiLoader, FiAlertCircle, FiCheckCircle, FiClock, FiTrash2, FiRefreshCw,
+  FiDownload, FiFileText 
 } = FiIcons;
 
 const DomainAnalytics = () => {
@@ -337,6 +339,26 @@ const DomainAnalytics = () => {
             <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-2">
               <SafeIcon icon={FiCheckCircle} className="w-5 h-5 text-green-600" />
               <p className="text-sm text-green-800">Analysis saved successfully!</p>
+            </div>
+          )}
+
+          {/* Export Buttons */}
+          {analytics && (
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => exportToCSV(analytics, `${analytics.domain}-analytics`)}
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium text-gray-700"
+              >
+                <SafeIcon icon={FiDownload} className="w-4 h-4" />
+                Export CSV
+              </button>
+              <button
+                onClick={() => exportToPDF(analytics, `${analytics.domain}-analytics`)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+              >
+                <SafeIcon icon={FiFileText} className="w-4 h-4" />
+                Export PDF
+              </button>
             </div>
           )}
 
