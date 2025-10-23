@@ -32,6 +32,15 @@ class SEOAIFixer {
           case 'schema':
             fix = await this.generateSchemaFix(url, issue);
             break;
+          case 'content':
+            fix = await this.generateContentFix(url, issue);
+            break;
+          case 'headings':
+            fix = await this.generateH1Fix(url, issue);
+            break;
+          case 'links':
+            fix = await this.generateLinksFix(url, issue);
+            break;
           default:
             continue;
         }
@@ -189,6 +198,93 @@ Return ONLY valid JSON-LD schema markup, nothing else. Start with <script type="
     }
 
     return null;
+  }
+
+  /**
+   * Generate H1 heading
+   */
+  async generateH1Fix(url, issue) {
+    const prompt = `You are an SEO expert. Generate an optimized H1 heading for this webpage.
+
+URL: ${url}
+Issue: ${issue.description}
+
+Requirements:
+- 20-70 characters long
+- Include primary keyword
+- Clear and descriptive
+- Compelling and engaging
+- Accurately represents page content
+- Only ONE H1 per page
+
+Return ONLY the H1 heading text, nothing else.`;
+
+    const response = await this.callOpenAI(prompt);
+    const h1Text = response.trim();
+
+    return {
+      content: h1Text,
+      confidence: this.calculateConfidence(h1Text, 20, 70),
+      keywords: this.extractKeywords(h1Text)
+    };
+  }
+
+  /**
+   * Generate content expansion suggestions
+   */
+  async generateContentFix(url, issue) {
+    const currentWordCount = issue.current_value ? parseInt(issue.current_value) : 0;
+    
+    const prompt = `You are an SEO content expert. Generate content expansion suggestions for this thin content page.
+
+URL: ${url}
+Current Word Count: ${currentWordCount}
+Issue: ${issue.description}
+
+Provide 5 specific content suggestions to expand this page to at least 300 words:
+1. Main topic to cover
+2. Subtopics to include
+3. Questions to answer
+4. Examples or case studies
+5. Call-to-action ideas
+
+Format as a numbered list with brief explanations.`;
+
+    const response = await this.callOpenAI(prompt);
+    
+    return {
+      content: response.trim(),
+      confidence: 0.85,
+      keywords: []
+    };
+  }
+
+  /**
+   * Generate internal linking suggestions
+   */
+  async generateLinksFix(url, issue) {
+    const currentLinks = issue.current_value ? parseInt(issue.current_value) : 0;
+    
+    const prompt = `You are an SEO expert. Suggest internal linking opportunities for this page.
+
+URL: ${url}
+Current Internal Links: ${currentLinks}
+Issue: ${issue.description}
+
+Suggest 5 internal linking opportunities:
+1. Anchor text to use
+2. Type of page to link to (e.g., "related blog post", "product category page")
+3. Why this link helps SEO
+
+Format as a numbered list with clear recommendations.`;
+
+    const response = await this.callOpenAI(prompt);
+    
+    return {
+      content: response.trim(),
+      confidence: 0.80,
+      keywords: []
+    };
   }
 
   /**

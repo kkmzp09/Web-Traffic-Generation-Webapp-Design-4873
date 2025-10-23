@@ -256,7 +256,7 @@ router.post('/generate-fixes/:scanId', async (req, res) => {
       `SELECT * FROM seo_issues 
        WHERE scan_id = $1 
        AND severity IN ('critical', 'warning')
-       AND category IN ('title', 'meta', 'images', 'schema')
+       AND category IN ('title', 'meta', 'images', 'schema', 'headings', 'content', 'links')
        AND fix_status = 'pending'`,
       [scanId]
     );

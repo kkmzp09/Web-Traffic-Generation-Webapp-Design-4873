@@ -269,21 +269,29 @@ export default function SEOScanResults() {
 }
 
 function FixCard({ fix, applyFix, applying }) {
+  const isSuggestion = ['headings', 'content', 'links'].includes(fix.fix_type);
+  
   return (
     <div className="border border-green-200 rounded-lg p-6 bg-green-50">
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
-          <h3 className="font-semibold text-gray-900 mb-2 capitalize">{fix.fix_type} Optimization</h3>
+          <h3 className="font-semibold text-gray-900 mb-2 capitalize">
+            {fix.fix_type} {isSuggestion ? 'Suggestions' : 'Optimization'}
+          </h3>
           <div className="space-y-3">
-            {fix.original_content && (
+            {fix.original_content && !isSuggestion && (
               <div>
                 <span className="text-xs font-medium text-gray-500 uppercase">Original:</span>
                 <p className="text-sm text-gray-700 bg-white p-2 rounded mt-1">{fix.original_content}</p>
               </div>
             )}
             <div>
-              <span className="text-xs font-medium text-green-600 uppercase">Optimized:</span>
-              <p className="text-sm text-gray-900 bg-white p-2 rounded mt-1 font-medium">{fix.optimized_content}</p>
+              <span className="text-xs font-medium text-green-600 uppercase">
+                {isSuggestion ? 'AI Suggestions:' : 'Optimized:'}
+              </span>
+              <div className="text-sm text-gray-900 bg-white p-3 rounded mt-1 whitespace-pre-line">
+                {fix.optimized_content}
+              </div>
             </div>
           </div>
           <div className="flex items-center gap-4 mt-3 text-xs text-gray-600">
@@ -306,7 +314,7 @@ function FixCard({ fix, applyFix, applying }) {
             ) : (
               <>
                 <FiCheckCircle className="w-4 h-4" />
-                Apply Fix
+                {isSuggestion ? 'Mark as Reviewed' : 'Apply Fix'}
               </>
             )}
           </button>
@@ -314,7 +322,7 @@ function FixCard({ fix, applyFix, applying }) {
         {fix.applied && (
           <div className="ml-4 px-4 py-2 bg-gray-100 text-gray-600 rounded-lg flex items-center gap-2">
             <FiCheckCircle className="w-4 h-4" />
-            Applied
+            {isSuggestion ? 'Reviewed' : 'Applied'}
           </div>
         )}
       </div>

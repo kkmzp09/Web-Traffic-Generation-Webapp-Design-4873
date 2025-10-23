@@ -161,7 +161,7 @@ class SEOScanner {
     
     if (h1s.length === 0) {
       results.issues.push({
-        category: 'content',
+        category: 'headings',
         severity: 'critical',
         title: 'Missing H1 Heading',
         description: 'Your page is missing an H1 heading, which is important for SEO structure.',
