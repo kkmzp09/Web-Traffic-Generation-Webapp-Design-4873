@@ -1,0 +1,345 @@
+// server-files/seo-ai-fixer.js
+// AI-Powered SEO Fix Generator using OpenAI
+
+const axios = require('axios');
+
+class SEOAIFixer {
+  constructor() {
+    this.openaiApiKey = process.env.OPENAI_API_KEY;
+    this.model = 'gpt-4o-mini'; // Cost-effective model
+  }
+
+  /**
+   * Generate fixes for multiple issues
+   */
+  async generateFixes(url, issues) {
+    const fixes = [];
+
+    for (const issue of issues) {
+      try {
+        let fix = null;
+
+        switch (issue.category) {
+          case 'title':
+            fix = await this.generateTitleFix(url, issue);
+            break;
+          case 'meta':
+            fix = await this.generateMetaDescriptionFix(url, issue);
+            break;
+          case 'images':
+            fix = await this.generateAltTextFix(url, issue);
+            break;
+          case 'schema':
+            fix = await this.generateSchemaFix(url, issue);
+            break;
+          default:
+            continue;
+        }
+
+        if (fix) {
+          fixes.push({
+            issueId: issue.id,
+            fixType: issue.category,
+            originalContent: issue.current_value,
+            optimizedContent: fix.content,
+            aiModel: this.model,
+            confidenceScore: fix.confidence,
+            keywords: fix.keywords || []
+          });
+        }
+      } catch (error) {
+        console.error(`Error generating fix for issue ${issue.id}:`, error.message);
+      }
+    }
+
+    return fixes;
+  }
+
+  /**
+   * Generate optimized title tag
+   */
+  async generateTitleFix(url, issue) {
+    const currentTitle = issue.current_value || '';
+    
+    const prompt = `You are an SEO expert. Generate an optimized title tag for this webpage.
+
+URL: ${url}
+Current Title: ${currentTitle || 'None'}
+Issue: ${issue.description}
+
+Requirements:
+- 50-60 characters long
+- Include primary keyword naturally
+- Compelling and click-worthy
+- Unique and descriptive
+- Front-load important keywords
+
+Return ONLY the optimized title tag text, nothing else.`;
+
+    const response = await this.callOpenAI(prompt);
+    const optimizedTitle = response.trim();
+
+    // Extract potential keywords
+    const keywords = this.extractKeywords(optimizedTitle);
+
+    return {
+      content: optimizedTitle,
+      confidence: this.calculateConfidence(optimizedTitle, 50, 60),
+      keywords
+    };
+  }
+
+  /**
+   * Generate optimized meta description
+   */
+  async generateMetaDescriptionFix(url, issue) {
+    const currentMeta = issue.current_value || '';
+    
+    const prompt = `You are an SEO expert. Generate an optimized meta description for this webpage.
+
+URL: ${url}
+Current Meta Description: ${currentMeta || 'None'}
+Issue: ${issue.description}
+
+Requirements:
+- 150-160 characters long
+- Include primary and secondary keywords naturally
+- Compelling call-to-action
+- Accurately summarize page content
+- Encourage clicks from search results
+
+Return ONLY the optimized meta description text, nothing else.`;
+
+    const response = await this.callOpenAI(prompt);
+    const optimizedMeta = response.trim();
+
+    const keywords = this.extractKeywords(optimizedMeta);
+
+    return {
+      content: optimizedMeta,
+      confidence: this.calculateConfidence(optimizedMeta, 150, 160),
+      keywords
+    };
+  }
+
+  /**
+   * Generate alt text for images
+   */
+  async generateAltTextFix(url, issue) {
+    const imageSrc = issue.current_value || '';
+    
+    const prompt = `You are an SEO expert. Generate descriptive alt text for an image.
+
+Image URL: ${imageSrc}
+Page URL: ${url}
+Context: Image on a webpage that needs SEO-friendly alt text
+
+Requirements:
+- Descriptive and specific
+- 125 characters or less
+- Include relevant keywords naturally
+- Describe what the image shows
+- Useful for screen readers
+
+Return ONLY the alt text, nothing else.`;
+
+    const response = await this.callOpenAI(prompt);
+    const altText = response.trim();
+
+    return {
+      content: altText,
+      confidence: altText.length <= 125 ? 0.9 : 0.7,
+      keywords: this.extractKeywords(altText)
+    };
+  }
+
+  /**
+   * Generate schema markup
+   */
+  async generateSchemaFix(url, issue) {
+    const prompt = `You are an SEO expert. Generate JSON-LD schema markup for this webpage.
+
+URL: ${url}
+Issue: ${issue.description}
+
+Generate appropriate schema markup. Common types:
+- Article (for blog posts)
+- Product (for product pages)
+- Organization (for company pages)
+- LocalBusiness (for local businesses)
+- WebPage (general pages)
+
+Return ONLY valid JSON-LD schema markup, nothing else. Start with <script type="application/ld+json"> and end with </script>.`;
+
+    const response = await this.callOpenAI(prompt);
+    
+    // Validate JSON
+    try {
+      const jsonMatch = response.match(/<script[^>]*>(.*?)<\/script>/s);
+      if (jsonMatch) {
+        JSON.parse(jsonMatch[1]);
+        return {
+          content: response.trim(),
+          confidence: 0.85,
+          keywords: []
+        };
+      }
+    } catch (e) {
+      console.error('Invalid schema JSON:', e.message);
+    }
+
+    return null;
+  }
+
+  /**
+   * Call OpenAI API
+   */
+  async callOpenAI(prompt) {
+    if (!this.openaiApiKey) {
+      throw new Error('OpenAI API key not configured');
+    }
+
+    try {
+      const response = await axios.post(
+        'https://api.openai.com/v1/chat/completions',
+        {
+          model: this.model,
+          messages: [
+            {
+              role: 'system',
+              content: 'You are an expert SEO specialist who creates optimized, compelling content that ranks well in search engines.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 200
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${this.openaiApiKey}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      return response.data.choices[0].message.content;
+    } catch (error) {
+      console.error('OpenAI API error:', error.response?.data || error.message);
+      throw new Error('Failed to generate AI fix');
+    }
+  }
+
+  /**
+   * Extract keywords from text
+   */
+  extractKeywords(text) {
+    // Simple keyword extraction - remove common words
+    const commonWords = new Set([
+      'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
+      'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'were', 'be',
+      'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will',
+      'would', 'could', 'should', 'may', 'might', 'can', 'this', 'that',
+      'these', 'those', 'i', 'you', 'he', 'she', 'it', 'we', 'they'
+    ]);
+
+    const words = text.toLowerCase()
+      .replace(/[^\w\s]/g, ' ')
+      .split(/\s+/)
+      .filter(word => word.length > 3 && !commonWords.has(word));
+
+    // Count frequency
+    const frequency = {};
+    words.forEach(word => {
+      frequency[word] = (frequency[word] || 0) + 1;
+    });
+
+    // Return top keywords
+    return Object.entries(frequency)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([word]) => word);
+  }
+
+  /**
+   * Calculate confidence score based on length
+   */
+  calculateConfidence(text, minLength, maxLength) {
+    const length = text.length;
+    
+    if (length >= minLength && length <= maxLength) {
+      return 0.95;
+    } else if (length >= minLength - 10 && length <= maxLength + 10) {
+      return 0.85;
+    } else if (length >= minLength - 20 && length <= maxLength + 20) {
+      return 0.75;
+    } else {
+      return 0.65;
+    }
+  }
+
+  /**
+   * Generate internal link suggestions
+   */
+  async generateInternalLinks(url, pageContent, existingLinks) {
+    const prompt = `You are an SEO expert. Suggest 3-5 internal link opportunities for this page.
+
+Page URL: ${url}
+Existing Internal Links: ${existingLinks.length}
+
+Analyze the content and suggest:
+1. Anchor text for internal links
+2. Suggested target pages (describe the type of page)
+3. Why this link would be valuable
+
+Format as JSON array:
+[
+  {
+    "anchorText": "suggested anchor text",
+    "targetPageType": "description of target page",
+    "reason": "why this link helps SEO"
+  }
+]
+
+Return ONLY the JSON array, nothing else.`;
+
+    try {
+      const response = await this.callOpenAI(prompt);
+      const suggestions = JSON.parse(response);
+      return suggestions;
+    } catch (error) {
+      console.error('Error generating internal links:', error.message);
+      return [];
+    }
+  }
+
+  /**
+   * Batch generate fixes for multiple pages
+   */
+  async batchGenerateFixes(pages) {
+    const results = [];
+
+    for (const page of pages) {
+      try {
+        const fixes = await this.generateFixes(page.url, page.issues);
+        results.push({
+          url: page.url,
+          fixes,
+          success: true
+        });
+      } catch (error) {
+        results.push({
+          url: page.url,
+          error: error.message,
+          success: false
+        });
+      }
+    }
+
+    return results;
+  }
+}
+
+module.exports = new SEOAIFixer();

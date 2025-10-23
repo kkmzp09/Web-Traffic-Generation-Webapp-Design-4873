@@ -24,6 +24,10 @@ import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx';
 import ResetPasswordPage from './pages/ResetPasswordPage.jsx';
 import Invoice from './components/Invoice';
 import DomainAnalytics from './components/DomainAnalytics';
+import KeywordTracker from './components/KeywordTracker';
+import OnPageSEO from './components/OnPageSEO';
+import SEODashboard from './components/SEODashboard';
+import SEOScanResults from './components/SEOScanResults';
 
 // --- Auth gate that matches your current context (user + loading) ---
 function RequireAuth({ children }) {
@@ -84,6 +88,10 @@ function AppShell() {
           <Route path="/seo-traffic" element={<RequireAuth><SubscriptionGuard><SeoTraffic /></SubscriptionGuard></RequireAuth>} />
           <Route path="/analytics" element={<RequireAuth><Analytics /></RequireAuth>} />
           <Route path="/domain-analytics" element={<RequireAuth><DomainAnalytics /></RequireAuth>} />
+          <Route path="/keyword-tracker" element={<RequireAuth><KeywordTracker /></RequireAuth>} />
+          <Route path="/onpage-seo" element={<RequireAuth><OnPageSEO /></RequireAuth>} />
+          <Route path="/seo-dashboard" element={<RequireAuth><SEODashboard /></RequireAuth>} />
+          <Route path="/seo-scan/:scanId" element={<RequireAuth><SEOScanResults /></RequireAuth>} />
           <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
           <Route path="/invoice" element={<RequireAuth><Invoice /></RequireAuth>} />
         </Route>
