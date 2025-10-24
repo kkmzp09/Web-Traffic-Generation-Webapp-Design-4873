@@ -235,13 +235,18 @@ export default function SEOScanResults() {
         </div>
 
         {/* AI Fix Generator */}
-        {fixableIssues.length > 0 && fixes.length === 0 && (
+        {fixableIssues.length > 0 && (
           <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl shadow-lg p-8 mb-8 text-white">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-2xl font-bold mb-2">AI-Powered Auto-Fix Available</h3>
+                <h3 className="text-2xl font-bold mb-2">
+                  {fixes.length === 0 ? 'AI-Powered Auto-Fix Available' : 'Generate More AI Fixes'}
+                </h3>
                 <p className="text-indigo-100">
-                  Generate optimized content for {fixableIssues.length} issue(s) using AI
+                  {fixes.length === 0 
+                    ? `Generate optimized content for ${fixableIssues.length} issue(s) using AI`
+                    : `Regenerate or create fixes for all ${fixableIssues.length} fixable issue(s)`
+                  }
                 </p>
               </div>
               <button
@@ -257,7 +262,7 @@ export default function SEOScanResults() {
                 ) : (
                   <>
                     <FiZap className="w-5 h-5" />
-                    Generate Fixes
+                    {fixes.length === 0 ? 'Generate Fixes' : 'Regenerate Fixes'}
                   </>
                 )}
               </button>
