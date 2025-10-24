@@ -5,6 +5,7 @@ import * as FiIcons from 'react-icons/fi';
 import { useAuth } from '../lib/authContext';
 import { useSubscription } from '../lib/subscriptionContext';
 import SubscriptionStatus from './SubscriptionStatus';
+import GSCConnect from './GSCConnect';
 
 const { 
   FiTrendingUp, FiUsers, FiPlay, FiBarChart, FiTarget, FiZap, FiActivity,
@@ -171,6 +172,11 @@ const Dashboard = () => {
         {/* Subscription Status */}
         <div className="mb-8">
           <SubscriptionStatus />
+        </div>
+
+        {/* Google Search Console Integration */}
+        <div className="mb-8">
+          <GSCConnect userId={user?.id} />
         </div>
 
         {/* Stats Grid */}

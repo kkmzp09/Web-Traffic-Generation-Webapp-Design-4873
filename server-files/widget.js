@@ -183,6 +183,15 @@
         case 'schema':
           success = applySchemaFix(fix.fix_data);
           break;
+        case 'social':
+          success = applyOpenGraphFix(fix.fix_data);
+          break;
+        case 'technical':
+          success = applyTechnicalFix(fix.fix_data);
+          break;
+        case 'mobile':
+          success = applyMobileFix(fix.fix_data);
+          break;
         default:
           errorMessage = 'Unknown fix type';
       }
@@ -319,6 +328,106 @@
       });
     } catch (error) {
       console.error('[OrganiTraffic] Error reporting fix status:', error);
+    }
+  }
+
+  /**
+   * Apply Open Graph tags fix
+   */
+  function applyOpenGraphFix(data) {
+    try {
+      const content = data.optimized_content;
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = content;
+      
+      const metaTags = tempDiv.querySelectorAll('meta');
+      metaTags.forEach(tag => {
+        const property = tag.getAttribute('property');
+        if (property && property.startsWith('og:')) {
+          let existing = document.querySelector(`meta[property="${property}"]`);
+          if (!existing) {
+            existing = document.createElement('meta');
+            existing.setAttribute('property', property);
+            document.head.appendChild(existing);
+          }
+          existing.setAttribute('content', tag.getAttribute('content'));
+        }
+      });
+      
+      return true;
+    } catch (error) {
+      console.error('[OrganiTraffic] Error applying Open Graph fix:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Apply Technical SEO fix (canonical, robots)
+   */
+  function applyTechnicalFix(data) {
+    try {
+      const content = data.optimized_content;
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = content;
+      
+      // Handle canonical tag
+      const canonical = tempDiv.querySelector('link[rel="canonical"]');
+      if (canonical) {
+        let existing = document.querySelector('link[rel="canonical"]');
+        if (!existing) {
+          existing = document.createElement('link');
+          existing.setAttribute('rel', 'canonical');
+          document.head.appendChild(existing);
+        }
+        existing.setAttribute('href', canonical.getAttribute('href'));
+        return true;
+      }
+      
+      // Handle robots meta tag
+      const robots = tempDiv.querySelector('meta[name="robots"]');
+      if (robots) {
+        let existing = document.querySelector('meta[name="robots"]');
+        if (!existing) {
+          existing = document.createElement('meta');
+          existing.setAttribute('name', 'robots');
+          document.head.appendChild(existing);
+        }
+        existing.setAttribute('content', robots.getAttribute('content'));
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('[OrganiTraffic] Error applying technical fix:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Apply Mobile/Viewport fix
+   */
+  function applyMobileFix(data) {
+    try {
+      const content = data.optimized_content;
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = content;
+      
+      const viewport = tempDiv.querySelector('meta[name="viewport"]');
+      if (viewport) {
+        let existing = document.querySelector('meta[name="viewport"]');
+        if (!existing) {
+          existing = document.createElement('meta');
+          existing.setAttribute('name', 'viewport');
+          document.head.appendChild(existing);
+        }
+        existing.setAttribute('content', viewport.getAttribute('content'));
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('[OrganiTraffic] Error applying mobile fix:', error);
+      return false;
     }
   }
 

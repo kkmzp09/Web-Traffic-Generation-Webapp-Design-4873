@@ -41,6 +41,15 @@ class SEOAIFixer {
           case 'links':
             fix = await this.generateLinksFix(url, issue);
             break;
+          case 'social':
+            fix = await this.generateOpenGraphFix(url, issue);
+            break;
+          case 'technical':
+            fix = await this.generateTechnicalFix(url, issue);
+            break;
+          case 'mobile':
+            fix = await this.generateMobileFix(url, issue);
+            break;
           default:
             continue;
         }
@@ -374,6 +383,81 @@ Format as a numbered list with clear recommendations.`;
     } else {
       return 0.65;
     }
+  }
+
+  /**
+   * Generate Open Graph tags fix
+   */
+  async generateOpenGraphFix(url, issue) {
+    const prompt = `You are an SEO expert. Generate Open Graph meta tags for social media sharing.
+
+URL: ${url}
+Issue: ${issue.description}
+
+Generate complete Open Graph tags including:
+- og:title
+- og:description
+- og:type
+- og:url
+- og:image (suggest placeholder)
+
+Return ONLY the HTML meta tags, one per line, nothing else.`;
+
+    const response = await this.callOpenAI(prompt);
+    
+    return {
+      content: response.trim(),
+      confidence: 0.90,
+      keywords: []
+    };
+  }
+
+  /**
+   * Generate Technical SEO fixes (canonical, robots)
+   */
+  async generateTechnicalFix(url, issue) {
+    if (issue.title.includes('Canonical')) {
+      return {
+        content: `<link rel="canonical" href="${url}" />`,
+        confidence: 0.95,
+        keywords: []
+      };
+    }
+    
+    if (issue.title.includes('Robots') || issue.title.includes('noindex')) {
+      const prompt = `You are an SEO expert. The page has a robots meta tag blocking indexing.
+
+URL: ${url}
+Issue: ${issue.description}
+
+Provide the correct robots meta tag to allow indexing.
+Return ONLY the HTML meta tag, nothing else.`;
+
+      const response = await this.callOpenAI(prompt);
+      
+      return {
+        content: response.trim(),
+        confidence: 0.90,
+        keywords: []
+      };
+    }
+
+    return null;
+  }
+
+  /**
+   * Generate Mobile/Viewport fix
+   */
+  async generateMobileFix(url, issue) {
+    if (issue.title.includes('Viewport')) {
+      return {
+        content: '<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">',
+        confidence: 0.95,
+        keywords: []
+      };
+    }
+
+    return null;
   }
 
   /**

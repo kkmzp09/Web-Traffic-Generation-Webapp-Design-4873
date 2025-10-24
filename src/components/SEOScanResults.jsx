@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/authContext';
 import * as FiIcons from 'react-icons/fi';
+import GSCKeywords from './GSCKeywords';
 
 const { FiAlertCircle, FiCheckCircle, FiZap, FiArrowLeft, FiRefreshCw, FiDownload } = FiIcons;
 
@@ -288,7 +289,18 @@ export default function SEOScanResults() {
           </div>
         )}
 
-        {/* AI Fixes */}
+        {/* Google Search Console Keywords */}
+        {scan && (
+          <div className="mb-8">
+            <GSCKeywords 
+              pageUrl={scan.url}
+              siteUrl={new URL(scan.url).origin}
+              userId={user?.id}
+            />
+          </div>
+        )}
+
+        {/* Fixes */}
         {fixes.length > 0 && (
           <div className="bg-white rounded-2xl shadow-lg p-6 mb-8 border border-green-100">
             <div className="flex items-center justify-between mb-6">
