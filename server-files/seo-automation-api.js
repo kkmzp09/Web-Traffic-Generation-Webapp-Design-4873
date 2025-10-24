@@ -5,7 +5,11 @@ const express = require('express');
 const router = express.Router();
 const { Pool } = require('pg');
 const seoScanner = require('./seo-scanner-service');
+const seoScannerPuppeteer = require('./seo-scanner-puppeteer');
 const seoAIFixer = require('./seo-ai-fixer');
+
+// Use Puppeteer scanner for JavaScript-rendered pages (set to true to enable)
+const USE_PUPPETEER = process.env.USE_PUPPETEER_SCANNER === 'true' || false;
 
 // CORS middleware for all routes
 router.use((req, res, next) => {
@@ -97,8 +101,9 @@ router.post('/scan-page', async (req, res) => {
  */
 async function performScan(scanId, url, userId, domain) {
   try {
-    // Run the scanner
-    const scanResults = await seoScanner.scanPage(url);
+    // Run the scanner (use Puppeteer if enabled for JavaScript-rendered pages)
+    const scanner = USE_PUPPETEER ? seoScannerPuppeteer : seoScanner;
+    const scanResults = await scanner.scanPage(url);
 
     // Count issues by severity
     const criticalIssues = scanResults.issues.filter(i => i.severity === 'critical').length;
