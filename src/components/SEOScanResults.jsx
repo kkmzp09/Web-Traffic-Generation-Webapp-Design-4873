@@ -182,8 +182,26 @@ export default function SEOScanResults() {
     );
   }
 
-  const criticalIssues = issues.filter(i => i.severity === 'critical');
-  const warnings = issues.filter(i => i.severity === 'warning');
+  // Filter out issues that have applied fixes (to avoid confusing customers)
+  const appliedFixCategories = fixes.filter(f => f.applied).map(f => {
+    // Map fix types to issue categories
+    const typeMap = {
+      'title': 'title',
+      'meta': 'meta',
+      'headings': 'headings',
+      'h1': 'headings',
+      'content': 'content',
+      'images': 'images'
+    };
+    return typeMap[f.fix_type];
+  });
+
+  const criticalIssues = issues.filter(i => 
+    i.severity === 'critical' && !appliedFixCategories.includes(i.category)
+  );
+  const warnings = issues.filter(i => 
+    i.severity === 'warning' && !appliedFixCategories.includes(i.category)
+  );
   const fixableIssues = issues.filter(i => ['title', 'meta', 'images'].includes(i.category) && i.fix_status === 'pending');
 
   return (
