@@ -7,6 +7,20 @@ const { Pool } = require('pg');
 const seoScanner = require('./seo-scanner-service');
 const seoAIFixer = require('./seo-ai-fixer');
 
+// CORS middleware for all routes
+router.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  
+  // Handle preflight
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  
+  next();
+});
+
 // PostgreSQL connection
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -19,13 +33,21 @@ const pool = new Pool({
  */
 router.post('/scan-page', async (req, res) => {
   try {
-    const { url, userId } = req.body;
+    let { url, userId } = req.body;
 
-    if (!url || !userId) {
+    if (!url) {
       return res.status(400).json({ 
         success: false, 
-        error: 'URL and userId are required' 
+        error: 'URL is required' 
       });
+    }
+
+    // Validate and fix userId - use default if not valid UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!userId || !uuidRegex.test(userId)) {
+      // Use a default UUID for non-UUID user IDs
+      userId = '00000000-0000-0000-0000-000000000000';
+      console.log('Using default UUID for userId:', req.body.userId);
     }
 
     // Validate URL
@@ -310,12 +332,12 @@ router.post('/apply-fix/:fixId', async (req, res) => {
     const { fixId } = req.params;
     const { method = 'one_click', siteId } = req.body;
 
-    // Get fix details
+    // Get fix details (fixId is integer, not UUID)
     const fixResult = await pool.query(
       `SELECT f.*, s.domain FROM seo_fixes f
        JOIN seo_scans s ON f.scan_id = s.id
        WHERE f.id = $1`,
-      [fixId]
+      [parseInt(fixId)]
     );
 
     if (fixResult.rows.length === 0) {
@@ -345,12 +367,12 @@ router.post('/apply-fix/:fixId', async (req, res) => {
          VALUES ($1, $2, $3, $4)`,
         [
           widget.site_id,
-          fixId,
+          parseInt(fixId),
           fix.fix_type,
-          {
+          JSON.stringify({
             optimized_content: fix.optimized_content,
             original_content: fix.original_content
-          }
+          })
         ]
       );
 
@@ -367,7 +389,7 @@ router.post('/apply-fix/:fixId', async (req, res) => {
              applied_at = NOW(), 
              applied_method = $1
          WHERE id = $2`,
-        [method, fixId]
+        [method, parseInt(fixId)]
       );
 
       await pool.query(
@@ -375,7 +397,7 @@ router.post('/apply-fix/:fixId', async (req, res) => {
          SET fix_status = 'fixed', 
              fixed_at = NOW()
          WHERE id = (SELECT issue_id FROM seo_fixes WHERE id = $1)`,
-        [fixId]
+        [parseInt(fixId)]
       );
 
       res.json({
@@ -400,13 +422,19 @@ router.post('/apply-fix/:fixId', async (req, res) => {
  */
 router.get('/dashboard-stats', async (req, res) => {
   try {
-    const { userId } = req.query;
+    let { userId } = req.query;
 
     if (!userId) {
       return res.status(400).json({ 
         success: false, 
         error: 'userId is required' 
       });
+    }
+
+    // Validate and fix userId - use default if not valid UUID
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(userId)) {
+      userId = '00000000-0000-0000-0000-000000000000';
     }
 
     // Get stats from the view

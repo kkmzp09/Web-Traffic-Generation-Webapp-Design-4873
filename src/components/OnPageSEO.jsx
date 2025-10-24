@@ -25,23 +25,55 @@ const OnPageSEO = () => {
 
     try {
       const apiBase = import.meta.env.VITE_API_BASE || 'https://api.organitrafficboost.com';
-      const response = await fetch(`${apiBase}/api/seo/onpage-analysis`, {
+      
+      // Start the scan
+      const response = await fetch(`${apiBase}/api/seo/scan-page`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: url.trim() })
+        body: JSON.stringify({ 
+          url: url.trim(),
+          userId: '00000000-0000-0000-0000-000000000000'
+        })
       });
 
       const data = await response.json();
 
-      if (data.success) {
-        setAnalysis(data.analysis);
+      if (data.success && data.scanId) {
+        // Poll for scan completion
+        const scanId = data.scanId;
+        let attempts = 0;
+        const maxAttempts = 30; // 30 seconds max
+        
+        const pollInterval = setInterval(async () => {
+          attempts++;
+          
+          try {
+            const scanResponse = await fetch(`${apiBase}/api/seo/scan/${scanId}`);
+            const scanData = await scanResponse.json();
+            
+            if (scanData.success && scanData.scan.status === 'completed') {
+              clearInterval(pollInterval);
+              setAnalysis({
+                score: scanData.scan.seo_score,
+                issues: scanData.issues || [],
+                url: scanData.scan.url
+              });
+              setLoading(false);
+            } else if (scanData.scan.status === 'failed' || attempts >= maxAttempts) {
+              clearInterval(pollInterval);
+              setError('Scan failed or timed out');
+              setLoading(false);
+            }
+          } catch (pollErr) {
+            console.error('Poll error:', pollErr);
+          }
+        }, 1000);
       } else {
-        setError(data.error || 'Analysis failed');
+        setError(data.error || 'Failed to start scan');
       }
     } catch (err) {
       console.error('Analysis Error:', err);
       setError('Failed to analyze page. Please try again.');
-    } finally {
       setLoading(false);
     }
   };
