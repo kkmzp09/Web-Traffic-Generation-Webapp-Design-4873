@@ -17,7 +17,7 @@ const GSCConnect = ({ userId }) => {
   const fetchConnections = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE}/api/gsc/connections?userId=${userId}`);
+      const response = await fetch(`${API_BASE}/api/seo/gsc/connections?userId=${userId}`);
       const data = await response.json();
 
       if (data.success) {
@@ -37,7 +37,7 @@ const GSCConnect = ({ userId }) => {
   const handleConnect = async () => {
     try {
       setConnecting(true);
-      const response = await fetch(`${API_BASE}/api/gsc/auth-url?userId=${userId}`);
+      const response = await fetch(`${API_BASE}/api/seo/gsc/auth-url?userId=${userId}`);
       const data = await response.json();
 
       if (data.success) {
@@ -65,7 +65,7 @@ const GSCConnect = ({ userId }) => {
       console.log('Disconnecting:', connectionId);
       
       const response = await fetch(
-        `${API_BASE}/api/gsc/disconnect/${connectionId}?userId=${userId}`,
+        `${API_BASE}/api/seo/gsc/disconnect/${connectionId}?userId=${userId}`,
         { method: 'DELETE' }
       );
       
