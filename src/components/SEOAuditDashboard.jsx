@@ -63,7 +63,7 @@ const SEOAuditDashboard = () => {
   // Auto-load keywords when switching to Keywords tab
   useEffect(() => {
     if (activeTab === 'keywords' && gscConnected && auditData && gscKeywords.length === 0 && !loadingKeywords) {
-      fetchGSCKeywords();
+      fetchGSCKeywords(true); // Silent mode - no error popups
     }
   }, [activeTab]);
 
@@ -105,14 +105,11 @@ const SEOAuditDashboard = () => {
   };
 
   // Fetch GSC keywords
-  const fetchGSCKeywords = async () => {
-    if (!auditData || !gscConnected || !user) {
-      console.log('Cannot fetch keywords:', { auditData: !!auditData, gscConnected, user: !!user });
-      return;
-    }
+  const fetchGSCKeywords = async (silent = false) => {
+    if (!user || !auditData) return;
 
-    setLoadingKeywords(true);
     try {
+      setLoadingKeywords(true);
       console.log('🔍 Fetching GSC connections for user:', user.id);
       const response = await fetch(`${API_BASE}/api/seo/gsc/connections?userId=${user.id}`);
       const data = await response.json();
@@ -149,24 +146,32 @@ const SEOAuditDashboard = () => {
         if (keywordData.success && keywordData.keywords && keywordData.keywords.length > 0) {
           console.log(`✅ Loaded ${keywordData.keywords.length} keywords`);
           setGscKeywords(keywordData.keywords);
-          alert(`✅ Loaded ${keywordData.keywords.length} keywords!`);
+          if (!silent) {
+            alert(`✅ Loaded ${keywordData.keywords.length} keywords!`);
+          }
         } else {
           console.log('❌ No keywords found in response');
           setGscKeywords([]);
-          const errorMsg = keywordData.error || 'Unknown error';
-          if (errorMsg.includes('401') || errorMsg.includes('Unauthorized') || errorMsg.includes('invalid_token')) {
-            alert('⚠️ GSC Token Expired!\n\nYour Google Search Console connection has expired.\n\nPlease go to Settings and reconnect your GSC account.');
-          } else {
-            alert('No keyword data found. This could mean:\n1. No data available for this domain yet\n2. Domain not verified in GSC\n3. Not enough data collected\n\nError: ' + errorMsg);
+          if (!silent) {
+            const errorMsg = keywordData.error || 'Unknown error';
+            if (errorMsg.includes('401') || errorMsg.includes('Unauthorized') || errorMsg.includes('invalid_token')) {
+              alert('⚠️ GSC Token Expired!\n\nYour Google Search Console connection has expired.\n\nPlease go to Settings and reconnect your GSC account.');
+            } else {
+              alert('No keyword data found. This could mean:\n1. No data available for this domain yet\n2. Domain not verified in GSC\n3. Not enough data collected\n\nError: ' + errorMsg);
+            }
           }
         }
       } else {
         console.log('❌ No GSC connections found');
-        alert('No GSC connections found. Please connect GSC in Settings.');
+        if (!silent) {
+          alert('No GSC connections found. Please connect GSC in Settings.');
+        }
       }
     } catch (error) {
       console.error('❌ Error fetching keywords:', error);
-      alert(`Error loading keywords: ${error.message}`);
+      if (!silent) {
+        alert(`Error loading keywords: ${error.message}`);
+      }
       setGscKeywords([]);
     } finally {
       setLoadingKeywords(false);
@@ -858,7 +863,25 @@ const SEOAuditDashboard = () => {
                   </div>
                 ) : gscKeywords.length === 0 ? (
                   <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-                    <p className="text-gray-600">No keyword data available yet. Check back later.</p>
+                    <div className="max-w-md mx-auto">
+                      <AlertCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No Keyword Data Found</h3>
+                      <p className="text-gray-600 mb-4">
+                        This could mean:
+                      </p>
+                      <ul className="text-left text-sm text-gray-600 space-y-2 mb-6">
+                        <li>• No data available for this domain yet in Google Search Console</li>
+                        <li>• Domain not verified in GSC</li>
+                        <li>• Not enough data collected (usually takes a few days)</li>
+                      </ul>
+                      <button
+                        onClick={() => fetchGSCKeywords(false)}
+                        className="px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2 mx-auto"
+                      >
+                        <RefreshCw className="w-4 h-4" />
+                        Try Again
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
