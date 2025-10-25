@@ -78,11 +78,11 @@ const SEOAuditDashboard = () => {
           connection = data.connections[0];
         }
         
-        console.log('Fetching keywords for:', connection.site_url);
+        console.log('Fetching keywords for:', connection.site_url, 'Connection ID:', connection.id);
         
         // Fetch keywords for this domain
         const keywordResponse = await fetch(
-          `${API_BASE}/api/seo/gsc/keywords?connectionId=${connection.id}&siteUrl=${connection.site_url}&days=30`
+          `${API_BASE}/api/seo/gsc/keywords/${connection.id}?siteUrl=${encodeURIComponent(connection.site_url)}&days=30`
         );
         const keywordData = await keywordResponse.json();
         
