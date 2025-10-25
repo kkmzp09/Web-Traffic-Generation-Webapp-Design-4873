@@ -165,18 +165,29 @@ const SEOAuditDashboard = () => {
 
   // Load scan history
   const loadScanHistory = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log('⚠️ No user, cannot load scan history');
+      return;
+    }
 
     try {
-      const response = await fetch(`${API_BASE}/api/seo/scan-history?userId=${user.id}`);
+      console.log('📊 Loading scan history for user:', user.id);
+      const url = `${API_BASE}/api/seo/scan-history?userId=${user.id}`;
+      console.log('🔗 Fetching from:', url);
+      
+      const response = await fetch(url);
       const data = await response.json();
       
+      console.log('📥 Scan history response:', data);
+      
       if (data.success) {
+        console.log(`✅ Found ${data.scans?.length || 0} scans in history`);
         setScanHistory(data.scans || []);
         
         // If no current scan loaded, load the most recent one
         if (!auditData && data.scans && data.scans.length > 0) {
           const latestScan = data.scans[0];
+          console.log('📌 Loading latest scan:', latestScan.url);
           setAuditData({
             success: true,
             url: latestScan.url,
@@ -190,9 +201,11 @@ const SEOAuditDashboard = () => {
           });
           setWebsiteUrl(latestScan.url);
         }
+      } else {
+        console.log('❌ Scan history fetch failed:', data.error);
       }
     } catch (error) {
-      console.error('Error loading scan history:', error);
+      console.error('❌ Error loading scan history:', error);
     }
   };
 
