@@ -51,28 +51,28 @@ const SEOJourney = () => {
 
       // Run multiple scans in parallel
       const [seoScan, gscData, domainData] = await Promise.all([
-        // On-page SEO scan
-        fetch(`${API_BASE}/api/seo/scan`, {
+        // On-page SEO scan - use existing puppeteer endpoint
+        fetch(`${API_BASE}/api/seo/analyze-page`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ url: normalizedUrl })
         }).then(r => r.json()).catch(err => {
           console.error('SEO scan error:', err);
-          return null;
+          return { success: false, analysis: null };
         }),
 
         // GSC data (if connected)
         user ? fetch(`${API_BASE}/api/seo/gsc/connections?userId=${user.id}`)
           .then(r => r.json()).catch(err => {
             console.error('GSC data error:', err);
-            return null;
-          }) : Promise.resolve(null),
+            return { success: false, connections: [] };
+          }) : Promise.resolve({ success: false, connections: [] }),
 
-        // Domain analytics
-        fetch(`${API_BASE}/api/seo/domain-metrics?domain=${hostname}`)
+        // Domain analytics - use DataForSEO endpoint
+        fetch(`${API_BASE}/api/dataforseo/domain-overview?domain=${hostname}`)
           .then(r => r.json()).catch(err => {
             console.error('Domain metrics error:', err);
-            return null;
+            return { success: false, data: null };
           })
       ]);
 
