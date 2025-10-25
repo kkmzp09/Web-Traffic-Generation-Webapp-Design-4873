@@ -132,10 +132,10 @@ const SEOAuditDashboard = () => {
         }
         
         console.log('✅ Using connection:', connection);
-        console.log('🔑 Fetching keywords for:', connection.site_url, 'Connection ID:', connection.id);
+        console.log('🔑 Fetching keywords for:', connection.site_url);
         
-        // Fetch keywords for this domain
-        const keywordUrl = `${API_BASE}/api/seo/gsc/keywords/${connection.id}?siteUrl=${encodeURIComponent(connection.site_url)}&days=30`;
+        // Fetch keywords using the same endpoint as GSC Analytics (which works!)
+        const keywordUrl = `${API_BASE}/api/seo/gsc/keyword-history?userId=${user.id}&siteUrl=${encodeURIComponent(connection.site_url)}&days=30`;
         console.log('📡 Keyword API URL:', keywordUrl);
         
         const keywordResponse = await fetch(keywordUrl);
@@ -143,11 +143,28 @@ const SEOAuditDashboard = () => {
         
         console.log('📈 Keyword data response:', keywordData);
         
-        if (keywordData.success && keywordData.keywords && keywordData.keywords.length > 0) {
-          console.log(`✅ Loaded ${keywordData.keywords.length} keywords`);
-          setGscKeywords(keywordData.keywords);
+        if (keywordData.success && keywordData.history && keywordData.history.length > 0) {
+          // Group by keyword and get latest data
+          const keywordMap = {};
+          keywordData.history.forEach(row => {
+            if (!keywordMap[row.keyword]) {
+              keywordMap[row.keyword] = {
+                keyword: row.keyword,
+                query: row.keyword,
+                clicks: row.clicks,
+                impressions: row.impressions,
+                ctr: parseFloat(row.ctr),
+                position: parseFloat(row.position),
+                position_change: 0
+              };
+            }
+          });
+          
+          const keywords = Object.values(keywordMap);
+          console.log(`✅ Loaded ${keywords.length} keywords`);
+          setGscKeywords(keywords);
           if (!silent) {
-            alert(`✅ Loaded ${keywordData.keywords.length} keywords!`);
+            alert(`✅ Loaded ${keywords.length} keywords!`);
           }
         } else {
           console.log('❌ No keywords found in response');
