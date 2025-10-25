@@ -600,16 +600,33 @@ const SEOAuditDashboard = () => {
                   <div>
                     <h2 className="text-2xl font-bold text-gray-900 mb-2">Keyword Rankings</h2>
                     <p className="text-gray-600">Track your keyword performance from Google Search Console</p>
+                    <div className="mt-2 text-sm">
+                      <span className={`px-2 py-1 rounded ${gscConnected ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                        GSC: {gscConnected ? 'Connected' : 'Not Connected'}
+                      </span>
+                    </div>
                   </div>
-                  {!gscConnected && (
-                    <button
-                      onClick={() => navigate('/settings')}
-                      className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-                    >
-                      <Search className="w-5 h-5" />
-                      Connect Google Search Console
-                    </button>
-                  )}
+                  <div className="flex items-center gap-3">
+                    {gscConnected && (
+                      <button
+                        onClick={fetchGSCKeywords}
+                        disabled={loadingKeywords}
+                        className="px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+                      >
+                        <RefreshCw className={`w-5 h-5 ${loadingKeywords ? 'animate-spin' : ''}`} />
+                        Load Keywords
+                      </button>
+                    )}
+                    {!gscConnected && (
+                      <button
+                        onClick={() => navigate('/settings')}
+                        className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                      >
+                        <Search className="w-5 h-5" />
+                        Connect Google Search Console
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {!gscConnected ? (
