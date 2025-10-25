@@ -22,6 +22,10 @@ const SEOAuditDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [expandedPages, setExpandedPages] = useState({});
   const [fixingIssues, setFixingIssues] = useState({});
+  const [gscKeywords, setGscKeywords] = useState([]);
+  const [gscConnected, setGscConnected] = useState(false);
+  const [loadingKeywords, setLoadingKeywords] = useState(false);
+  const [scanHistory, setScanHistory] = useState([]);
 
   const API_BASE = import.meta.env.VITE_API_URL || 'https://api.organitrafficboost.com';
 
@@ -29,7 +33,93 @@ const SEOAuditDashboard = () => {
     if (urlParam) {
       runAudit(urlParam);
     }
+    checkGSCConnection();
+    loadScanHistory();
   }, [urlParam]);
+
+  // Check if GSC is connected
+  const checkGSCConnection = async () => {
+    if (!user) return;
+    
+    try {
+      const response = await fetch(`${API_BASE}/api/seo/gsc/connections?userId=${user.id}`);
+      const data = await response.json();
+      setGscConnected(data.success && data.connections?.length > 0);
+    } catch (error) {
+      console.error('Error checking GSC:', error);
+    }
+  };
+
+  // Fetch GSC keywords
+  const fetchGSCKeywords = async () => {
+    if (!auditData || !gscConnected) return;
+
+    setLoadingKeywords(true);
+    try {
+      const response = await fetch(`${API_BASE}/api/seo/gsc/connections?userId=${user.id}`);
+      const data = await response.json();
+      
+      if (data.success && data.connections?.length > 0) {
+        const connection = data.connections[0];
+        
+        // Fetch keywords for this domain
+        const keywordResponse = await fetch(
+          `${API_BASE}/api/seo/gsc/keywords?connectionId=${connection.id}&siteUrl=${connection.site_url}&days=30`
+        );
+        const keywordData = await keywordResponse.json();
+        
+        if (keywordData.success) {
+          setGscKeywords(keywordData.keywords || []);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching keywords:', error);
+    } finally {
+      setLoadingKeywords(false);
+    }
+  };
+
+  // Load scan history
+  const loadScanHistory = async () => {
+    if (!user || !websiteUrl) return;
+
+    try {
+      const response = await fetch(
+        `${API_BASE}/api/seo/scan-history?userId=${user.id}&url=${encodeURIComponent(websiteUrl)}`
+      );
+      const data = await response.json();
+      
+      if (data.success) {
+        setScanHistory(data.scans || []);
+      }
+    } catch (error) {
+      console.error('Error loading scan history:', error);
+    }
+  };
+
+  // Save scan results
+  const saveScanResults = async (scanData) => {
+    if (!user) return;
+
+    try {
+      await fetch(`${API_BASE}/api/seo/save-scan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          url: scanData.url,
+          score: scanData.analysis.score,
+          issues: scanData.analysis.issues,
+          summary: scanData.analysis.summary,
+          pageData: scanData.analysis.pageData
+        })
+      });
+      
+      loadScanHistory();
+    } catch (error) {
+      console.error('Error saving scan:', error);
+    }
+  };
 
   // Run comprehensive audit
   const runAudit = async (url = websiteUrl) => {
@@ -50,6 +140,14 @@ const SEOAuditDashboard = () => {
       if (data.success) {
         setAuditData(data);
         console.log('✅ Audit complete:', data);
+        
+        // Save scan results
+        await saveScanResults(data);
+        
+        // Fetch keywords if GSC connected
+        if (gscConnected) {
+          fetchGSCKeywords();
+        }
       } else {
         alert('Failed to audit website. Please try again.');
       }
@@ -58,6 +156,29 @@ const SEOAuditDashboard = () => {
       alert('An error occurred during the audit.');
     } finally {
       setScanning(false);
+    }
+  };
+
+  // Refresh scan (reload from saved data)
+  const refreshScan = async () => {
+    if (scanHistory.length > 0) {
+      const latestScan = scanHistory[0];
+      setAuditData({
+        success: true,
+        url: latestScan.url,
+        hostname: new URL(latestScan.url).hostname,
+        scannedAt: latestScan.scanned_at,
+        analysis: {
+          score: latestScan.score,
+          issues: latestScan.issues,
+          summary: latestScan.summary,
+          pageData: latestScan.page_data
+        }
+      });
+      
+      if (gscConnected) {
+        fetchGSCKeywords();
+      }
     }
   };
 
@@ -181,10 +302,25 @@ const SEOAuditDashboard = () => {
         <div className="flex items-center gap-3">
           <div className="text-2xl font-bold">OrganiTraffic</div>
         </div>
-        <button className="px-4 py-2 bg-white text-slate-800 rounded-lg font-medium hover:bg-gray-100 transition-colors flex items-center gap-2">
-          <Search className="w-4 h-4" />
-          Fix Your Website Issues
-        </button>
+        <div className="flex items-center gap-3">
+          {scanHistory.length > 0 && (
+            <button
+              onClick={refreshScan}
+              className="px-4 py-2 bg-slate-700 text-white rounded-lg font-medium hover:bg-slate-600 transition-colors flex items-center gap-2"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Refresh
+            </button>
+          )}
+          <button
+            onClick={() => runAudit()}
+            disabled={scanning}
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+          >
+            <Search className="w-4 h-4" />
+            {scanning ? 'Scanning...' : 'Rescan Website'}
+          </button>
+        </div>
       </div>
 
       {/* Website Header Section */}
@@ -436,9 +572,96 @@ const SEOAuditDashboard = () => {
             )}
 
             {activeTab === 'keywords' && (
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Keywords</h2>
-                <p className="text-gray-600">GSC keyword integration coming soon...</p>
+              <div>
+                <div className="flex items-center justify-between mb-6">
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Keyword Rankings</h2>
+                    <p className="text-gray-600">Track your keyword performance from Google Search Console</p>
+                  </div>
+                  {!gscConnected && (
+                    <button
+                      onClick={() => navigate('/settings')}
+                      className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                    >
+                      <Search className="w-5 h-5" />
+                      Connect Google Search Console
+                    </button>
+                  )}
+                </div>
+
+                {!gscConnected ? (
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+                      <Search className="w-8 h-8 text-blue-600" />
+                    </div>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">Connect Google Search Console</h3>
+                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                      Connect your Google Search Console account to see keyword rankings, clicks, impressions, and more.
+                    </p>
+                    <button
+                      onClick={() => navigate('/settings')}
+                      className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                    >
+                      Go to Settings
+                    </button>
+                  </div>
+                ) : loadingKeywords ? (
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+                    <RefreshCw className="w-12 h-12 text-purple-600 animate-spin mx-auto mb-4" />
+                    <p className="text-gray-600">Loading keyword data...</p>
+                  </div>
+                ) : gscKeywords.length === 0 ? (
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+                    <p className="text-gray-600">No keyword data available yet. Check back later.</p>
+                  </div>
+                ) : (
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <table className="w-full">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Keyword</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Position</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Clicks</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Impressions</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">CTR</th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Change</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {gscKeywords.map((keyword, idx) => (
+                          <tr key={idx} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 text-sm font-medium text-gray-900">{keyword.query}</td>
+                            <td className="px-6 py-4 text-sm text-gray-600">
+                              <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded font-medium">
+                                #{Math.round(keyword.position)}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-900">{keyword.clicks}</td>
+                            <td className="px-6 py-4 text-sm text-gray-600">{keyword.impressions}</td>
+                            <td className="px-6 py-4 text-sm text-gray-600">
+                              {(keyword.ctr * 100).toFixed(2)}%
+                            </td>
+                            <td className="px-6 py-4 text-sm">
+                              {keyword.position_change > 0 ? (
+                                <span className="flex items-center gap-1 text-green-600">
+                                  <TrendingUp className="w-4 h-4" />
+                                  +{Math.abs(keyword.position_change)}
+                                </span>
+                              ) : keyword.position_change < 0 ? (
+                                <span className="flex items-center gap-1 text-red-600">
+                                  <TrendingDown className="w-4 h-4" />
+                                  {keyword.position_change}
+                                </span>
+                              ) : (
+                                <span className="text-gray-400">-</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             )}
           </div>

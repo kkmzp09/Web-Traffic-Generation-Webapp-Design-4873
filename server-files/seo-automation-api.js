@@ -9,6 +9,7 @@ const seoScannerPuppeteer = require('./seo-scanner-puppeteer');
 const seoAIFixer = require('./seo-ai-fixer');
 const quickAuditRoutes = require('./seo-quick-audit-api');
 const comprehensiveAuditRoutes = require('./comprehensive-seo-audit');
+const scanHistoryRoutes = require('./seo-scan-history-api');
 
 // Use Puppeteer scanner for JavaScript-rendered pages (set to true to enable)
 const USE_PUPPETEER = process.env.USE_PUPPETEER_SCANNER === 'true' || false;
@@ -662,5 +663,8 @@ router.use('/', quickAuditRoutes);
 
 // Mount comprehensive audit routes
 router.use('/', comprehensiveAuditRoutes);
+
+// Mount scan history routes
+router.use('/', scanHistoryRoutes);
 
 module.exports = router;
