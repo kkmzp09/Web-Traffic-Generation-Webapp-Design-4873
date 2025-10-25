@@ -557,9 +557,10 @@ const SEOAuditDashboard = () => {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="flex gap-8">
-          {/* Left Sidebar - Issue Categories */}
-          <div className="w-64 flex-shrink-0">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-6">
+          {/* Left Sidebar - Issue Categories (Only show on Issues tab) */}
+          {activeTab === 'issues' && (
+            <div className="w-64 flex-shrink-0">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-6">
               {/* Errors */}
               <div className="mb-6">
                 <div className="text-xs font-bold text-red-600 mb-3">ERRORS</div>
@@ -608,7 +609,8 @@ const SEOAuditDashboard = () => {
                 </div>
               </div>
             </div>
-          </div>
+            </div>
+          )}
 
           {/* Main Content Area */}
           <div className="flex-1">
