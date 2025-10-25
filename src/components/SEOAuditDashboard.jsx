@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../lib/authContext';
 import GSCAnalytics from './GSCAnalytics';
+import SEODashboard from './SEODashboard';
 import {
   Search, TrendingUp, AlertCircle, CheckCircle, XCircle,
   ChevronDown, ChevronUp, Zap, Target, BarChart2, Clock,
@@ -463,17 +464,17 @@ const SEOAuditDashboard = () => {
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex gap-8">
-            {['overview', 'issues', 'keywords', 'suggestions', 'performance', 'reports'].map(tab => (
+            {['overview', 'seo-automation', 'keywords', 'suggestions', 'performance', 'reports'].map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`py-4 px-2 border-b-2 font-medium capitalize transition-colors ${
+                className={`py-4 px-2 border-b-2 font-medium transition-colors ${
                   activeTab === tab
                     ? 'border-purple-600 text-purple-600'
-                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
-                {tab}
+                {tab === 'seo-automation' ? 'SEO Automation' : tab.charAt(0).toUpperCase() + tab.slice(1)}
               </button>
             ))}
           </div>
@@ -483,61 +484,6 @@ const SEOAuditDashboard = () => {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="flex gap-8">
-          {/* Left Sidebar - Issue Categories (Only show on Issues tab) */}
-          {activeTab === 'issues' && (
-            <div className="w-64 flex-shrink-0">
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-6">
-              {/* Errors */}
-              <div className="mb-6">
-                <div className="text-xs font-bold text-red-600 mb-3">ERRORS</div>
-                <div className="space-y-2">
-                  {errors.map((issue, idx) => (
-                    <div key={idx} className="flex items-center justify-between text-sm">
-                      <span className="text-gray-700">{issue.title}</span>
-                      <span className="text-gray-500">{issue.count || 1}</span>
-                    </div>
-                  ))}
-                  {errors.length === 0 && (
-                    <div className="text-sm text-gray-500">No errors found</div>
-                  )}
-                </div>
-              </div>
-
-              {/* Warnings */}
-              <div className="mb-6">
-                <div className="text-xs font-bold text-orange-600 mb-3">WARNINGS</div>
-                <div className="space-y-2">
-                  {warnings.map((issue, idx) => (
-                    <div key={idx} className="flex items-center justify-between text-sm">
-                      <span className="text-gray-700">{issue.title}</span>
-                      <span className="text-gray-500">{issue.count || 1}</span>
-                    </div>
-                  ))}
-                  {warnings.length === 0 && (
-                    <div className="text-sm text-gray-500">No warnings</div>
-                  )}
-                </div>
-              </div>
-
-              {/* Notices */}
-              <div>
-                <div className="text-xs font-bold text-blue-600 mb-3">NOTICES</div>
-                <div className="space-y-2">
-                  {notices.map((issue, idx) => (
-                    <div key={idx} className="flex items-center justify-between text-sm">
-                      <span className="text-gray-700">{issue.title}</span>
-                      <span className="text-gray-500">{issue.count || 1}</span>
-                    </div>
-                  ))}
-                  {notices.length === 0 && (
-                    <div className="text-sm text-gray-500">No notices</div>
-                  )}
-                </div>
-              </div>
-            </div>
-            </div>
-          )}
-
           {/* Main Content Area */}
           <div className="flex-1">
             {activeTab === 'overview' && (
@@ -582,92 +528,8 @@ const SEOAuditDashboard = () => {
               </div>
             )}
 
-            {activeTab === 'issues' && (
-              <div>
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  {auditData.hostname}'s Top-Performing Pages
-                </h2>
-                <p className="text-gray-600 mb-6">
-                  In-depth analysis of {auditData.hostname} highest-performing pages, evaluating crucial SEO metrics and identifying potential areas for improvement.
-                </p>
-
-                {/* Page Sections */}
-                <div className="space-y-4">
-                  {pages.map((page, pageIdx) => (
-                    <div key={pageIdx} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                      {/* Page Header */}
-                      <button
-                        onClick={() => togglePage(page.url)}
-                        className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="text-purple-600 font-medium">{page.url}</span>
-                          {page.errorCount > 0 && (
-                            <span className="px-2 py-1 bg-red-100 text-red-600 text-xs font-semibold rounded">
-                              {page.errorCount} Errors
-                            </span>
-                          )}
-                        </div>
-                        {expandedPages[page.url] ? (
-                          <ChevronUp className="w-5 h-5 text-gray-400" />
-                        ) : (
-                          <ChevronDown className="w-5 h-5 text-gray-400" />
-                        )}
-                      </button>
-
-                      {/* Issue Table */}
-                      {expandedPages[page.url] && (
-                        <div className="border-t border-gray-200">
-                          <table className="w-full">
-                            <thead className="bg-gray-50">
-                              <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Issue</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Result</th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-200">
-                              {page.issues.map((issue, issueIdx) => (
-                                <tr key={issueIdx} className="hover:bg-gray-50">
-                                  <td className="px-6 py-4 text-sm text-gray-900">{issue.description}</td>
-                                  <td className="px-6 py-4">
-                                    <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded">
-                                      Passed
-                                    </span>
-                                  </td>
-                                  <td className="px-6 py-4">
-                                    {issue.autoFixAvailable ? (
-                                      <button
-                                        onClick={() => autoFixIssue(issue, page.url)}
-                                        disabled={fixingIssues[`${page.url}-${issue.title}`]}
-                                        className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 flex items-center gap-2"
-                                      >
-                                        {fixingIssues[`${page.url}-${issue.title}`] ? (
-                                          <>
-                                            <RefreshCw className="w-4 h-4 animate-spin" />
-                                            Fixing...
-                                          </>
-                                        ) : (
-                                          <>
-                                            <Zap className="w-4 h-4" />
-                                            Auto Optimize
-                                          </>
-                                        )}
-                                      </button>
-                                    ) : (
-                                      <span className="text-sm text-gray-500">Manual fix required</span>
-                                    )}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
+            {activeTab === 'seo-automation' && (
+              <SEODashboard />
             )}
 
             {activeTab === 'keywords' && (
