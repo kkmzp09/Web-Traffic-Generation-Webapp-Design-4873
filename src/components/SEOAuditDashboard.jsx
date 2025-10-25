@@ -11,10 +11,22 @@ import {
 } from 'lucide-react';
 
 const SEOAuditDashboard = () => {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const urlParam = searchParams.get('url');
+
+  // Show loading while auth is initializing
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <RefreshCw className="w-8 h-8 animate-spin text-purple-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   const [websiteUrl, setWebsiteUrl] = useState(urlParam || '');
   const [scanning, setScanning] = useState(false);
