@@ -7,6 +7,7 @@ const { Pool } = require('pg');
 const seoScanner = require('./seo-scanner-service');
 const seoScannerPuppeteer = require('./seo-scanner-puppeteer');
 const seoAIFixer = require('./seo-ai-fixer');
+const quickAuditRoutes = require('./seo-quick-audit-api');
 
 // Use Puppeteer scanner for JavaScript-rendered pages (set to true to enable)
 const USE_PUPPETEER = process.env.USE_PUPPETEER_SCANNER === 'true' || false;
@@ -654,5 +655,8 @@ function calculateNextRun(frequency) {
 // Mount GSC routes
 const gscRoutes = require('./gsc-api-endpoints');
 router.use('/gsc', gscRoutes);
+
+// Mount quick audit routes
+router.use('/', quickAuditRoutes);
 
 module.exports = router;
