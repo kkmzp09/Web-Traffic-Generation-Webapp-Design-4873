@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../lib/authContext';
 import { FiUser, FiMail, FiLock, FiBell, FiGlobe, FiCreditCard, FiSave, FiCheck } from 'react-icons/fi';
+import GSCConnect from './GSCConnect';
 
 export default function Settings() {
   const { user } = useAuth();
@@ -50,6 +51,11 @@ export default function Settings() {
           <span className="text-green-800 font-medium">Settings saved successfully!</span>
         </div>
       )}
+
+      {/* Google Search Console Integration */}
+      <div>
+        <GSCConnect userId={user?.id} />
+      </div>
 
       {/* Profile Settings */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
