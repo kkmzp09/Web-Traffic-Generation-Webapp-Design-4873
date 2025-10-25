@@ -238,7 +238,7 @@ const SEOJourney = () => {
     }
 
     // Add good items
-    if (hasTraffic) {
+    if (hasGSCConnection) {
       issues.good.push({
         title: 'Traffic Tracking Active',
         description: 'Google Search Console is connected and tracking.',
