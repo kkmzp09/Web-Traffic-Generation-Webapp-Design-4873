@@ -165,20 +165,52 @@ const SEOAuditDashboard = () => {
 
   // Load scan history
   const loadScanHistory = async () => {
-    if (!user || !websiteUrl) return;
+    if (!user) return;
 
     try {
-      const response = await fetch(
-        `${API_BASE}/api/seo/scan-history?userId=${user.id}&url=${encodeURIComponent(websiteUrl)}`
-      );
+      const response = await fetch(`${API_BASE}/api/seo/scan-history?userId=${user.id}`);
       const data = await response.json();
       
       if (data.success) {
         setScanHistory(data.scans || []);
+        
+        // If no current scan loaded, load the most recent one
+        if (!auditData && data.scans && data.scans.length > 0) {
+          const latestScan = data.scans[0];
+          setAuditData({
+            success: true,
+            url: latestScan.url,
+            hostname: new URL(latestScan.url).hostname,
+            analysis: {
+              score: latestScan.score,
+              issues: latestScan.issues,
+              summary: latestScan.summary,
+              pageData: latestScan.page_data
+            }
+          });
+          setWebsiteUrl(latestScan.url);
+        }
       }
     } catch (error) {
       console.error('Error loading scan history:', error);
     }
+  };
+
+  // Load a specific scan from history
+  const loadScanFromHistory = (scan) => {
+    setAuditData({
+      success: true,
+      url: scan.url,
+      hostname: new URL(scan.url).hostname,
+      analysis: {
+        score: scan.score,
+        issues: scan.issues,
+        summary: scan.summary,
+        pageData: scan.page_data
+      }
+    });
+    setWebsiteUrl(scan.url);
+    setActiveTab('overview');
   };
 
   // Save scan results
@@ -406,6 +438,42 @@ const SEOAuditDashboard = () => {
           <div className="text-2xl font-bold">OrganiTraffic</div>
         </div>
         <div className="flex items-center gap-3">
+          {scanHistory.length > 0 && (
+            <div className="relative group">
+              <button className="px-4 py-2 bg-slate-700 text-white rounded-lg font-medium hover:bg-slate-600 transition-colors flex items-center gap-2">
+                <Clock className="w-4 h-4" />
+                Scan History ({scanHistory.length})
+                <ChevronDown className="w-4 h-4" />
+              </button>
+              <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 hidden group-hover:block z-50">
+                <div className="p-2 max-h-96 overflow-y-auto">
+                  {scanHistory.map((scan, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => loadScanFromHistory(scan)}
+                      className="w-full text-left px-4 py-3 hover:bg-gray-50 rounded-lg transition-colors border-b border-gray-100 last:border-0"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-900 truncate">{scan.url}</div>
+                          <div className="text-xs text-gray-500 mt-1">
+                            {new Date(scan.scanned_at).toLocaleDateString()} at {new Date(scan.scanned_at).toLocaleTimeString()}
+                          </div>
+                        </div>
+                        <div className={`ml-3 px-2 py-1 rounded text-xs font-medium ${
+                          scan.score >= 80 ? 'bg-green-100 text-green-700' :
+                          scan.score >= 60 ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-red-100 text-red-700'
+                        }`}>
+                          {scan.score}%
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
           {scanHistory.length > 0 && (
             <button
               onClick={refreshScan}
