@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../lib/authContext';
+import GSCAnalytics from './GSCAnalytics';
 import {
   Search, TrendingUp, AlertCircle, CheckCircle, XCircle,
   ChevronDown, ChevronUp, Zap, Target, BarChart2, Clock,
@@ -22,11 +23,7 @@ const SEOAuditDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [expandedPages, setExpandedPages] = useState({});
   const [fixingIssues, setFixingIssues] = useState({});
-  const [gscConnected, setGscConnected] = useState(false);
-  const [gscKeywords, setGscKeywords] = useState([]);
-  const [loadingKeywords, setLoadingKeywords] = useState(false);
   const [scanHistory, setScanHistory] = useState([]);
-  const [sortConfig, setSortConfig] = useState({ key: 'clicks', direction: 'desc' });
   const [showNewScanModal, setShowNewScanModal] = useState(false);
   const [newScanUrl, setNewScanUrl] = useState('');
 
@@ -48,7 +45,6 @@ const SEOAuditDashboard = () => {
     if (urlParam) {
       runAudit(urlParam);
     }
-    checkGSCConnection();
     loadScanHistory();
   }, [urlParam]);
 
@@ -56,144 +52,8 @@ const SEOAuditDashboard = () => {
   useEffect(() => {
     if (user) {
       loadScanHistory();
-      checkGSCConnection();
     }
   }, [user]);
-
-  // Auto-load keywords when switching to Keywords tab
-  useEffect(() => {
-    if (activeTab === 'keywords' && gscConnected && auditData && gscKeywords.length === 0 && !loadingKeywords) {
-      fetchGSCKeywords(true); // Silent mode - no error popups
-    }
-  }, [activeTab]);
-
-  // Sort keywords
-  const handleSort = (key) => {
-    let direction = 'desc';
-    if (sortConfig.key === key && sortConfig.direction === 'desc') {
-      direction = 'asc';
-    }
-    setSortConfig({ key, direction });
-  };
-
-  const sortedKeywords = gscKeywords.length > 0 ? [...gscKeywords].sort((a, b) => {
-    const aVal = a[sortConfig.key];
-    const bVal = b[sortConfig.key];
-    
-    if (sortConfig.key === 'keyword' || sortConfig.key === 'query') {
-      const aText = (a.keyword || a.query || '').toLowerCase();
-      const bText = (b.keyword || b.query || '').toLowerCase();
-      return sortConfig.direction === 'asc' 
-        ? aText.localeCompare(bText)
-        : bText.localeCompare(aText);
-    }
-    
-    return sortConfig.direction === 'asc' ? aVal - bVal : bVal - aVal;
-  }) : [];
-
-  // Check if GSC is connected
-  const checkGSCConnection = async () => {
-    if (!user) return;
-    
-    try {
-      const response = await fetch(`${API_BASE}/api/seo/gsc/connections?userId=${user.id}`);
-      const data = await response.json();
-      setGscConnected(data.success && data.connections?.length > 0);
-    } catch (error) {
-      console.error('Error checking GSC:', error);
-    }
-  };
-
-  // Fetch GSC keywords
-  const fetchGSCKeywords = async (silent = false) => {
-    if (!user || !auditData) return;
-
-    try {
-      setLoadingKeywords(true);
-      console.log('🔍 Fetching GSC connections for user:', user.id);
-      const response = await fetch(`${API_BASE}/api/seo/gsc/connections?userId=${user.id}`);
-      const data = await response.json();
-      
-      console.log('📊 GSC Connections response:', data);
-      
-      if (data.success && data.connections?.length > 0) {
-        // Find connection matching the current website domain
-        const currentDomain = auditData.hostname;
-        console.log('🌐 Current domain:', currentDomain);
-        
-        let connection = data.connections.find(c => 
-          c.site_url.includes(currentDomain) || currentDomain.includes(c.site_url.replace('sc-domain:', ''))
-        );
-        
-        // If no match, use first connection
-        if (!connection) {
-          console.log('⚠️ No matching connection found, using first one');
-          connection = data.connections[0];
-        }
-        
-        console.log('✅ Using connection:', connection);
-        console.log('🔑 Fetching keywords for:', connection.site_url);
-        
-        // Fetch keywords using the same endpoint as GSC Analytics (which works!)
-        const keywordUrl = `${API_BASE}/api/seo/gsc/keyword-history?userId=${user.id}&siteUrl=${encodeURIComponent(connection.site_url)}&days=30`;
-        console.log('📡 Keyword API URL:', keywordUrl);
-        
-        const keywordResponse = await fetch(keywordUrl);
-        const keywordData = await keywordResponse.json();
-        
-        console.log('📈 Keyword data response:', keywordData);
-        
-        if (keywordData.success && keywordData.history && keywordData.history.length > 0) {
-          // Group by keyword and get latest data
-          const keywordMap = {};
-          keywordData.history.forEach(row => {
-            if (!keywordMap[row.keyword]) {
-              keywordMap[row.keyword] = {
-                keyword: row.keyword,
-                query: row.keyword,
-                clicks: row.clicks,
-                impressions: row.impressions,
-                ctr: parseFloat(row.ctr),
-                position: parseFloat(row.position),
-                position_change: 0
-              };
-            }
-          });
-          
-          const keywords = Object.values(keywordMap);
-          console.log(`✅ Loaded ${keywords.length} keywords`);
-          setGscKeywords(keywords);
-          if (!silent) {
-            alert(`✅ Loaded ${keywords.length} keywords!`);
-          }
-        } else {
-          console.log('❌ No keywords found in response');
-          setGscKeywords([]);
-          if (!silent) {
-            const errorMsg = keywordData.error || 'Unknown error';
-            if (errorMsg.includes('401') || errorMsg.includes('Unauthorized') || errorMsg.includes('invalid_token')) {
-              alert('⚠️ GSC Token Expired!\n\nYour Google Search Console connection has expired.\n\nPlease go to Settings and reconnect your GSC account.');
-            } else {
-              alert('No keyword data found. This could mean:\n1. No data available for this domain yet\n2. Domain not verified in GSC\n3. Not enough data collected\n\nError: ' + errorMsg);
-            }
-          }
-        }
-      } else {
-        console.log('❌ No GSC connections found');
-        if (!silent) {
-          alert('No GSC connections found. Please connect GSC in Settings.');
-        }
-      }
-    } catch (error) {
-      console.error('❌ Error fetching keywords:', error);
-      if (!silent) {
-        alert(`Error loading keywords: ${error.message}`);
-      }
-      setGscKeywords([]);
-    } finally {
-      setLoadingKeywords(false);
-    }
-  };
 
   // Load scan history
   const loadScanHistory = async () => {
@@ -811,213 +671,7 @@ const SEOAuditDashboard = () => {
             )}
 
             {activeTab === 'keywords' && (
-              <div>
-                <div className="mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900 mb-3">Keywords</h2>
-                  <p className="text-gray-600 mb-4 leading-relaxed">
-                    The keywords that are most successful in driving traffic to <span className="font-semibold text-gray-900">{auditData.hostname}</span>. 
-                    It showcases the search terms your audience frequently uses, along with their position, clicks, impressions, and CTR. 
-                    By analyzing these crucial performance metrics, you can fine-tune your SEO strategies for {auditData.hostname}, 
-                    enhance content relevance, and attract more organic traffic, thereby boosting {auditData.hostname} overall search engine visibility.
-                  </p>
-                  <div className="flex items-center gap-3">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${gscConnected ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                      GSC: {gscConnected ? 'Connected' : 'Not Connected'}
-                    </span>
-                    {loadingKeywords && (
-                      <span className="text-sm text-gray-500 flex items-center gap-2">
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        Loading keywords...
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex items-center justify-between mb-6">
-                  <div></div>
-                  <div className="flex items-center gap-3">
-                    {gscConnected && (
-                      <button
-                        onClick={fetchGSCKeywords}
-                        disabled={loadingKeywords}
-                        className="px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2 disabled:opacity-50"
-                      >
-                        <RefreshCw className={`w-5 h-5 ${loadingKeywords ? 'animate-spin' : ''}`} />
-                        Load Keywords
-                      </button>
-                    )}
-                    {!gscConnected && (
-                      <button
-                        onClick={() => navigate('/settings')}
-                        className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-                      >
-                        <Search className="w-5 h-5" />
-                        Connect Google Search Console
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {!gscConnected ? (
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
-                      <Search className="w-8 h-8 text-blue-600" />
-                    </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">Connect Google Search Console</h3>
-                    <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                      Connect your Google Search Console account to see keyword rankings, clicks, impressions, and more.
-                    </p>
-                    <button
-                      onClick={() => navigate('/settings')}
-                      className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      Go to Settings
-                    </button>
-                  </div>
-                ) : loadingKeywords ? (
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-                    <RefreshCw className="w-12 h-12 text-purple-600 animate-spin mx-auto mb-4" />
-                    <p className="text-gray-600">Loading keyword data...</p>
-                  </div>
-                ) : gscKeywords.length === 0 ? (
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
-                    <div className="max-w-md mx-auto">
-                      <AlertCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-lg font-semibold text-gray-900 mb-2">No Keyword Data Found</h3>
-                      <p className="text-gray-600 mb-4">
-                        This could mean:
-                      </p>
-                      <ul className="text-left text-sm text-gray-600 space-y-2 mb-6">
-                        <li>• No data available for this domain yet in Google Search Console</li>
-                        <li>• Domain not verified in GSC</li>
-                        <li>• Not enough data collected (usually takes a few days)</li>
-                      </ul>
-                      <button
-                        onClick={() => fetchGSCKeywords(false)}
-                        className="px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2 mx-auto"
-                      >
-                        <RefreshCw className="w-4 h-4" />
-                        Try Again
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                    <table className="w-full">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th 
-                            onClick={() => handleSort('keyword')}
-                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
-                          >
-                            <div className="flex items-center gap-2">
-                              Keyword
-                              {sortConfig.key === 'keyword' && (
-                                <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
-                              )}
-                            </div>
-                          </th>
-                          <th 
-                            onClick={() => handleSort('position')}
-                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
-                          >
-                            <div className="flex items-center gap-2">
-                              Position
-                              {sortConfig.key === 'position' && (
-                                <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
-                              )}
-                            </div>
-                          </th>
-                          <th 
-                            onClick={() => handleSort('clicks')}
-                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
-                          >
-                            <div className="flex items-center gap-2">
-                              Clicks
-                              {sortConfig.key === 'clicks' && (
-                                <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
-                              )}
-                            </div>
-                          </th>
-                          <th 
-                            onClick={() => handleSort('impressions')}
-                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
-                          >
-                            <div className="flex items-center gap-2">
-                              Impressions
-                              {sortConfig.key === 'impressions' && (
-                                <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
-                              )}
-                            </div>
-                          </th>
-                          <th 
-                            onClick={() => handleSort('ctr')}
-                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
-                          >
-                            <div className="flex items-center gap-2">
-                              CTR
-                              {sortConfig.key === 'ctr' && (
-                                <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
-                              )}
-                            </div>
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Change</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {sortedKeywords.map((keyword, idx) => (
-                          <tr key={idx} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 text-sm font-medium text-gray-900">{keyword.keyword || keyword.query || 'N/A'}</td>
-                            <td className="px-6 py-4 text-sm text-gray-600">
-                              <div className="flex items-center gap-2">
-                                {Math.round(keyword.position) <= 10 ? (
-                                  <>
-                                    <div className="w-2 h-8 bg-green-500 rounded-full"></div>
-                                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded font-medium">
-                                      #{Math.round(keyword.position)}
-                                    </span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded font-medium">
-                                      #{Math.round(keyword.position)}
-                                    </span>
-                                    <button
-                                      onClick={() => navigate(`/seo-traffic?keyword=${encodeURIComponent(keyword.keyword || keyword.query)}&url=${encodeURIComponent(websiteUrl)}`)}
-                                      className="px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors"
-                                    >
-                                      Boost Ranking
-                                    </button>
-                                  </>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-900">{keyword.clicks}</td>
-                            <td className="px-6 py-4 text-sm text-gray-600">{keyword.impressions}</td>
-                            <td className="px-6 py-4 text-sm text-gray-600">
-                              {(keyword.ctr * 100).toFixed(2)}%
-                            </td>
-                            <td className="px-6 py-4 text-sm">
-                              {keyword.position_change > 0 ? (
-                                <span className="flex items-center gap-1 text-green-600">
-                                  <TrendingUp className="w-4 h-4" />
-                                  +{Math.abs(keyword.position_change)}
-                                </span>
-                              ) : keyword.position_change < 0 ? (
-                                <span className="flex items-center gap-1 text-red-600">
-                                  <TrendingDown className="w-4 h-4" />
-                                  {keyword.position_change}
-                                </span>
-                              ) : (
-                                <span className="text-gray-400">-</span>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
+              <GSCAnalytics />
             )}
           </div>
         </div>
