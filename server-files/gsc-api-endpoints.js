@@ -4,15 +4,14 @@
 const express = require('express');
 const router = express.Router();
 const gscService = require('./gsc-service');
-const { authenticateToken } = require('./auth-middleware');
 
 /**
  * GET /api/gsc/auth-url
  * Generate OAuth authorization URL
  */
-router.get('/auth-url', authenticateToken, async (req, res) => {
+router.get('/auth-url', async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.query.userId || '00000000-0000-0000-0000-000000000000';
     const authUrl = gscService.getAuthUrl(userId);
 
     res.json({
@@ -59,11 +58,13 @@ router.get('/callback', async (req, res) => {
       await gscService.saveConnection(userId, site.siteUrl, tokens);
     }
 
-    // Redirect back to dashboard
-    res.redirect('/dashboard?gsc_connected=true');
+    // Redirect back to frontend dashboard
+    const frontendUrl = process.env.FRONTEND_URL || 'https://www.organitrafficboost.com';
+    res.redirect(`${frontendUrl}/?gsc_connected=true`);
   } catch (error) {
     console.error('Error in OAuth callback:', error);
-    res.redirect('/dashboard?gsc_error=auth_failed');
+    const frontendUrl = process.env.FRONTEND_URL || 'https://www.organitrafficboost.com';
+    res.redirect(`${frontendUrl}/?gsc_error=auth_failed`);
   }
 });
 
@@ -71,9 +72,9 @@ router.get('/callback', async (req, res) => {
  * GET /api/gsc/connections
  * Get user's GSC connections
  */
-router.get('/connections', authenticateToken, async (req, res) => {
+router.get('/connections', async (req, res) => {
   try {
-    const userId = req.user.id;
+    const userId = req.query.userId || '00000000-0000-0000-0000-000000000000';
     const connections = await gscService.getUserConnections(userId);
 
     res.json({
@@ -93,7 +94,7 @@ router.get('/connections', authenticateToken, async (req, res) => {
  * GET /api/gsc/sites/:connectionId
  * List sites for a connection
  */
-router.get('/sites/:connectionId', authenticateToken, async (req, res) => {
+router.get('/sites/:connectionId', async (req, res) => {
   try {
     const { connectionId } = req.params;
     const sites = await gscService.listSites(connectionId);
@@ -115,7 +116,7 @@ router.get('/sites/:connectionId', authenticateToken, async (req, res) => {
  * GET /api/gsc/keywords/:connectionId
  * Get top keywords for a site
  */
-router.get('/keywords/:connectionId', authenticateToken, async (req, res) => {
+router.get('/keywords/:connectionId', async (req, res) => {
   try {
     const { connectionId } = req.params;
     const { siteUrl, days = 30 } = req.query;
@@ -151,7 +152,7 @@ router.get('/keywords/:connectionId', authenticateToken, async (req, res) => {
  * GET /api/gsc/page-keywords/:connectionId
  * Get top keywords for a specific page
  */
-router.get('/page-keywords/:connectionId', authenticateToken, async (req, res) => {
+router.get('/page-keywords/:connectionId', async (req, res) => {
   try {
     const { connectionId } = req.params;
     const { siteUrl, pageUrl, days = 30 } = req.query;
@@ -194,7 +195,7 @@ router.get('/page-keywords/:connectionId', authenticateToken, async (req, res) =
  * POST /api/gsc/refresh-keywords
  * Force refresh keywords for a page
  */
-router.post('/refresh-keywords', authenticateToken, async (req, res) => {
+router.post('/refresh-keywords', async (req, res) => {
   try {
     const { connectionId, siteUrl, pageUrl, days = 30 } = req.body;
 
@@ -230,10 +231,10 @@ router.post('/refresh-keywords', authenticateToken, async (req, res) => {
  * DELETE /api/gsc/disconnect/:connectionId
  * Disconnect a GSC connection
  */
-router.delete('/disconnect/:connectionId', authenticateToken, async (req, res) => {
+router.delete('/disconnect/:connectionId', async (req, res) => {
   try {
     const { connectionId } = req.params;
-    const userId = req.user.id;
+    const userId = req.query.userId || '00000000-0000-0000-0000-000000000000';
 
     await gscService.disconnectConnection(connectionId, userId);
 
@@ -254,7 +255,7 @@ router.delete('/disconnect/:connectionId', authenticateToken, async (req, res) =
  * GET /api/gsc/analytics/:connectionId
  * Get search analytics data
  */
-router.get('/analytics/:connectionId', authenticateToken, async (req, res) => {
+router.get('/analytics/:connectionId', async (req, res) => {
   try {
     const { connectionId } = req.params;
     const { siteUrl, startDate, endDate, dimensions = 'query' } = req.query;

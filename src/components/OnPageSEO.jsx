@@ -4,6 +4,8 @@
 import React, { useState } from 'react';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
+import { useAuth } from '../lib/authContext';
+import GSCKeywords from './GSCKeywords';
 
 const { 
   FiCheckCircle, FiAlertCircle, FiXCircle, FiSearch, FiLoader,
@@ -11,6 +13,7 @@ const {
 } = FiIcons;
 
 const OnPageSEO = () => {
+  const { user } = useAuth();
   const [url, setUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [analysis, setAnalysis] = useState(null);
@@ -226,6 +229,15 @@ Fix: ${issue.fix}
               ))}
             </div>
           </div>
+
+          {/* GSC Keywords Section */}
+          {user && (
+            <GSCKeywords 
+              pageUrl={url}
+              siteUrl={new URL(url).origin}
+              userId={user.id}
+            />
+          )}
         </>
       )}
 

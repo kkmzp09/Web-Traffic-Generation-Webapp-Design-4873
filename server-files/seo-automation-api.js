@@ -651,4 +651,8 @@ function calculateNextRun(frequency) {
   return now;
 }
 
+// Mount GSC routes
+const gscRoutes = require('./gsc-api-endpoints');
+router.use('/gsc', gscRoutes);
+
 module.exports = router;
