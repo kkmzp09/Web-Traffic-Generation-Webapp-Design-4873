@@ -51,11 +51,11 @@ const SEOJourney = () => {
 
       // Run multiple scans in parallel
       const [seoScan, gscData, domainData] = await Promise.all([
-        // On-page SEO scan - use existing puppeteer endpoint
-        fetch(`${API_BASE}/api/seo/analyze-page`, {
+        // On-page SEO scan - use existing scan-page endpoint
+        fetch(`${API_BASE}/api/seo/scan-page`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: normalizedUrl })
+          body: JSON.stringify({ url: normalizedUrl, userId: user?.id })
         }).then(r => r.json()).catch(err => {
           console.error('SEO scan error:', err);
           return { success: false, analysis: null };
