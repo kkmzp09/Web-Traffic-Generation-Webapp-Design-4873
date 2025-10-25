@@ -1,18 +1,11 @@
 // src/components/Dashboard.jsx
-// Main dashboard - now shows SEO Journey as primary interface
+// Main dashboard - SEO Audit Dashboard
 
 import React from 'react';
-import SEOJourney from './SEOJourney';
+import SEOAuditDashboard from './SEOAuditDashboard';
 
 const Dashboard = () => {
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="p-6">
-        {/* SEO Journey - Main Interface */}
-        <SEOJourney />
-      </div>
-    </div>
-  );
+  return <SEOAuditDashboard />;
 };
 
 export default Dashboard;
