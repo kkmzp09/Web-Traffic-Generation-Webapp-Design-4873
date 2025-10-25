@@ -694,7 +694,7 @@ const SEOAuditDashboard = () => {
                       <tbody className="divide-y divide-gray-200">
                         {gscKeywords.map((keyword, idx) => (
                           <tr key={idx} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 text-sm font-medium text-gray-900">{keyword.query}</td>
+                            <td className="px-6 py-4 text-sm font-medium text-gray-900">{keyword.keyword || keyword.query || 'N/A'}</td>
                             <td className="px-6 py-4 text-sm text-gray-600">
                               <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded font-medium">
                                 #{Math.round(keyword.position)}
