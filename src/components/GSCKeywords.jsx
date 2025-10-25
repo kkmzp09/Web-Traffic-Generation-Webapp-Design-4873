@@ -8,12 +8,12 @@ const GSCKeywords = ({ pageUrl, siteUrl, userId }) => {
   const [keywords, setKeywords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [connectionId, setConnectionId] = useState(null);
+  const [connection, setConnection] = useState(null);
 
   const API_BASE = import.meta.env.VITE_API_URL || 'https://api.organitrafficboost.com';
 
-  // Get connection ID for the site
-  const getConnectionId = async () => {
+  // Get connection for the site
+  const getConnection = async () => {
     try {
       const response = await fetch(`${API_BASE}/api/seo/gsc/connections?userId=${userId}`);
       const data = await response.json();
@@ -21,12 +21,14 @@ const GSCKeywords = ({ pageUrl, siteUrl, userId }) => {
       if (data.success && data.connections.length > 0) {
         // Find connection matching the site URL
         const conn = data.connections.find(c => 
-          c.site_url === siteUrl || siteUrl.includes(c.site_url.replace('sc-domain:', ''))
+          c.site_url === siteUrl || 
+          siteUrl.includes(c.site_url.replace('sc-domain:', '')) ||
+          c.site_url.includes(new URL(siteUrl).hostname)
         );
         
         if (conn) {
-          setConnectionId(conn.id);
-          return conn.id;
+          setConnection(conn);
+          return conn;
         }
       }
       return null;
@@ -42,18 +44,21 @@ const GSCKeywords = ({ pageUrl, siteUrl, userId }) => {
       setLoading(true);
       setError(null);
 
-      let connId = connectionId;
-      if (!connId) {
-        connId = await getConnectionId();
-        if (!connId) {
+      let conn = connection;
+      if (!conn) {
+        conn = await getConnection();
+        if (!conn) {
           setError('No GSC connection found for this site');
           setLoading(false);
           return;
         }
       }
 
+      // Use the actual GSC site URL from the connection
+      const gscSiteUrl = conn.site_url;
+      
       const response = await fetch(
-        `${API_BASE}/api/seo/gsc/keywords/${connId}?siteUrl=${encodeURIComponent(siteUrl)}&days=30`
+        `${API_BASE}/api/seo/gsc/keywords/${conn.id}?siteUrl=${encodeURIComponent(gscSiteUrl)}&days=30`
       );
       const data = await response.json();
 
