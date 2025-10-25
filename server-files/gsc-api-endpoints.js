@@ -290,4 +290,59 @@ router.get('/analytics/:connectionId', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/gsc/keyword-history
+ * Get historical keyword data for tracking trends
+ */
+router.get('/keyword-history', async (req, res) => {
+  try {
+    const { userId, keyword, siteUrl, days = 30 } = req.query;
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        error: 'userId is required'
+      });
+    }
+
+    const db = require('./db');
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - parseInt(days));
+
+    let query = `
+      SELECT date, keyword, clicks, impressions, ctr, position, site_url, page_url
+      FROM gsc_keyword_history
+      WHERE user_id = $1 AND date >= $2 AND date <= $3
+    `;
+    const params = [userId, startDate.toISOString().split('T')[0], endDate.toISOString().split('T')[0]];
+
+    if (keyword) {
+      query += ` AND keyword = $${params.length + 1}`;
+      params.push(keyword);
+    }
+
+    if (siteUrl) {
+      query += ` AND site_url = $${params.length + 1}`;
+      params.push(siteUrl);
+    }
+
+    query += ` ORDER BY date DESC, clicks DESC`;
+
+    const result = await db.query(query, params);
+
+    res.json({
+      success: true,
+      history: result.rows,
+      count: result.rows.length
+    });
+  } catch (error) {
+    console.error('Error getting keyword history:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get keyword history'
+    });
+  }
+});
+
 module.exports = router;

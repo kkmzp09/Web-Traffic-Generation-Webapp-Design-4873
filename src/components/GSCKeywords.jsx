@@ -19,12 +19,23 @@ const GSCKeywords = ({ pageUrl, siteUrl, userId }) => {
       const data = await response.json();
 
       if (data.success && data.connections.length > 0) {
+        // Extract hostname from siteUrl
+        const hostname = new URL(siteUrl).hostname;
+        
         // Find connection matching the site URL
-        const conn = data.connections.find(c => 
-          c.site_url === siteUrl || 
-          siteUrl.includes(c.site_url.replace('sc-domain:', '')) ||
-          c.site_url.includes(new URL(siteUrl).hostname)
-        );
+        const conn = data.connections.find(c => {
+          // Exact match
+          if (c.site_url === siteUrl) return true;
+          
+          // Domain property match (sc-domain:example.com)
+          if (c.site_url.startsWith('sc-domain:')) {
+            const domain = c.site_url.replace('sc-domain:', '');
+            return hostname === domain || hostname.endsWith('.' + domain);
+          }
+          
+          // URL property match
+          return c.site_url.includes(hostname);
+        });
         
         if (conn) {
           setConnection(conn);

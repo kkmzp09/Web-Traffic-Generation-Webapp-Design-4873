@@ -255,6 +255,12 @@ class GSCService {
       // Save to cache
       await this.cacheTopKeywords(connectionId, pageUrl, pageKeywords);
 
+      // Save to history for tracking
+      const connection = await this.getConnection(connectionId);
+      if (connection) {
+        await this.saveKeywordHistory(connection.user_id, connectionId, siteUrl, pageUrl, pageKeywords);
+      }
+
       return pageKeywords;
     } catch (error) {
       console.error('Error getting top keywords:', error.message);
@@ -326,7 +332,7 @@ class GSCService {
         ['query']
       );
 
-      return data
+      const keywords = data
         .map(row => ({
           keyword: row.keys[0],
           clicks: row.clicks,
@@ -336,9 +342,79 @@ class GSCService {
         }))
         .sort((a, b) => b.clicks - a.clicks)
         .slice(0, 100); // Top 100 keywords
+
+      // Save to history for tracking
+      const connection = await this.getConnection(connectionId);
+      if (connection) {
+        await this.saveKeywordHistory(connection.user_id, connectionId, siteUrl, null, keywords);
+      }
+
+      return keywords;
     } catch (error) {
       console.error('Error getting site keywords:', error.message);
       throw error;
+    }
+  }
+
+  /**
+   * Save keyword history for tracking over time
+   */
+  async saveKeywordHistory(userId, connectionId, siteUrl, pageUrl, keywords) {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+
+      for (const keyword of keywords) {
+        // Check if entry exists for today
+        const existing = await db.query(
+          `SELECT id FROM gsc_keyword_history 
+           WHERE user_id = $1 AND connection_id = $2 AND keyword = $3 AND date = $4`,
+          [userId, connectionId, keyword.keyword, today]
+        );
+
+        if (existing.rows.length > 0) {
+          // Update existing entry
+          await db.query(
+            `UPDATE gsc_keyword_history 
+             SET clicks = $1, impressions = $2, ctr = $3, position = $4, 
+                 page_url = $5, site_url = $6, updated_at = NOW()
+             WHERE id = $7`,
+            [
+              keyword.clicks,
+              keyword.impressions,
+              keyword.ctr,
+              keyword.position,
+              pageUrl,
+              siteUrl,
+              existing.rows[0].id
+            ]
+          );
+        } else {
+          // Insert new entry
+          await db.query(
+            `INSERT INTO gsc_keyword_history 
+             (user_id, connection_id, site_url, page_url, keyword, clicks, impressions, ctr, position, date)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+            [
+              userId,
+              connectionId,
+              siteUrl,
+              pageUrl,
+              keyword.keyword,
+              keyword.clicks,
+              keyword.impressions,
+              keyword.ctr,
+              keyword.position,
+              today
+            ]
+          );
+        }
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error saving keyword history:', error.message);
+      // Don't throw - we don't want to fail the main request if history save fails
+      return false;
     }
   }
 
