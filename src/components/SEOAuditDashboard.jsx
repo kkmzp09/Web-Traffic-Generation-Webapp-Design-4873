@@ -37,6 +37,13 @@ const SEOAuditDashboard = () => {
     loadScanHistory();
   }, [urlParam]);
 
+  // Fetch keywords when switching to Keywords tab
+  useEffect(() => {
+    if (activeTab === 'keywords' && gscConnected && auditData) {
+      fetchGSCKeywords();
+    }
+  }, [activeTab, gscConnected, auditData]);
+
   // Check if GSC is connected
   const checkGSCConnection = async () => {
     if (!user) return;
@@ -52,7 +59,7 @@ const SEOAuditDashboard = () => {
 
   // Fetch GSC keywords
   const fetchGSCKeywords = async () => {
-    if (!auditData || !gscConnected) return;
+    if (!auditData || !gscConnected || !user) return;
 
     setLoadingKeywords(true);
     try {
@@ -60,7 +67,18 @@ const SEOAuditDashboard = () => {
       const data = await response.json();
       
       if (data.success && data.connections?.length > 0) {
-        const connection = data.connections[0];
+        // Find connection matching the current website domain
+        const currentDomain = auditData.hostname;
+        let connection = data.connections.find(c => 
+          c.site_url.includes(currentDomain) || currentDomain.includes(c.site_url.replace('sc-domain:', ''))
+        );
+        
+        // If no match, use first connection
+        if (!connection) {
+          connection = data.connections[0];
+        }
+        
+        console.log('Fetching keywords for:', connection.site_url);
         
         // Fetch keywords for this domain
         const keywordResponse = await fetch(
@@ -68,12 +86,17 @@ const SEOAuditDashboard = () => {
         );
         const keywordData = await keywordResponse.json();
         
-        if (keywordData.success) {
-          setGscKeywords(keywordData.keywords || []);
+        console.log('Keyword data:', keywordData);
+        
+        if (keywordData.success && keywordData.keywords) {
+          setGscKeywords(keywordData.keywords);
+        } else {
+          setGscKeywords([]);
         }
       }
     } catch (error) {
       console.error('Error fetching keywords:', error);
+      setGscKeywords([]);
     } finally {
       setLoadingKeywords(false);
     }
