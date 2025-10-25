@@ -22,42 +22,76 @@ const SEOJourney = () => {
 
   // Comprehensive site audit
   const runComprehensiveAudit = async () => {
-    if (!websiteUrl) return;
+    if (!websiteUrl) {
+      alert('Please enter a website URL');
+      return;
+    }
 
     try {
       setScanning(true);
+      console.log('Starting audit for:', websiteUrl);
+
+      // Validate and normalize URL
+      let normalizedUrl = websiteUrl.trim();
+      if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
+        normalizedUrl = 'https://' + normalizedUrl;
+      }
+
+      let hostname;
+      try {
+        hostname = new URL(normalizedUrl).hostname;
+      } catch (e) {
+        console.error('Invalid URL:', e);
+        alert('Please enter a valid website URL (e.g., https://example.com)');
+        setScanning(false);
+        return;
+      }
       
+      console.log('Fetching data for:', normalizedUrl, 'hostname:', hostname);
+
       // Run multiple scans in parallel
       const [seoScan, gscData, domainData] = await Promise.all([
         // On-page SEO scan
         fetch(`${API_BASE}/api/seo/scan`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: websiteUrl })
-        }).then(r => r.json()).catch(() => null),
+          body: JSON.stringify({ url: normalizedUrl })
+        }).then(r => r.json()).catch(err => {
+          console.error('SEO scan error:', err);
+          return null;
+        }),
 
         // GSC data (if connected)
         user ? fetch(`${API_BASE}/api/seo/gsc/connections?userId=${user.id}`)
-          .then(r => r.json()).catch(() => null) : null,
+          .then(r => r.json()).catch(err => {
+            console.error('GSC data error:', err);
+            return null;
+          }) : Promise.resolve(null),
 
         // Domain analytics
-        fetch(`${API_BASE}/api/seo/domain-metrics?domain=${new URL(websiteUrl).hostname}`)
-          .then(r => r.json()).catch(() => null)
+        fetch(`${API_BASE}/api/seo/domain-metrics?domain=${hostname}`)
+          .then(r => r.json()).catch(err => {
+            console.error('Domain metrics error:', err);
+            return null;
+          })
       ]);
 
+      console.log('Scan results:', { seoScan, gscData, domainData });
+
       // Calculate comprehensive results
-      const results = calculateAuditResults(seoScan, gscData, domainData);
+      const results = calculateAuditResults(seoScan, gscData, domainData, normalizedUrl);
       setAuditResults(results);
       
     } catch (error) {
       console.error('Audit error:', error);
+      alert('An error occurred during the audit. Please try again.');
     } finally {
       setScanning(false);
     }
   };
 
   // Calculate audit results and priority fixes
-  const calculateAuditResults = (seoScan, gscData, domainData) => {
+  const calculateAuditResults = (seoScan, gscData, domainData, url) => {
     const issues = {
       critical: [],
       warnings: [],
@@ -66,7 +100,7 @@ const SEOJourney = () => {
 
     let totalScore = 100;
 
-    console.log('Audit data:', { seoScan, gscData, domainData });
+    console.log('Audit data:', { seoScan, gscData, domainData, url });
 
     // Check GSC connection and traffic
     const hasGSCConnection = gscData?.success && gscData?.connections?.length > 0;
@@ -229,7 +263,7 @@ const SEOJourney = () => {
     return {
       score: Math.max(0, Math.min(100, totalScore)),
       issues,
-      websiteUrl,
+      websiteUrl: url,
       scannedAt: new Date().toISOString(),
       domain: domainData?.metrics || {},
       seo: seoScan?.analysis || {}
