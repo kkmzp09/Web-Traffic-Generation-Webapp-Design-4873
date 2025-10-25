@@ -58,13 +58,6 @@ const SEOAuditDashboard = () => {
     }
   }, [user]);
 
-  // Fetch keywords when switching to Keywords tab
-  useEffect(() => {
-    if (activeTab === 'keywords' && gscConnected && auditData) {
-      fetchGSCKeywords();
-    }
-  }, [activeTab, gscConnected, auditData]);
-
   // Sort keywords
   const handleSort = (key) => {
     let direction = 'desc';
