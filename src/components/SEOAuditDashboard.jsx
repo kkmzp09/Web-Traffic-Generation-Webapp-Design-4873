@@ -60,6 +60,13 @@ const SEOAuditDashboard = () => {
     }
   }, [user]);
 
+  // Auto-load keywords when switching to Keywords tab
+  useEffect(() => {
+    if (activeTab === 'keywords' && gscConnected && auditData && gscKeywords.length === 0 && !loadingKeywords) {
+      fetchGSCKeywords();
+    }
+  }, [activeTab]);
+
   // Sort keywords
   const handleSort = (key) => {
     let direction = 'desc';
@@ -783,16 +790,28 @@ const SEOAuditDashboard = () => {
 
             {activeTab === 'keywords' && (
               <div>
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Keyword Rankings</h2>
-                    <p className="text-gray-600">Track your keyword performance from Google Search Console</p>
-                    <div className="mt-2 text-sm">
-                      <span className={`px-2 py-1 rounded ${gscConnected ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                        GSC: {gscConnected ? 'Connected' : 'Not Connected'}
+                <div className="mb-6">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-3">Keywords</h2>
+                  <p className="text-gray-600 mb-4 leading-relaxed">
+                    The keywords that are most successful in driving traffic to <span className="font-semibold text-gray-900">{auditData.hostname}</span>. 
+                    It showcases the search terms your audience frequently uses, along with their position, clicks, impressions, and CTR. 
+                    By analyzing these crucial performance metrics, you can fine-tune your SEO strategies for {auditData.hostname}, 
+                    enhance content relevance, and attract more organic traffic, thereby boosting {auditData.hostname} overall search engine visibility.
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${gscConnected ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                      GSC: {gscConnected ? 'Connected' : 'Not Connected'}
+                    </span>
+                    {loadingKeywords && (
+                      <span className="text-sm text-gray-500 flex items-center gap-2">
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        Loading keywords...
                       </span>
-                    </div>
+                    )}
                   </div>
+                </div>
+                <div className="flex items-center justify-between mb-6">
+                  <div></div>
                   <div className="flex items-center gap-3">
                     {gscConnected && (
                       <button
