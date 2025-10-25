@@ -31,6 +31,18 @@ const SEOAuditDashboard = () => {
   const API_BASE = import.meta.env.VITE_API_URL || 'https://api.organitrafficboost.com';
 
   useEffect(() => {
+    // Load saved scan results from localStorage
+    const savedScan = localStorage.getItem('lastScanResult');
+    if (savedScan) {
+      try {
+        const parsed = JSON.parse(savedScan);
+        setAuditData(parsed.auditData);
+        setWebsiteUrl(parsed.websiteUrl);
+      } catch (e) {
+        console.error('Error loading saved scan:', e);
+      }
+    }
+    
     if (urlParam) {
       runAudit(urlParam);
     }
@@ -212,6 +224,13 @@ const SEOAuditDashboard = () => {
       if (data.success) {
         setAuditData(data);
         console.log('✅ Audit complete:', data);
+        
+        // Save to localStorage for persistence
+        localStorage.setItem('lastScanResult', JSON.stringify({
+          auditData: data,
+          websiteUrl: url,
+          timestamp: new Date().toISOString()
+        }));
         
         // Save scan results
         await saveScanResults(data);
@@ -783,9 +802,28 @@ const SEOAuditDashboard = () => {
                           <tr key={idx} className="hover:bg-gray-50">
                             <td className="px-6 py-4 text-sm font-medium text-gray-900">{keyword.keyword || keyword.query || 'N/A'}</td>
                             <td className="px-6 py-4 text-sm text-gray-600">
-                              <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded font-medium">
-                                #{Math.round(keyword.position)}
-                              </span>
+                              <div className="flex items-center gap-2">
+                                {Math.round(keyword.position) <= 10 ? (
+                                  <>
+                                    <div className="w-2 h-8 bg-green-500 rounded-full"></div>
+                                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded font-medium">
+                                      #{Math.round(keyword.position)}
+                                    </span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <span className="px-2 py-1 bg-orange-100 text-orange-700 rounded font-medium">
+                                      #{Math.round(keyword.position)}
+                                    </span>
+                                    <button
+                                      onClick={() => navigate(`/seo-traffic?keyword=${encodeURIComponent(keyword.keyword || keyword.query)}&url=${encodeURIComponent(websiteUrl)}`)}
+                                      className="px-3 py-1 bg-purple-600 text-white text-xs rounded hover:bg-purple-700 transition-colors"
+                                    >
+                                      Boost Ranking
+                                    </button>
+                                  </>
+                                )}
+                              </div>
                             </td>
                             <td className="px-6 py-4 text-sm text-gray-900">{keyword.clicks}</td>
                             <td className="px-6 py-4 text-sm text-gray-600">{keyword.impressions}</td>
