@@ -50,6 +50,14 @@ const SEOAuditDashboard = () => {
     loadScanHistory();
   }, [urlParam]);
 
+  // Load scan history when user becomes available
+  useEffect(() => {
+    if (user) {
+      loadScanHistory();
+      checkGSCConnection();
+    }
+  }, [user]);
+
   // Fetch keywords when switching to Keywords tab
   useEffect(() => {
     if (activeTab === 'keywords' && gscConnected && auditData) {
