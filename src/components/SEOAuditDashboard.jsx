@@ -23,9 +23,9 @@ const SEOAuditDashboard = () => {
   const [expandedPages, setExpandedPages] = useState({});
   const [fixingIssues, setFixingIssues] = useState({});
   const [gscKeywords, setGscKeywords] = useState([]);
-  const [gscConnected, setGscConnected] = useState(false);
   const [loadingKeywords, setLoadingKeywords] = useState(false);
   const [scanHistory, setScanHistory] = useState([]);
+  const [sortConfig, setSortConfig] = useState({ key: 'clicks', direction: 'desc' });
 
   const API_BASE = import.meta.env.VITE_API_URL || 'https://api.organitrafficboost.com';
 
@@ -43,6 +43,30 @@ const SEOAuditDashboard = () => {
       fetchGSCKeywords();
     }
   }, [activeTab, gscConnected, auditData]);
+
+  // Sort keywords
+  const handleSort = (key) => {
+    let direction = 'desc';
+    if (sortConfig.key === key && sortConfig.direction === 'desc') {
+      direction = 'asc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const sortedKeywords = [...gscKeywords].sort((a, b) => {
+    const aVal = a[sortConfig.key];
+    const bVal = b[sortConfig.key];
+    
+    if (sortConfig.key === 'keyword' || sortConfig.key === 'query') {
+      const aText = (a.keyword || a.query || '').toLowerCase();
+      const bText = (b.keyword || b.query || '').toLowerCase();
+      return sortConfig.direction === 'asc' 
+        ? aText.localeCompare(bText)
+        : bText.localeCompare(aText);
+    }
+    
+    return sortConfig.direction === 'asc' ? aVal - bVal : bVal - aVal;
+  });
 
   // Check if GSC is connected
   const checkGSCConnection = async () => {
@@ -683,16 +707,66 @@ const SEOAuditDashboard = () => {
                     <table className="w-full">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Keyword</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Position</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Clicks</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Impressions</th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">CTR</th>
+                          <th 
+                            onClick={() => handleSort('keyword')}
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
+                          >
+                            <div className="flex items-center gap-2">
+                              Keyword
+                              {sortConfig.key === 'keyword' && (
+                                <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                              )}
+                            </div>
+                          </th>
+                          <th 
+                            onClick={() => handleSort('position')}
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
+                          >
+                            <div className="flex items-center gap-2">
+                              Position
+                              {sortConfig.key === 'position' && (
+                                <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                              )}
+                            </div>
+                          </th>
+                          <th 
+                            onClick={() => handleSort('clicks')}
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
+                          >
+                            <div className="flex items-center gap-2">
+                              Clicks
+                              {sortConfig.key === 'clicks' && (
+                                <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                              )}
+                            </div>
+                          </th>
+                          <th 
+                            onClick={() => handleSort('impressions')}
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
+                          >
+                            <div className="flex items-center gap-2">
+                              Impressions
+                              {sortConfig.key === 'impressions' && (
+                                <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                              )}
+                            </div>
+                          </th>
+                          <th 
+                            onClick={() => handleSort('ctr')}
+                            className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase cursor-pointer hover:bg-gray-100 select-none"
+                          >
+                            <div className="flex items-center gap-2">
+                              CTR
+                              {sortConfig.key === 'ctr' && (
+                                <span>{sortConfig.direction === 'asc' ? '↑' : '↓'}</span>
+                              )}
+                            </div>
+                          </th>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Change</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
-                        {gscKeywords.map((keyword, idx) => (
+                        {sortedKeywords.map((keyword, idx) => (
                           <tr key={idx} className="hover:bg-gray-50">
                             <td className="px-6 py-4 text-sm font-medium text-gray-900">{keyword.keyword || keyword.query || 'N/A'}</td>
                             <td className="px-6 py-4 text-sm text-gray-600">
