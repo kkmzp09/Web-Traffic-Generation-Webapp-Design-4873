@@ -60,11 +60,11 @@ router.get('/callback', async (req, res) => {
 
     // Redirect back to frontend dashboard
     const frontendUrl = process.env.FRONTEND_URL || 'https://www.organitrafficboost.com';
-    res.redirect(`${frontendUrl}/?gsc_connected=true`);
+    res.redirect(`${frontendUrl}/dashboard?gsc_connected=true`);
   } catch (error) {
     console.error('Error in OAuth callback:', error);
     const frontendUrl = process.env.FRONTEND_URL || 'https://www.organitrafficboost.com';
-    res.redirect(`${frontendUrl}/?gsc_error=auth_failed`);
+    res.redirect(`${frontendUrl}/dashboard?gsc_error=auth_failed`);
   }
 });
 

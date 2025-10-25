@@ -2,13 +2,14 @@
 // Google Search Console Connection Component
 
 import { useState, useEffect } from 'react';
-import { ExternalLink, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
+import { ExternalLink, CheckCircle, AlertCircle, RefreshCw, Trash2 } from 'lucide-react';
 
 const GSCConnect = ({ userId }) => {
   const [connections, setConnections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [connecting, setConnecting] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(null);
 
   const API_BASE = import.meta.env.VITE_API_URL || 'https://api.organitrafficboost.com';
 
@@ -50,6 +51,34 @@ const GSCConnect = ({ userId }) => {
       console.error('GSC connect error:', err);
     } finally {
       setConnecting(false);
+    }
+  };
+
+  // Disconnect a GSC connection
+  const handleDisconnect = async (connectionId) => {
+    if (!confirm('Are you sure you want to disconnect this site from Google Search Console?')) {
+      return;
+    }
+
+    try {
+      setDisconnecting(connectionId);
+      const response = await fetch(
+        `${API_BASE}/api/seo/gsc/disconnect/${connectionId}?userId=${userId}`,
+        { method: 'DELETE' }
+      );
+      const data = await response.json();
+
+      if (data.success) {
+        // Remove from local state
+        setConnections(connections.filter(c => c.id !== connectionId));
+      } else {
+        setError('Failed to disconnect');
+      }
+    } catch (err) {
+      setError('Disconnect failed');
+      console.error('GSC disconnect error:', err);
+    } finally {
+      setDisconnecting(null);
     }
   };
 
@@ -149,9 +178,19 @@ const GSCConnect = ({ userId }) => {
                   </div>
                 </div>
                 
-                <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full">
-                  Active
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs px-2 py-1 bg-green-100 text-green-700 rounded-full">
+                    Active
+                  </span>
+                  <button
+                    onClick={() => handleDisconnect(conn.id)}
+                    disabled={disconnecting === conn.id}
+                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                    title="Disconnect"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
