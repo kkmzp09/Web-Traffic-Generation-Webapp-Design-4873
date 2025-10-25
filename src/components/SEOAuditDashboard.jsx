@@ -16,24 +16,13 @@ const SEOAuditDashboard = () => {
   const [searchParams] = useSearchParams();
   const urlParam = searchParams.get('url');
 
-  // Show loading while auth is initializing
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <RefreshCw className="w-8 h-8 animate-spin text-purple-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading dashboard...</p>
-        </div>
-      </div>
-    );
-  }
-
   const [websiteUrl, setWebsiteUrl] = useState(urlParam || '');
   const [scanning, setScanning] = useState(false);
   const [auditData, setAuditData] = useState(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [expandedPages, setExpandedPages] = useState({});
   const [fixingIssues, setFixingIssues] = useState({});
+  const [gscConnected, setGscConnected] = useState(false);
   const [gscKeywords, setGscKeywords] = useState([]);
   const [loadingKeywords, setLoadingKeywords] = useState(false);
   const [scanHistory, setScanHistory] = useState([]);
@@ -327,6 +316,18 @@ const SEOAuditDashboard = () => {
   };
 
   const pages = groupIssuesByPage();
+
+  // Show loading while auth is initializing
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <RefreshCw className="w-8 h-8 animate-spin text-purple-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!auditData && !scanning) {
     return (
