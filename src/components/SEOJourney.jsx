@@ -66,38 +66,57 @@ const SEOJourney = () => {
 
     let totalScore = 100;
 
-    // Check traffic
-    const hasTraffic = gscData?.connections?.length > 0;
-    if (!hasTraffic) {
+    console.log('Audit data:', { seoScan, gscData, domainData });
+
+    // Check GSC connection and traffic
+    const hasGSCConnection = gscData?.success && gscData?.connections?.length > 0;
+    
+    if (!hasGSCConnection) {
       issues.critical.push({
-        title: 'No Traffic Data',
-        description: 'Your website has no traffic tracking. Start getting visitors now!',
+        title: 'No Traffic Tracking',
+        description: 'Connect Google Search Console to track your website traffic and performance.',
         impact: 'HIGH',
-        action: 'Get Traffic',
-        link: '/direct-traffic',
+        action: 'Connect GSC',
+        link: '/dashboard',
         icon: Users,
         color: 'red'
       });
-      totalScore -= 25;
-    }
+      totalScore -= 20;
 
-    // Check keywords
-    const hasKeywords = gscData?.connections?.length > 0;
-    if (!hasKeywords) {
       issues.critical.push({
-        title: 'No Keywords Ranking',
-        description: 'Your site is not ranking for any keywords. Start SEO campaigns!',
+        title: 'No Keyword Data',
+        description: 'Without GSC, we cannot see which keywords your site ranks for.',
         impact: 'HIGH',
-        action: 'Start SEO Traffic',
-        link: '/seo-traffic',
+        action: 'Connect GSC',
+        link: '/dashboard',
         icon: Target,
         color: 'red'
       });
       totalScore -= 20;
+    } else {
+      // GSC is connected - good!
+      issues.good.push({
+        title: 'Traffic Tracking Active',
+        description: 'Google Search Console is connected and monitoring your site.',
+        icon: CheckCircle,
+        color: 'green'
+      });
     }
 
+    // Always suggest getting more traffic
+    issues.warnings.push({
+      title: 'Boost Your Traffic',
+      description: 'Increase your website visitors with targeted traffic campaigns.',
+      impact: 'MEDIUM',
+      action: 'Get Traffic',
+      link: '/direct-traffic',
+      icon: Users,
+      color: 'yellow'
+    });
+    totalScore -= 10;
+
     // Check technical SEO
-    if (seoScan?.analysis) {
+    if (seoScan?.success && seoScan?.analysis) {
       const technicalIssues = seoScan.analysis.issues?.filter(i => 
         i.severity === 'high' || i.severity === 'critical'
       ) || [];
@@ -116,33 +135,60 @@ const SEOJourney = () => {
       }
 
       // Check page speed
-      if (seoScan.analysis.performance?.score < 70) {
+      const performanceScore = seoScan.analysis.performance?.score || seoScan.analysis.score || 0;
+      if (performanceScore < 70) {
         issues.warnings.push({
-          title: 'Slow Page Speed',
-          description: 'Your website loads slowly, affecting user experience and SEO.',
+          title: 'Page Speed Needs Improvement',
+          description: 'Faster loading times improve user experience and SEO rankings.',
           impact: 'MEDIUM',
-          action: 'Install Performance Widget',
+          action: 'Optimize Performance',
           link: '/widget-installation',
           icon: Zap,
           color: 'yellow'
         });
         totalScore -= 10;
+      } else if (performanceScore >= 70) {
+        issues.good.push({
+          title: 'Good Page Speed',
+          description: 'Your website loads at an acceptable speed.',
+          icon: CheckCircle,
+          color: 'green'
+        });
       }
 
       // Check on-page SEO
       const onPageScore = seoScan.analysis.score || 0;
-      if (onPageScore < 70) {
+      if (onPageScore < 80) {
         issues.warnings.push({
-          title: 'Poor On-Page SEO',
-          description: 'Your content and meta tags need optimization.',
+          title: 'On-Page SEO Can Be Improved',
+          description: 'Optimize your content, meta tags, and structure for better rankings.',
           impact: 'MEDIUM',
-          action: 'Optimize Pages',
+          action: 'Analyze & Optimize',
           link: '/onpage-seo',
           icon: CheckCircle,
           color: 'yellow'
         });
         totalScore -= 10;
+      } else {
+        issues.good.push({
+          title: 'Strong On-Page SEO',
+          description: 'Your pages are well-optimized for search engines.',
+          icon: CheckCircle,
+          color: 'green'
+        });
       }
+    } else {
+      // No scan data - suggest running analysis
+      issues.warnings.push({
+        title: 'Run Technical SEO Audit',
+        description: 'Scan your website for technical issues and optimization opportunities.',
+        impact: 'MEDIUM',
+        action: 'Run SEO Audit',
+        link: '/seo-dashboard',
+        icon: Activity,
+        color: 'yellow'
+      });
+      totalScore -= 15;
     }
 
     // Check domain metrics
