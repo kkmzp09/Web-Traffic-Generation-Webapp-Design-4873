@@ -28,6 +28,7 @@ import KeywordTracker from './components/KeywordTracker';
 import OnPageSEO from './components/OnPageSEO';
 import SEODashboard from './components/SEODashboard';
 import SEOScanResults from './components/SEOScanResults';
+import GSCAnalytics from './components/GSCAnalytics';
 import WidgetInstallation from './components/WidgetInstallation';
 
 // --- Auth gate that matches your current context (user + loading) ---
@@ -91,6 +92,7 @@ function AppShell() {
           <Route path="/domain-analytics" element={<RequireAuth><DomainAnalytics /></RequireAuth>} />
           <Route path="/keyword-tracker" element={<RequireAuth><KeywordTracker /></RequireAuth>} />
           <Route path="/onpage-seo" element={<RequireAuth><OnPageSEO /></RequireAuth>} />
+          <Route path="/gsc-analytics" element={<RequireAuth><GSCAnalytics /></RequireAuth>} />
           <Route path="/seo-dashboard" element={<RequireAuth><SEODashboard /></RequireAuth>} />
           <Route path="/seo-scan/:scanId" element={<RequireAuth><SEOScanResults /></RequireAuth>} />
           <Route path="/widget-installation" element={<RequireAuth><WidgetInstallation /></RequireAuth>} />

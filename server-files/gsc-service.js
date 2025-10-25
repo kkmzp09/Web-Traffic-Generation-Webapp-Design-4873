@@ -361,6 +361,7 @@ class GSCService {
    */
   async saveKeywordHistory(userId, connectionId, siteUrl, pageUrl, keywords) {
     try {
+      console.log(`💾 Saving keyword history: userId=${userId}, connectionId=${connectionId}, siteUrl=${siteUrl}, keywords=${keywords.length}`);
       const today = new Date().toISOString().split('T')[0];
 
       for (const keyword of keywords) {
@@ -410,9 +411,11 @@ class GSCService {
         }
       }
 
+      console.log(`✅ Saved ${keywords.length} keywords to history`);
       return true;
     } catch (error) {
-      console.error('Error saving keyword history:', error.message);
+      console.error('❌ Error saving keyword history:', error.message);
+      console.error('Error details:', error);
       // Don't throw - we don't want to fail the main request if history save fails
       return false;
     }
