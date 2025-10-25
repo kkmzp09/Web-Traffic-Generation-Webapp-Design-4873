@@ -26,8 +26,7 @@ router.use((req, res, next) => {
 router.get('/auth-url', async (req, res) => {
   try {
     const userId = req.query.userId || '00000000-0000-0000-0000-000000000000';
-    const origin = req.get('origin') || req.get('referer');
-    const authUrl = gscService.getAuthUrl(userId, origin);
+    const authUrl = gscService.getAuthUrl(userId);
 
     res.json({
       success: true,
@@ -51,21 +50,24 @@ router.get('/callback', async (req, res) => {
     const { code, state } = req.query;
     const userId = state; // userId passed as state
     
-    // Detect which environment based on the callback URL
+    // Detect frontend URL from referer
     const referer = req.get('referer') || '';
-    const isDev = referer.includes('dev--trafficgen.netlify.app');
-    const frontendUrl = isDev ? 'https://dev--trafficgen.netlify.app' : 'https://organitrafficboost.com';
-    const origin = isDev ? 'https://dev--trafficgen.netlify.app' : 'https://api.organitrafficboost.com';
+    let frontendUrl = 'https://organitrafficboost.com';
+    
+    if (referer.includes('dev--trafficgen.netlify.app') || referer.includes('accounts.google.com')) {
+      // Check if there's a stored origin in session or default to prod
+      frontendUrl = 'https://dev--trafficgen.netlify.app';
+    }
 
     if (!code) {
       return res.redirect(`${frontendUrl}/dashboard?gsc_error=no_code`);
     }
 
-    // Exchange code for tokens with correct redirect URI
-    const tokens = await gscService.getTokensFromCode(code, origin);
+    // Exchange code for tokens
+    const tokens = await gscService.getTokensFromCode(code);
 
     // Get list of sites
-    const oauth2Client = gscService.getOAuthClient(origin);
+    const oauth2Client = gscService.getOAuthClient();
     oauth2Client.setCredentials(tokens);
     
     const { google } = require('googleapis');
@@ -84,8 +86,9 @@ router.get('/callback', async (req, res) => {
   } catch (error) {
     console.error('Error in OAuth callback:', error);
     const referer = req.get('referer') || '';
-    const isDev = referer.includes('dev--trafficgen.netlify.app');
-    const frontendUrl = isDev ? 'https://dev--trafficgen.netlify.app' : 'https://organitrafficboost.com';
+    const frontendUrl = referer.includes('dev--trafficgen.netlify.app') 
+      ? 'https://dev--trafficgen.netlify.app' 
+      : 'https://organitrafficboost.com';
     res.redirect(`${frontendUrl}/dashboard?gsc_error=auth_failed`);
   }
 });

@@ -12,18 +12,11 @@ class GSCService {
   }
 
   /**
-   * Get OAuth client with dynamic redirect URI
+   * Get OAuth client - always uses same backend redirect URI
    */
-  getOAuthClient(origin) {
-    // Determine redirect URI based on origin
-    let redirectUri;
-    if (origin && origin.includes('dev--trafficgen.netlify.app')) {
-      redirectUri = 'https://dev--trafficgen.netlify.app/api/seo/gsc/callback';
-    } else {
-      redirectUri = process.env.GOOGLE_REDIRECT_URI || 'https://api.organitrafficboost.com/api/seo/gsc/callback';
-    }
-
-    console.log('🔗 Using redirect URI:', redirectUri, 'for origin:', origin);
+  getOAuthClient() {
+    // Backend API is always at api.organitrafficboost.com
+    const redirectUri = 'https://api.organitrafficboost.com/api/seo/gsc/callback';
 
     return new google.auth.OAuth2(
       this.clientId,
@@ -35,8 +28,8 @@ class GSCService {
   /**
    * Generate OAuth authorization URL
    */
-  getAuthUrl(userId, origin) {
-    const oauth2Client = this.getOAuthClient(origin);
+  getAuthUrl(userId) {
+    const oauth2Client = this.getOAuthClient();
     
     const scopes = [
       'https://www.googleapis.com/auth/webmasters.readonly'
@@ -55,9 +48,9 @@ class GSCService {
   /**
    * Exchange authorization code for tokens
    */
-  async getTokensFromCode(code, origin) {
+  async getTokensFromCode(code) {
     try {
-      const oauth2Client = this.getOAuthClient(origin);
+      const oauth2Client = this.getOAuthClient();
       const { tokens } = await oauth2Client.getToken(code);
       return tokens;
     } catch (error) {
