@@ -53,7 +53,7 @@ const SEOAuditDashboard = () => {
     setSortConfig({ key, direction });
   };
 
-  const sortedKeywords = [...gscKeywords].sort((a, b) => {
+  const sortedKeywords = gscKeywords.length > 0 ? [...gscKeywords].sort((a, b) => {
     const aVal = a[sortConfig.key];
     const bVal = b[sortConfig.key];
     
@@ -66,7 +66,7 @@ const SEOAuditDashboard = () => {
     }
     
     return sortConfig.direction === 'asc' ? aVal - bVal : bVal - aVal;
-  });
+  }) : [];
 
   // Check if GSC is connected
   const checkGSCConnection = async () => {
