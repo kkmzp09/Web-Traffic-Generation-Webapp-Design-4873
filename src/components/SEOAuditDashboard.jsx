@@ -287,11 +287,6 @@ const SEOAuditDashboard = () => {
         
         // Save scan results
         await saveScanResults(data);
-        
-        // Fetch keywords if GSC connected
-        if (gscConnected) {
-          fetchGSCKeywords();
-        }
       } else {
         alert('Failed to audit website. Please try again.');
       }
