@@ -56,26 +56,34 @@ const GSCConnect = ({ userId }) => {
 
   // Disconnect a GSC connection
   const handleDisconnect = async (connectionId) => {
-    if (!confirm('Are you sure you want to disconnect this site from Google Search Console?')) {
+    if (!confirm('⚠️ Disconnect GSC?\n\nThis will remove access to keyword data for this site. You can reconnect anytime.')) {
       return;
     }
 
     try {
       setDisconnecting(connectionId);
+      console.log('Disconnecting:', connectionId);
+      
       const response = await fetch(
         `${API_BASE}/api/seo/gsc/disconnect/${connectionId}?userId=${userId}`,
         { method: 'DELETE' }
       );
+      
+      console.log('Disconnect response:', response.status);
       const data = await response.json();
+      console.log('Disconnect data:', data);
 
       if (data.success) {
-        // Remove from local state
-        setConnections(connections.filter(c => c.id !== connectionId));
+        alert('✅ Disconnected successfully! Refreshing...');
+        // Reload page to get fresh connections
+        window.location.reload();
       } else {
-        setError('Failed to disconnect');
+        setError(data.error || 'Failed to disconnect');
+        alert('❌ Failed to disconnect: ' + (data.error || 'Unknown error'));
       }
     } catch (err) {
-      setError('Disconnect failed');
+      setError('Disconnect failed: ' + err.message);
+      alert('❌ Disconnect failed: ' + err.message);
       console.error('GSC disconnect error:', err);
     } finally {
       setDisconnecting(null);
