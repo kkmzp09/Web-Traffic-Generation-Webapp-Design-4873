@@ -66,7 +66,10 @@ const GSCConnect = ({ userId }) => {
       
       const response = await fetch(
         `${API_BASE}/api/seo/gsc/disconnect/${connectionId}?userId=${userId}`,
-        { method: 'DELETE' }
+        { 
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        }
       );
       
       console.log('Disconnect response:', response.status);
