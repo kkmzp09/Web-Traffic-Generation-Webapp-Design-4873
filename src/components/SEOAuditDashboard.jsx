@@ -59,43 +59,67 @@ const SEOAuditDashboard = () => {
 
   // Fetch GSC keywords
   const fetchGSCKeywords = async () => {
-    if (!auditData || !gscConnected || !user) return;
+    if (!auditData || !gscConnected || !user) {
+      console.log('Cannot fetch keywords:', { auditData: !!auditData, gscConnected, user: !!user });
+      return;
+    }
 
     setLoadingKeywords(true);
     try {
+      console.log('🔍 Fetching GSC connections for user:', user.id);
       const response = await fetch(`${API_BASE}/api/seo/gsc/connections?userId=${user.id}`);
       const data = await response.json();
+      
+      console.log('📊 GSC Connections response:', data);
       
       if (data.success && data.connections?.length > 0) {
         // Find connection matching the current website domain
         const currentDomain = auditData.hostname;
+        console.log('🌐 Current domain:', currentDomain);
+        
         let connection = data.connections.find(c => 
           c.site_url.includes(currentDomain) || currentDomain.includes(c.site_url.replace('sc-domain:', ''))
         );
         
         // If no match, use first connection
         if (!connection) {
+          console.log('⚠️ No matching connection found, using first one');
           connection = data.connections[0];
         }
         
-        console.log('Fetching keywords for:', connection.site_url, 'Connection ID:', connection.id);
+        console.log('✅ Using connection:', connection);
+        console.log('🔑 Fetching keywords for:', connection.site_url, 'Connection ID:', connection.id);
         
         // Fetch keywords for this domain
-        const keywordResponse = await fetch(
-          `${API_BASE}/api/seo/gsc/keywords/${connection.id}?siteUrl=${encodeURIComponent(connection.site_url)}&days=30`
-        );
+        const keywordUrl = `${API_BASE}/api/seo/gsc/keywords/${connection.id}?siteUrl=${encodeURIComponent(connection.site_url)}&days=30`;
+        console.log('📡 Keyword API URL:', keywordUrl);
+        
+        const keywordResponse = await fetch(keywordUrl);
         const keywordData = await keywordResponse.json();
         
-        console.log('Keyword data:', keywordData);
+        console.log('📈 Keyword data response:', keywordData);
         
-        if (keywordData.success && keywordData.keywords) {
+        if (keywordData.success && keywordData.keywords && keywordData.keywords.length > 0) {
+          console.log(`✅ Loaded ${keywordData.keywords.length} keywords`);
           setGscKeywords(keywordData.keywords);
+          alert(`✅ Loaded ${keywordData.keywords.length} keywords!`);
         } else {
+          console.log('❌ No keywords found in response');
           setGscKeywords([]);
+          const errorMsg = keywordData.error || 'Unknown error';
+          if (errorMsg.includes('401') || errorMsg.includes('Unauthorized') || errorMsg.includes('invalid_token')) {
+            alert('⚠️ GSC Token Expired!\n\nYour Google Search Console connection has expired.\n\nPlease go to Settings and reconnect your GSC account.');
+          } else {
+            alert('No keyword data found. This could mean:\n1. No data available for this domain yet\n2. Domain not verified in GSC\n3. Not enough data collected\n\nError: ' + errorMsg);
+          }
         }
+      } else {
+        console.log('❌ No GSC connections found');
+        alert('No GSC connections found. Please connect GSC in Settings.');
       }
     } catch (error) {
-      console.error('Error fetching keywords:', error);
+      console.error('❌ Error fetching keywords:', error);
+      alert(`Error loading keywords: ${error.message}`);
       setGscKeywords([]);
     } finally {
       setLoadingKeywords(false);
