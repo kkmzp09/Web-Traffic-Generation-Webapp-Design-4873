@@ -27,6 +27,8 @@ const SEOAuditDashboard = () => {
   const [loadingKeywords, setLoadingKeywords] = useState(false);
   const [scanHistory, setScanHistory] = useState([]);
   const [sortConfig, setSortConfig] = useState({ key: 'clicks', direction: 'desc' });
+  const [showNewScanModal, setShowNewScanModal] = useState(false);
+  const [newScanUrl, setNewScanUrl] = useState('');
 
   const API_BASE = import.meta.env.VITE_API_URL || 'https://api.organitrafficboost.com';
 
@@ -291,6 +293,25 @@ const SEOAuditDashboard = () => {
     }
   };
 
+  // Handle new scan from modal
+  const handleNewScan = async () => {
+    if (!newScanUrl) {
+      alert('Please enter a website URL');
+      return;
+    }
+
+    // Add https:// if not present
+    let url = newScanUrl.trim();
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'https://' + url;
+    }
+
+    setShowNewScanModal(false);
+    setNewScanUrl('');
+    setWebsiteUrl(url);
+    await runAudit(url);
+  };
+
   // Refresh scan (reload from saved data)
   const refreshScan = async () => {
     if (scanHistory.length > 0) {
@@ -447,6 +468,13 @@ const SEOAuditDashboard = () => {
           <div className="text-2xl font-bold">OrganiTraffic</div>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowNewScanModal(true)}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center gap-2"
+          >
+            <Search className="w-4 h-4" />
+            New Scan
+          </button>
           {scanHistory.length > 0 && (
             <div className="relative group">
               <button className="px-4 py-2 bg-slate-700 text-white rounded-lg font-medium hover:bg-slate-600 transition-colors flex items-center gap-2">
@@ -935,6 +963,46 @@ const SEOAuditDashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* New Scan Modal */}
+      {showNewScanModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full mx-4">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Scan New Website</h2>
+            <p className="text-gray-600 mb-6">Enter the URL of the website you want to analyze</p>
+            
+            <input
+              type="text"
+              value={newScanUrl}
+              onChange={(e) => setNewScanUrl(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleNewScan()}
+              placeholder="example.com or https://example.com"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent mb-6"
+              autoFocus
+            />
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowNewScanModal(false);
+                  setNewScanUrl('');
+                }}
+                className="flex-1 px-4 py-3 bg-gray-200 text-gray-700 rounded-lg font-medium hover:bg-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleNewScan}
+                disabled={!newScanUrl.trim()}
+                className="flex-1 px-4 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                <Search className="w-4 h-4" />
+                Start Scan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
