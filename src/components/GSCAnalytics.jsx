@@ -51,12 +51,15 @@ const GSCAnalytics = () => {
   const fetchKeywordHistory = async () => {
     try {
       setLoading(true);
+      console.log(`🔍 Fetching keyword history for ${selectedSite}, ${dateRange} days`);
       const response = await fetch(
         `${API_BASE}/api/seo/gsc/keyword-history?userId=${user.id}&siteUrl=${encodeURIComponent(selectedSite)}&days=${dateRange}`
       );
       const data = await response.json();
+      console.log('📊 Keyword history response:', data);
 
       if (data.success) {
+        console.log(`✅ Found ${data.history?.length || 0} keyword history records`);
         // Group keywords by keyword name and calculate trends
         const keywordMap = {};
         
