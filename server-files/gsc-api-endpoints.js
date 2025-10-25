@@ -5,6 +5,20 @@ const express = require('express');
 const router = express.Router();
 const gscService = require('./gsc-service');
 
+// CORS middleware for all GSC routes
+router.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  
+  // Handle preflight
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  
+  next();
+});
+
 /**
  * GET /api/gsc/auth-url
  * Generate OAuth authorization URL
@@ -12,7 +26,8 @@ const gscService = require('./gsc-service');
 router.get('/auth-url', async (req, res) => {
   try {
     const userId = req.query.userId || '00000000-0000-0000-0000-000000000000';
-    const authUrl = gscService.getAuthUrl(userId);
+    const origin = req.get('origin') || req.get('referer');
+    const authUrl = gscService.getAuthUrl(userId, origin);
 
     res.json({
       success: true,
@@ -35,16 +50,22 @@ router.get('/callback', async (req, res) => {
   try {
     const { code, state } = req.query;
     const userId = state; // userId passed as state
+    
+    // Detect which environment based on the callback URL
+    const referer = req.get('referer') || '';
+    const isDev = referer.includes('dev--trafficgen.netlify.app');
+    const frontendUrl = isDev ? 'https://dev--trafficgen.netlify.app' : 'https://organitrafficboost.com';
+    const origin = isDev ? 'https://dev--trafficgen.netlify.app' : 'https://api.organitrafficboost.com';
 
     if (!code) {
-      return res.redirect('/dashboard?gsc_error=no_code');
+      return res.redirect(`${frontendUrl}/dashboard?gsc_error=no_code`);
     }
 
-    // Exchange code for tokens
-    const tokens = await gscService.getTokensFromCode(code);
+    // Exchange code for tokens with correct redirect URI
+    const tokens = await gscService.getTokensFromCode(code, origin);
 
     // Get list of sites
-    const oauth2Client = gscService.oauth2Client;
+    const oauth2Client = gscService.getOAuthClient(origin);
     oauth2Client.setCredentials(tokens);
     
     const { google } = require('googleapis');
@@ -59,11 +80,12 @@ router.get('/callback', async (req, res) => {
     }
 
     // Redirect back to frontend dashboard
-    const frontendUrl = process.env.FRONTEND_URL || 'https://www.organitrafficboost.com';
     res.redirect(`${frontendUrl}/dashboard?gsc_connected=true`);
   } catch (error) {
     console.error('Error in OAuth callback:', error);
-    const frontendUrl = process.env.FRONTEND_URL || 'https://www.organitrafficboost.com';
+    const referer = req.get('referer') || '';
+    const isDev = referer.includes('dev--trafficgen.netlify.app');
+    const frontendUrl = isDev ? 'https://dev--trafficgen.netlify.app' : 'https://organitrafficboost.com';
     res.redirect(`${frontendUrl}/dashboard?gsc_error=auth_failed`);
   }
 });
@@ -232,6 +254,30 @@ router.post('/refresh-keywords', async (req, res) => {
  * Disconnect a GSC connection
  */
 router.delete('/disconnect/:connectionId', async (req, res) => {
+  try {
+    const { connectionId } = req.params;
+    const userId = req.query.userId || '00000000-0000-0000-0000-000000000000';
+
+    await gscService.disconnectConnection(connectionId, userId);
+
+    res.json({
+      success: true,
+      message: 'Connection disconnected successfully'
+    });
+  } catch (error) {
+    console.error('Error disconnecting:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to disconnect'
+    });
+  }
+});
+
+/**
+ * POST /api/gsc/disconnect/:connectionId
+ * Disconnect a GSC connection (POST alternative for CORS compatibility)
+ */
+router.post('/disconnect/:connectionId', async (req, res) => {
   try {
     const { connectionId } = req.params;
     const userId = req.query.userId || '00000000-0000-0000-0000-000000000000';

@@ -9,24 +9,40 @@ class GSCService {
   constructor() {
     this.clientId = process.env.GOOGLE_CLIENT_ID;
     this.clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-    this.redirectUri = process.env.GOOGLE_REDIRECT_URI || 'https://organitrafficboost.com/api/gsc/callback';
-    
-    this.oauth2Client = new google.auth.OAuth2(
+  }
+
+  /**
+   * Get OAuth client with dynamic redirect URI
+   */
+  getOAuthClient(origin) {
+    // Determine redirect URI based on origin
+    let redirectUri;
+    if (origin && origin.includes('dev--trafficgen.netlify.app')) {
+      redirectUri = 'https://dev--trafficgen.netlify.app/api/seo/gsc/callback';
+    } else {
+      redirectUri = process.env.GOOGLE_REDIRECT_URI || 'https://api.organitrafficboost.com/api/seo/gsc/callback';
+    }
+
+    console.log('🔗 Using redirect URI:', redirectUri, 'for origin:', origin);
+
+    return new google.auth.OAuth2(
       this.clientId,
       this.clientSecret,
-      this.redirectUri
+      redirectUri
     );
   }
 
   /**
    * Generate OAuth authorization URL
    */
-  getAuthUrl(userId) {
+  getAuthUrl(userId, origin) {
+    const oauth2Client = this.getOAuthClient(origin);
+    
     const scopes = [
       'https://www.googleapis.com/auth/webmasters.readonly'
     ];
 
-    const authUrl = this.oauth2Client.generateAuthUrl({
+    const authUrl = oauth2Client.generateAuthUrl({
       access_type: 'offline',
       scope: scopes,
       state: userId, // Pass userId to identify user after callback
@@ -39,9 +55,10 @@ class GSCService {
   /**
    * Exchange authorization code for tokens
    */
-  async getTokensFromCode(code) {
+  async getTokensFromCode(code, origin) {
     try {
-      const { tokens } = await this.oauth2Client.getToken(code);
+      const oauth2Client = this.getOAuthClient(origin);
+      const { tokens } = await oauth2Client.getToken(code);
       return tokens;
     } catch (error) {
       console.error('Error getting tokens:', error.message);
