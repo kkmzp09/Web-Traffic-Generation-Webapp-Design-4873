@@ -78,12 +78,13 @@ export default function SEODashboard() {
       console.log('Scan response:', data);
 
       if (data.success) {
-        alert('✅ Scan started successfully! Results will appear in 10-15 seconds.');
+        const pageLimit = data.pageLimit || 10;
+        alert(`✅ Multi-page scan started! Scanning up to ${pageLimit} pages.\n\nThis may take 30-60 seconds. Results will appear automatically.`);
         setScanUrl('');
-        // Wait longer for scan to complete
-        setTimeout(loadDashboardData, 5000);
-        // Refresh again after 10 seconds
-        setTimeout(loadDashboardData, 10000);
+        // Wait longer for multi-page scan to complete
+        setTimeout(loadDashboardData, 15000); // 15 seconds
+        setTimeout(loadDashboardData, 30000); // 30 seconds
+        setTimeout(loadDashboardData, 60000); // 60 seconds
       } else {
         alert('❌ Scan failed: ' + (data.error || 'Unknown error'));
       }

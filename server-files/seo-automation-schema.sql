@@ -24,13 +24,13 @@ CREATE TABLE IF NOT EXISTS seo_scans (
     -- Scan metadata
     scan_duration_ms INTEGER,
     scanned_at TIMESTAMP DEFAULT NOW(),
-    created_at TIMESTAMP DEFAULT NOW(),
-    
-    -- Indexes
-    INDEX idx_user_scans (user_id, scanned_at DESC),
-    INDEX idx_url_scans (url, scanned_at DESC),
-    INDEX idx_domain_scans (domain, scanned_at DESC)
+    created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Create indexes for seo_scans
+CREATE INDEX IF NOT EXISTS idx_user_scans ON seo_scans(user_id, scanned_at DESC);
+CREATE INDEX IF NOT EXISTS idx_url_scans ON seo_scans(url, scanned_at DESC);
+CREATE INDEX IF NOT EXISTS idx_domain_scans ON seo_scans(domain, scanned_at DESC);
 
 -- Table: seo_issues
 -- Stores individual SEO issues found during scans
@@ -54,12 +54,13 @@ CREATE TABLE IF NOT EXISTS seo_issues (
     fix_status VARCHAR(50) DEFAULT 'pending', -- 'pending', 'fixed', 'ignored', 'auto_fixed'
     fixed_at TIMESTAMP,
     
-    created_at TIMESTAMP DEFAULT NOW(),
-    
-    INDEX idx_scan_issues (scan_id),
-    INDEX idx_user_issues (user_id, fix_status),
-    INDEX idx_severity (severity)
+    created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Create indexes for seo_issues
+CREATE INDEX IF NOT EXISTS idx_scan_issues ON seo_issues(scan_id);
+CREATE INDEX IF NOT EXISTS idx_user_issues ON seo_issues(user_id, fix_status);
+CREATE INDEX IF NOT EXISTS idx_severity ON seo_issues(severity);
 
 -- Table: seo_fixes
 -- Stores AI-generated fixes for SEO issues
@@ -90,12 +91,13 @@ CREATE TABLE IF NOT EXISTS seo_fixes (
     keywords_used TEXT[], -- Array of keywords used in optimization
     character_count INTEGER,
     
-    created_at TIMESTAMP DEFAULT NOW(),
-    
-    INDEX idx_issue_fixes (issue_id),
-    INDEX idx_user_fixes (user_id, applied),
-    INDEX idx_scan_fixes (scan_id)
+    created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Create indexes for seo_fixes
+CREATE INDEX IF NOT EXISTS idx_issue_fixes ON seo_fixes(issue_id);
+CREATE INDEX IF NOT EXISTS idx_user_fixes ON seo_fixes(user_id, applied);
+CREATE INDEX IF NOT EXISTS idx_scan_fixes ON seo_fixes(scan_id);
 
 -- Table: seo_monitoring
 -- Tracks SEO metrics over time for monitoring
@@ -125,11 +127,12 @@ CREATE TABLE IF NOT EXISTS seo_monitoring (
     -- Rankings (if tracked)
     avg_keyword_position DECIMAL(5,2),
     
-    measured_at TIMESTAMP DEFAULT NOW(),
-    
-    INDEX idx_url_monitoring (url, measured_at DESC),
-    INDEX idx_user_monitoring (user_id, measured_at DESC)
+    measured_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Create indexes for seo_monitoring
+CREATE INDEX IF NOT EXISTS idx_url_monitoring ON seo_monitoring(url, measured_at DESC);
+CREATE INDEX IF NOT EXISTS idx_user_monitoring ON seo_monitoring(user_id, measured_at DESC);
 
 -- Table: seo_schedules
 -- Manages automated SEO scan schedules
@@ -159,11 +162,12 @@ CREATE TABLE IF NOT EXISTS seo_schedules (
     next_run_at TIMESTAMP,
     
     created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP DEFAULT NOW(),
-    
-    INDEX idx_user_schedules (user_id, active),
-    INDEX idx_next_run (next_run_at, active)
+    updated_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Create indexes for seo_schedules
+CREATE INDEX IF NOT EXISTS idx_user_schedules ON seo_schedules(user_id, active);
+CREATE INDEX IF NOT EXISTS idx_next_run ON seo_schedules(next_run_at, active);
 
 -- Table: seo_reports
 -- Stores generated SEO reports
@@ -188,11 +192,12 @@ CREATE TABLE IF NOT EXISTS seo_reports (
     emailed BOOLEAN DEFAULT FALSE,
     emailed_at TIMESTAMP,
     
-    created_at TIMESTAMP DEFAULT NOW(),
-    
-    INDEX idx_user_reports (user_id, created_at DESC),
-    INDEX idx_report_type (report_type, created_at DESC)
+    created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Create indexes for seo_reports
+CREATE INDEX IF NOT EXISTS idx_user_reports ON seo_reports(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_report_type ON seo_reports(report_type, created_at DESC);
 
 -- Table: seo_keywords_tracked
 -- Extended keyword tracking with SEO context
@@ -222,12 +227,13 @@ CREATE TABLE IF NOT EXISTS seo_keywords_tracked (
     last_checked TIMESTAMP,
     check_frequency VARCHAR(50) DEFAULT 'weekly', -- 'daily', 'weekly', 'monthly'
     
-    created_at TIMESTAMP DEFAULT NOW(),
-    
-    INDEX idx_user_keywords (user_id),
-    INDEX idx_domain_keywords (domain),
-    INDEX idx_keyword_position (keyword, current_position)
+    created_at TIMESTAMP DEFAULT NOW()
 );
+
+-- Create indexes for seo_keywords_tracked
+CREATE INDEX IF NOT EXISTS idx_user_keywords ON seo_keywords_tracked(user_id);
+CREATE INDEX IF NOT EXISTS idx_domain_keywords ON seo_keywords_tracked(domain);
+CREATE INDEX IF NOT EXISTS idx_keyword_position ON seo_keywords_tracked(keyword, current_position);
 
 -- Create a view for dashboard summary
 CREATE OR REPLACE VIEW seo_dashboard_summary AS

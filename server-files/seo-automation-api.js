@@ -7,6 +7,7 @@ const { Pool } = require('pg');
 const seoScanner = require('./seo-scanner-service');
 const seoScannerPuppeteer = require('./seo-scanner-puppeteer');
 const seoAIFixer = require('./seo-ai-fixer');
+const MultiPageScanner = require('./multi-page-scanner');
 const quickAuditRoutes = require('./seo-quick-audit-api');
 const comprehensiveAuditRoutes = require('./comprehensive-seo-audit');
 const scanHistoryRoutes = require('./seo-scan-history-api');
@@ -36,6 +37,31 @@ const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
+
+/**
+ * Get user's subscription page limit
+ */
+async function getUserPageLimit(userId) {
+  try {
+    // Check if user has active subscription
+    const subResult = await pool.query(
+      `SELECT plan_type, scan_limit FROM subscriptions 
+       WHERE user_id = $1 AND status = 'active' 
+       ORDER BY created_at DESC LIMIT 1`,
+      [userId]
+    );
+    
+    if (subResult.rows.length > 0) {
+      return subResult.rows[0].scan_limit || 100;
+    }
+    
+    // Default limits based on common plans
+    return 10; // Free tier: 10 pages
+  } catch (error) {
+    console.error('Error getting page limit:', error);
+    return 10; // Default to free tier
+  }
+}
 
 /**
  * POST /api/seo/scan-page
@@ -83,14 +109,18 @@ router.post('/scan-page', async (req, res) => {
 
     const scanId = scanResult.rows[0].id;
 
+    // Get user's page limit
+    const pageLimit = await getUserPageLimit(userId);
+
     // Perform the scan (async)
-    performScan(scanId, url, userId, domain);
+    performScan(scanId, url, userId, domain, pageLimit);
 
     res.json({
       success: true,
       scanId,
-      message: 'Scan started',
-      status: 'scanning'
+      message: 'Multi-page scan started',
+      status: 'scanning',
+      pageLimit: pageLimit
     });
 
   } catch (error) {
@@ -105,18 +135,60 @@ router.post('/scan-page', async (req, res) => {
 /**
  * Perform the actual scan (background process)
  */
-async function performScan(scanId, url, userId, domain) {
+async function performScan(scanId, url, userId, domain, pageLimit = 10) {
+  const startTime = Date.now();
+  
   try {
-    // Run the scanner (use Puppeteer if enabled for JavaScript-rendered pages)
+    console.log(`🚀 Starting multi-page scan for ${url} (limit: ${pageLimit} pages)`);
+    
+    // Step 1: Crawl website to discover pages
+    const multiPageScanner = new MultiPageScanner(pageLimit);
+    const discoveredPages = await multiPageScanner.crawlWebsite(url);
+    
+    console.log(`📄 Found ${discoveredPages.length} pages to scan`);
+    
+    // Step 2: Scan each page
     const scanner = USE_PUPPETEER ? seoScannerPuppeteer : seoScanner;
-    const scanResults = await scanner.scanPage(url);
-
-    // Count issues by severity
-    const criticalIssues = scanResults.issues.filter(i => i.severity === 'critical').length;
-    const warnings = scanResults.issues.filter(i => i.severity === 'warning').length;
-    const passedChecks = scanResults.passed.length;
-
-    // Update scan record
+    let totalIssues = 0;
+    let totalCritical = 0;
+    let totalWarnings = 0;
+    let totalPassed = 0;
+    let totalScore = 0;
+    let scannedCount = 0;
+    
+    for (const pageUrl of discoveredPages) {
+      try {
+        const scanResults = await scanner.scanPage(pageUrl);
+        scannedCount++;
+        
+        totalScore += scanResults.seoScore;
+        totalIssues += scanResults.issues.length;
+        totalCritical += scanResults.issues.filter(i => i.severity === 'critical').length;
+        totalWarnings += scanResults.issues.filter(i => i.severity === 'warning').length;
+        totalPassed += scanResults.passed.length;
+        
+        // Insert issues for this page
+        for (const issue of scanResults.issues) {
+          await pool.query(
+            `INSERT INTO seo_issues 
+             (scan_id, user_id, category, severity, title, description, current_value, element_selector)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+            [scanId, userId, issue.category, issue.severity, 
+             `${issue.title} (${pageUrl})`, issue.description, 
+             issue.currentValue, issue.elementSelector]
+          );
+        }
+        
+      } catch (error) {
+        console.error(`Error scanning ${pageUrl}:`, error.message);
+      }
+    }
+    
+    // Calculate averages
+    const avgScore = scannedCount > 0 ? Math.round(totalScore / scannedCount) : 0;
+    const scanDuration = Date.now() - startTime;
+    
+    // Update scan record with aggregated results
     await pool.query(
       `UPDATE seo_scans 
        SET status = 'completed', 
@@ -127,29 +199,18 @@ async function performScan(scanId, url, userId, domain) {
            scan_duration_ms = $5,
            scanned_at = NOW()
        WHERE id = $6`,
-      [scanResults.seoScore, criticalIssues, warnings, passedChecks, scanResults.scanDuration, scanId]
+      [avgScore, totalCritical, totalWarnings, totalPassed, scanDuration, scanId]
     );
-
-    // Insert issues
-    for (const issue of scanResults.issues) {
-      await pool.query(
-        `INSERT INTO seo_issues 
-         (scan_id, user_id, category, severity, title, description, current_value, element_selector)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-        [scanId, userId, issue.category, issue.severity, issue.title, issue.description, 
-         issue.currentValue, issue.elementSelector]
-      );
-    }
 
     // Add to monitoring
     await pool.query(
       `INSERT INTO seo_monitoring 
        (user_id, url, domain, seo_score, total_issues, critical_issues, warnings)
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [userId, url, domain, scanResults.seoScore, scanResults.issues.length, criticalIssues, warnings]
+      [userId, url, domain, avgScore, totalIssues, totalCritical, totalWarnings]
     );
 
-    console.log(`Scan ${scanId} completed with score ${scanResults.seoScore}`);
+    console.log(`✅ Scan ${scanId} completed: ${scannedCount} pages, avg score ${avgScore}, ${totalIssues} total issues`);
 
   } catch (error) {
     console.error('Scan execution error:', error);
