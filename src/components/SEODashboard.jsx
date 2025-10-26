@@ -103,39 +103,82 @@ export default function SEODashboard() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">SEO Automation Dashboard</h1>
-          <p className="text-gray-600">Scan, analyze, and optimize your pages with AI-powered fixes</p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">SEO Auto Fix</h1>
+          <p className="text-gray-600">Scan, analyze, and auto-fix your pages with AI-powered optimization</p>
         </div>
 
-        {/* Quick Scan */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8 border border-indigo-100">
-          <div className="flex items-center gap-4">
-            <FiSearch className="w-6 h-6 text-indigo-600" />
-            <input
-              type="url"
-              placeholder="Enter URL to scan (e.g., https://example.com)"
-              value={scanUrl}
-              onChange={(e) => setScanUrl(e.target.value)}
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-              disabled={scanning}
-            />
-            <button
-              onClick={startScan}
-              disabled={scanning}
-              className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium transition-all"
-            >
-              {scanning ? (
-                <>
-                  <FiRefreshCw className="w-5 h-5 animate-spin" />
-                  Scanning...
-                </>
-              ) : (
-                <>
-                  <FiZap className="w-5 h-5" />
-                  Scan Now
-                </>
-              )}
-            </button>
+        {/* Quick Scan & Recent Scans */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Scan Input */}
+          <div className="lg:col-span-2 bg-white rounded-2xl shadow-lg p-6 border border-indigo-100">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Scan</h2>
+            <div className="flex items-center gap-4">
+              <FiSearch className="w-6 h-6 text-indigo-600" />
+              <input
+                type="url"
+                placeholder="Enter URL to scan (e.g., https://example.com)"
+                value={scanUrl}
+                onChange={(e) => setScanUrl(e.target.value)}
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                disabled={scanning}
+              />
+              <button
+                onClick={startScan}
+                disabled={scanning}
+                className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium transition-all"
+              >
+                {scanning ? (
+                  <>
+                    <FiRefreshCw className="w-5 h-5 animate-spin" />
+                    Scanning...
+                  </>
+                ) : (
+                  <>
+                    <FiZap className="w-5 h-5" />
+                    Scan Now
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Recent Scans */}
+          <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900">Recent Scans</h2>
+              <button
+                onClick={loadDashboardData}
+                className="text-indigo-600 hover:text-indigo-700"
+              >
+                <FiRefreshCw className="w-5 h-5" />
+              </button>
+            </div>
+            {recentScans.length === 0 ? (
+              <div className="text-center py-8">
+                <FiSearch className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                <p className="text-gray-500 text-sm">No scans yet</p>
+              </div>
+            ) : (
+              <div className="space-y-3 max-h-64 overflow-y-auto">
+                {recentScans.slice(0, 5).map((scan) => (
+                  <div
+                    key={scan.id}
+                    onClick={() => navigate(`/seo-scan/${scan.id}`)}
+                    className="border border-gray-200 rounded-lg p-3 hover:border-indigo-300 hover:shadow-sm transition-all cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 text-sm truncate">{scan.url}</p>
+                        <p className="text-xs text-gray-500">{new Date(scan.scanned_at).toLocaleDateString()}</p>
+                      </div>
+                      <div className={`ml-2 px-2 py-1 rounded text-xs font-bold ${getScoreBg(scan.seo_score)} ${getScoreColor(scan.seo_score)}`}>
+                        {scan.seo_score}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
@@ -167,40 +210,43 @@ export default function SEODashboard() {
           />
         </div>
 
-        {/* Recent Scans */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-8 border border-gray-100">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Recent Scans</h2>
-            <button
-              onClick={loadDashboardData}
-              className="text-indigo-600 hover:text-indigo-700 flex items-center gap-2"
-            >
-              <FiRefreshCw className="w-5 h-5" />
-              Refresh
-            </button>
-          </div>
-
-          {recentScans.length === 0 ? (
-            <div className="text-center py-12">
-              <FiSearch className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-              <p className="text-gray-500 text-lg">No scans yet. Start your first scan above!</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {recentScans.map((scan) => (
-                <ScanCard key={scan.id} scan={scan} getScoreColor={getScoreColor} getScoreBg={getScoreBg} navigate={navigate} />
-              ))}
-            </div>
-          )}
-        </div>
 
         {/* Top Issues */}
         {topIssues.length > 0 && (
           <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Top Issues</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-3">
               {topIssues.map((issue, idx) => (
-                <IssueCard key={idx} issue={issue} />
+                <div key={idx} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-indigo-300 transition-all">
+                  <div className="flex items-center gap-4 flex-1">
+                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+                      issue.severity === 'critical' ? 'bg-red-100' :
+                      issue.severity === 'warning' ? 'bg-yellow-100' : 'bg-blue-100'
+                    }`}>
+                      <FiAlertCircle className={`w-6 h-6 ${
+                        issue.severity === 'critical' ? 'text-red-600' :
+                        issue.severity === 'warning' ? 'text-yellow-600' : 'text-blue-600'
+                      }`} />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-gray-900 capitalize">{issue.category}</h3>
+                      <p className="text-sm text-gray-600">
+                        <span className="font-bold text-gray-900">{issue.count}</span> issues found · 
+                        <span className={`uppercase text-xs font-medium ml-1 ${
+                          issue.severity === 'critical' ? 'text-red-600' :
+                          issue.severity === 'warning' ? 'text-yellow-600' : 'text-blue-600'
+                        }`}>{issue.severity}</span>
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => alert('Auto-fix feature coming soon!')}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2 font-medium"
+                  >
+                    <FiZap className="w-4 h-4" />
+                    Auto Fix
+                  </button>
+                </div>
               ))}
             </div>
           </div>
