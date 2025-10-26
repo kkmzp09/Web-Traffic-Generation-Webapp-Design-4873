@@ -55,7 +55,11 @@ export default function SEODashboard() {
       
       const response = await fetch('https://api.organitrafficboost.com/api/seo/scan-page', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        mode: 'cors',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify({
           url: scanUrl,
           userId: user.id
@@ -85,7 +89,22 @@ export default function SEODashboard() {
       }
     } catch (error) {
       console.error('Scan error:', error);
-      alert('❌ Failed to start scan: ' + error.message);
+      console.error('Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
+      
+      let errorMsg = 'Failed to start scan';
+      if (error.message.includes('Failed to fetch')) {
+        errorMsg = 'Network error - Please check your internet connection or try again';
+      } else if (error.message.includes('CORS')) {
+        errorMsg = 'CORS error - Please wait for deployment to complete';
+      } else {
+        errorMsg = error.message;
+      }
+      
+      alert('❌ ' + errorMsg);
     } finally {
       setScanning(false);
     }
