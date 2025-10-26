@@ -95,9 +95,9 @@ function AppShell() {
           <Route path="/keyword-tracker" element={<RequireAuth><KeywordTracker /></RequireAuth>} />
           <Route path="/onpage-seo" element={<RequireAuth><OnPageSEO /></RequireAuth>} />
           <Route path="/gsc-analytics" element={<RequireAuth><GSCAnalytics /></RequireAuth>} />
-          <Route path="/seo-dashboard" element={<RequireAuth><SEODashboard /></RequireAuth>} />
-          <Route path="/seo-scan/:scanId" element={<RequireAuth><SEOScanResults /></RequireAuth>} />
-          <Route path="/widget-installation" element={<RequireAuth><WidgetInstallation /></RequireAuth>} />
+          <Route path="/seo-dashboard" element={<RequireAuth><SubscriptionGuard><SEODashboard /></SubscriptionGuard></RequireAuth>} />
+          <Route path="/seo-scan/:scanId" element={<RequireAuth><SubscriptionGuard><SEOScanResults /></SubscriptionGuard></RequireAuth>} />
+          <Route path="/widget-installation" element={<RequireAuth><SubscriptionGuard><WidgetInstallation /></SubscriptionGuard></RequireAuth>} />
           <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
           <Route path="/invoice" element={<RequireAuth><Invoice /></RequireAuth>} />
         </Route>

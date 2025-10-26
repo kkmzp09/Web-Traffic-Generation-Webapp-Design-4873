@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaChartLine, FaUsers, FaRocket, FaCheckCircle, FaArrowRight } from 'react-icons/fa';
+import { FaChartLine, FaUsers, FaRocket, FaCheckCircle, FaArrowRight, FaMagic, FaRobot, FaBolt } from 'react-icons/fa';
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -107,6 +107,112 @@ export default function LandingPage() {
               <p className="text-gray-600">
                 See immediate results with our high-speed traffic delivery system. Start getting visitors within minutes.
               </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SEO Automation Section - NEW */}
+      <section className="py-20 bg-gradient-to-br from-indigo-600 to-purple-700 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl md:text-5xl font-bold mb-4">
+              AI-Powered SEO Auto Fix
+            </h2>
+            <p className="text-xl text-indigo-100 max-w-3xl mx-auto">
+              Let AI automatically detect and fix your SEO issues. Powered by OpenAI GPT-4 for intelligent optimization.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8 mb-12">
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
+              <div className="bg-white/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FaRobot className="text-3xl" />
+              </div>
+              <h3 className="text-2xl font-bold mb-3 text-center">AI-Powered Analysis</h3>
+              <p className="text-indigo-100 text-center">
+                Scan your website and get AI-generated fixes for 18 different SEO categories including titles, meta descriptions, images, and more.
+              </p>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
+              <div className="bg-white/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FaBolt className="text-3xl" />
+              </div>
+              <h3 className="text-2xl font-bold mb-3 text-center">Auto-Apply Widget</h3>
+              <p className="text-indigo-100 text-center">
+                Install our JavaScript widget and fixes are automatically applied to your website. No manual work required!
+              </p>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
+              <div className="bg-white/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FaMagic className="text-3xl" />
+              </div>
+              <h3 className="text-2xl font-bold mb-3 text-center">18 SEO Categories</h3>
+              <p className="text-indigo-100 text-center">
+                Comprehensive coverage: titles, meta, images, schema, content, headings, links, performance, accessibility, and more.
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-8 border border-white/20">
+            <div className="grid md:grid-cols-2 gap-8 items-center">
+              <div>
+                <h3 className="text-3xl font-bold mb-4">How It Works</h3>
+                <ul className="space-y-4">
+                  <li className="flex items-start gap-3">
+                    <div className="bg-white/20 rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 mt-1">
+                      <span className="font-bold">1</span>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-lg mb-1">Scan Your Website</h4>
+                      <p className="text-indigo-100">Enter your URL and our AI analyzes all SEO issues</p>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <div className="bg-white/20 rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 mt-1">
+                      <span className="font-bold">2</span>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-lg mb-1">AI Generates Fixes</h4>
+                      <p className="text-indigo-100">GPT-4 creates optimized content for each issue</p>
+                    </div>
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <div className="bg-white/20 rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 mt-1">
+                      <span className="font-bold">3</span>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-lg mb-1">Auto-Apply or Manual</h4>
+                      <p className="text-indigo-100">Use our widget for automatic fixes or copy/paste manually</p>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+              <div className="bg-white/5 rounded-xl p-6 border border-white/20">
+                <h4 className="font-bold text-xl mb-4">Pricing Plans</h4>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-indigo-100">Starter - 100 scans/mo</span>
+                    <span className="font-bold text-2xl">$29</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-indigo-100">Professional - 500 scans/mo</span>
+                    <span className="font-bold text-2xl">$79</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-indigo-100">Business - 2,500 scans/mo</span>
+                    <span className="font-bold text-2xl">$199</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => navigate('/pricing')}
+                  className="w-full mt-6 bg-white text-indigo-600 px-6 py-3 rounded-lg hover:bg-indigo-50 transition font-semibold flex items-center justify-center gap-2"
+                >
+                  View Full Pricing <FaArrowRight />
+                </button>
+              </div>
             </div>
           </div>
         </div>
