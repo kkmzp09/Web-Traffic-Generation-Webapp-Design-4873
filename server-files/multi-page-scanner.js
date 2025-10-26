@@ -6,11 +6,12 @@ const cheerio = require('cheerio');
 const { URL } = require('url');
 
 class MultiPageScanner {
-  constructor(maxPages = 100) {
+  constructor(maxPages = 100, progressCallback = null) {
     this.maxPages = maxPages;
     this.visitedUrls = new Set();
     this.urlsToVisit = [];
     this.scannedPages = [];
+    this.progressCallback = progressCallback;
   }
 
   /**
@@ -40,6 +41,11 @@ class MultiPageScanner {
         });
         
         this.visitedUrls.add(currentUrl);
+        
+        // Report crawling progress
+        if (this.progressCallback) {
+          this.progressCallback('crawling', this.visitedUrls.size, this.maxPages);
+        }
         
         // Parse HTML and find links
         const $ = cheerio.load(response.data);

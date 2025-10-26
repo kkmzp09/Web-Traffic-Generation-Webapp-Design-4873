@@ -8,6 +8,7 @@ const seoScanner = require('./seo-scanner-service');
 const seoScannerPuppeteer = require('./seo-scanner-puppeteer');
 const seoAIFixer = require('./seo-ai-fixer');
 const MultiPageScanner = require('./multi-page-scanner');
+const progressTracker = require('./scan-progress-tracker');
 const quickAuditRoutes = require('./seo-quick-audit-api');
 const comprehensiveAuditRoutes = require('./comprehensive-seo-audit');
 const scanHistoryRoutes = require('./seo-scan-history-api');
@@ -141,11 +142,21 @@ async function performScan(scanId, url, userId, domain, pageLimit = 10) {
   try {
     console.log(`🚀 Starting multi-page scan for ${url} (limit: ${pageLimit} pages)`);
     
+    // Initialize progress tracking
+    progressTracker.initScan(scanId, pageLimit, userId);
+    
     // Step 1: Crawl website to discover pages
-    const multiPageScanner = new MultiPageScanner(pageLimit);
+    const progressCallback = (phase, current, total) => {
+      if (phase === 'crawling') {
+        progressTracker.updateCrawling(scanId, current);
+      }
+    };
+    
+    const multiPageScanner = new MultiPageScanner(pageLimit, progressCallback);
     const discoveredPages = await multiPageScanner.crawlWebsite(url);
     
     console.log(`📄 Found ${discoveredPages.length} pages to scan`);
+    progressTracker.startScanning(scanId, discoveredPages.length);
     
     // Step 2: Scan each page
     const scanner = USE_PUPPETEER ? seoScannerPuppeteer : seoScanner;
@@ -158,8 +169,14 @@ async function performScan(scanId, url, userId, domain, pageLimit = 10) {
     
     for (const pageUrl of discoveredPages) {
       try {
+        // Update progress before scanning
+        progressTracker.updateScanning(scanId, scannedCount, pageUrl);
+        
         const scanResults = await scanner.scanPage(pageUrl);
         scannedCount++;
+        
+        // Update progress after scanning
+        progressTracker.updateScanning(scanId, scannedCount, pageUrl);
         
         totalScore += scanResults.seoScore;
         totalIssues += scanResults.issues.length;
@@ -211,6 +228,15 @@ async function performScan(scanId, url, userId, domain, pageLimit = 10) {
     );
 
     console.log(`✅ Scan ${scanId} completed: ${scannedCount} pages, avg score ${avgScore}, ${totalIssues} total issues`);
+    
+    // Mark progress as complete
+    progressTracker.completeScan(scanId, {
+      avgScore,
+      totalIssues,
+      totalCritical,
+      totalWarnings,
+      scannedCount
+    });
 
   } catch (error) {
     console.error('Scan execution error:', error);
@@ -220,8 +246,77 @@ async function performScan(scanId, url, userId, domain, pageLimit = 10) {
       `UPDATE seo_scans SET status = 'failed' WHERE id = $1`,
       [scanId]
     );
+    
+    // Mark progress as failed
+    progressTracker.failScan(scanId, error.message);
   }
 }
+
+/**
+ * GET /api/seo/subscription-usage/:userId
+ * Get user's subscription usage (pages scanned this month)
+ */
+router.get('/subscription-usage/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    // Get subscription limit
+    const pageLimit = await getUserPageLimit(userId);
+    
+    // Count pages scanned this month
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+    
+    const usageResult = await pool.query(
+      `SELECT COUNT(*) as pages_scanned 
+       FROM seo_monitoring 
+       WHERE user_id = $1 
+       AND measured_at >= $2`,
+      [userId, startOfMonth]
+    );
+    
+    const pagesScanned = parseInt(usageResult.rows[0].pages_scanned) || 0;
+    const pagesRemaining = Math.max(0, pageLimit - pagesScanned);
+    
+    res.json({
+      success: true,
+      pageLimit,
+      pagesScanned,
+      pagesRemaining,
+      percentUsed: Math.round((pagesScanned / pageLimit) * 100)
+    });
+    
+  } catch (error) {
+    console.error('Error getting subscription usage:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+/**
+ * GET /api/seo/scan-progress/:scanId
+ * Server-Sent Events endpoint for real-time scan progress
+ */
+router.get('/scan-progress/:scanId', (req, res) => {
+  const { scanId } = req.params;
+  
+  // Set headers for SSE
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  
+  // Register client for progress updates
+  progressTracker.registerClient(parseInt(scanId), res);
+  
+  // Handle client disconnect
+  req.on('close', () => {
+    console.log(`Client disconnected from scan ${scanId} progress`);
+  });
+});
 
 /**
  * GET /api/seo/scan/:scanId
@@ -618,12 +713,17 @@ router.post('/auto-fix', async (req, res) => {
 
     // Generate fixes using AI
     console.log(`Generating AI fixes for ${issues.length} ${category} issues...`);
+    console.log('Issues to fix:', issues.map(i => ({ id: i.id, category: i.category, title: i.title })));
+    
     const fixes = await seoAIFixer.generateFixes(scan.url, issues);
-
+    
+    console.log(`Generated ${fixes.length} fixes`);
+    
     if (fixes.length === 0) {
+      console.error('No fixes generated. Check OpenAI API key and quota.');
       return res.json({
         success: false,
-        error: 'Failed to generate fixes'
+        error: 'Failed to generate fixes. Please check server logs or try again later.'
       });
     }
 
@@ -633,13 +733,14 @@ router.post('/auto-fix', async (req, res) => {
       // Store the fix
       const fixResult = await pool.query(
         `INSERT INTO seo_fixes 
-         (scan_id, issue_id, fix_type, original_content, optimized_content, 
+         (scan_id, issue_id, user_id, fix_type, original_content, optimized_content, 
           ai_model, confidence_score, keywords, status)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'generated')
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'generated')
          RETURNING id`,
         [
           scan.id,
           fix.issueId,
+          userId,
           fix.fixType,
           fix.originalContent,
           fix.optimizedContent,

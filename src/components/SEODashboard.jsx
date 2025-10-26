@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/authContext';
 import * as FiIcons from 'react-icons/fi';
+import ScanProgressModal from './ScanProgressModal';
 
 const { FiSearch, FiAlertCircle, FiCheckCircle, FiTrendingUp, FiClock, FiZap, FiRefreshCw } = FiIcons;
 
@@ -15,12 +16,34 @@ export default function SEODashboard() {
   const [scanning, setScanning] = useState(false);
   const [scanUrl, setScanUrl] = useState('');
   const [fixingIssues, setFixingIssues] = useState({});
+  
+  // Progress tracking
+  const [showProgress, setShowProgress] = useState(false);
+  const [currentScanId, setCurrentScanId] = useState(null);
+  
+  // Subscription usage
+  const [subscriptionUsage, setSubscriptionUsage] = useState(null);
 
   useEffect(() => {
     if (user) {
       loadDashboardData();
+      loadSubscriptionUsage();
     }
   }, [user]);
+
+  const loadSubscriptionUsage = async () => {
+    try {
+      const response = await fetch(
+        `https://api.organitrafficboost.com/api/seo/subscription-usage/${user.id}`
+      );
+      const data = await response.json();
+      if (data.success) {
+        setSubscriptionUsage(data);
+      }
+    } catch (error) {
+      console.error('Error loading subscription usage:', error);
+    }
+  };
 
   const loadDashboardData = async () => {
     try {
@@ -78,13 +101,11 @@ export default function SEODashboard() {
       console.log('Scan response:', data);
 
       if (data.success) {
-        const pageLimit = data.pageLimit || 10;
-        alert(`✅ Multi-page scan started! Scanning up to ${pageLimit} pages.\n\nThis may take 30-60 seconds. Results will appear automatically.`);
         setScanUrl('');
-        // Wait longer for multi-page scan to complete
-        setTimeout(loadDashboardData, 15000); // 15 seconds
-        setTimeout(loadDashboardData, 30000); // 30 seconds
-        setTimeout(loadDashboardData, 60000); // 60 seconds
+        setCurrentScanId(data.scanId);
+        setShowProgress(true);
+        // Reload subscription usage after scan starts
+        loadSubscriptionUsage();
       } else {
         alert('❌ Scan failed: ' + (data.error || 'Unknown error'));
       }
@@ -175,6 +196,31 @@ export default function SEODashboard() {
           <h1 className="text-4xl font-bold text-gray-900 mb-2">SEO Auto Fix</h1>
           <p className="text-gray-600">Scan, analyze, and auto-fix your pages with AI-powered optimization</p>
         </div>
+
+        {/* Subscription Usage */}
+        {subscriptionUsage && (
+          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl shadow-lg p-6 mb-6 text-white">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold mb-1">Subscription Usage</h3>
+                <p className="text-indigo-100 text-sm">Pages scanned this month</p>
+              </div>
+              <div className="text-right">
+                <div className="text-3xl font-bold">{subscriptionUsage.pagesScanned} / {subscriptionUsage.pageLimit}</div>
+                <p className="text-indigo-100 text-sm">{subscriptionUsage.pagesRemaining} pages remaining</p>
+              </div>
+            </div>
+            <div className="mt-4">
+              <div className="w-full bg-indigo-800 rounded-full h-3">
+                <div 
+                  className="bg-white rounded-full h-3 transition-all duration-500"
+                  style={{ width: `${subscriptionUsage.percentUsed}%` }}
+                />
+              </div>
+              <p className="text-indigo-100 text-xs mt-2">{subscriptionUsage.percentUsed}% used</p>
+            </div>
+          </div>
+        )}
 
         {/* Quick Scan & Recent Scans */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
@@ -331,6 +377,23 @@ export default function SEODashboard() {
           </div>
         )}
       </div>
+
+      {/* Progress Modal */}
+      {showProgress && currentScanId && (
+        <ScanProgressModal
+          scanId={currentScanId}
+          onComplete={(results) => {
+            setShowProgress(false);
+            setScanning(false);
+            loadDashboardData();
+            loadSubscriptionUsage();
+          }}
+          onClose={() => {
+            setShowProgress(false);
+            setScanning(false);
+          }}
+        />
+      )}
     </div>
   );
 }
