@@ -112,9 +112,8 @@ const ScanProgressModal = ({ scanId, onComplete, onClose }) => {
                   results: data
                 });
                 clearInterval(fallbackInterval);
-                setTimeout(() => {
-                  onComplete(data);
-                }, 2000);
+                // Auto-close immediately and navigate to issues
+                onComplete(data);
               } else if (data.scan.status === 'scanning') {
                 // Show progressive updates during scanning
                 setProgress(prev => {

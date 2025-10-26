@@ -235,7 +235,16 @@ export default function SEODashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Scan Input */}
           <div className="lg:col-span-2 bg-white rounded-2xl shadow-lg p-6 border border-indigo-100">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Scan</h2>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900">Quick Scan</h2>
+              <button
+                onClick={() => navigate('/widget-setup')}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 font-medium transition-all text-sm"
+              >
+                <FiCheckCircle className="w-4 h-4" />
+                Validate Widget
+              </button>
+            </div>
             <div className="flex items-center gap-4">
               <FiSearch className="w-6 h-6 text-indigo-600" />
               <input
@@ -396,6 +405,8 @@ export default function SEODashboard() {
             setScanning(false);
             loadDashboardData();
             loadSubscriptionUsage();
+            // Navigate to scan details page to apply fixes
+            navigate(`/seo-scan/${currentScanId}`);
           }}
           onClose={() => {
             setShowProgress(false);
