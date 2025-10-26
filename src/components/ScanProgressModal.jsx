@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 const ScanProgressModal = ({ scanId, onComplete, onClose }) => {
   const [progress, setProgress] = useState({
@@ -9,16 +9,22 @@ const ScanProgressModal = ({ scanId, onComplete, onClose }) => {
     currentPage: null,
     estimatedTimeRemaining: null
   });
+  
+  const eventSourceRef = useRef(null);
+  const isConnectedRef = useRef(false);
 
   useEffect(() => {
-    if (!scanId) return;
+    if (!scanId || isConnectedRef.current) return;
 
     console.log('[ScanProgress] Connecting to SSE for scan:', scanId);
+    isConnectedRef.current = true;
 
     // Connect to Server-Sent Events for real-time progress
     const eventSource = new EventSource(
       `https://api.organitrafficboost.com/api/seo/scan-progress/${scanId}`
     );
+    
+    eventSourceRef.current = eventSource;
 
     eventSource.onopen = () => {
       console.log('[ScanProgress] SSE connection opened');
@@ -70,9 +76,13 @@ const ScanProgressModal = ({ scanId, onComplete, onClose }) => {
 
     return () => {
       console.log('[ScanProgress] Cleaning up SSE connection');
-      eventSource.close();
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+      isConnectedRef.current = false;
     };
-  }, [scanId, onComplete, onClose]);
+  }, [scanId]);
 
   const getProgressPercentage = () => {
     if (progress.status === 'crawling') {
