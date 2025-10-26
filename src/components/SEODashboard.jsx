@@ -14,6 +14,7 @@ export default function SEODashboard() {
   const [loading, setLoading] = useState(true);
   const [scanning, setScanning] = useState(false);
   const [scanUrl, setScanUrl] = useState('');
+  const [fixingIssues, setFixingIssues] = useState({});
 
   useEffect(() => {
     if (user) {
@@ -85,6 +86,39 @@ export default function SEODashboard() {
     if (score >= 80) return 'bg-green-100';
     if (score >= 60) return 'bg-yellow-100';
     return 'bg-red-100';
+  };
+
+  const autoFixIssue = async (issue) => {
+    const key = issue.category;
+    setFixingIssues(prev => ({ ...prev, [key]: true }));
+
+    try {
+      // Call auto-fix API
+      const response = await fetch('https://api.organitrafficboost.com/api/seo/auto-fix', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          category: issue.category,
+          severity: issue.severity
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert(`✅ Successfully fixed ${issue.count} ${issue.category} issues!`);
+        // Reload dashboard data
+        loadDashboardData();
+      } else {
+        alert(`❌ Failed to fix issues: ${data.error || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Auto-fix error:', error);
+      alert('❌ Failed to apply auto-fix. Please try again.');
+    } finally {
+      setFixingIssues(prev => ({ ...prev, [key]: false }));
+    }
   };
 
   if (loading) {
@@ -240,11 +274,21 @@ export default function SEODashboard() {
                     </div>
                   </div>
                   <button
-                    onClick={() => alert('Auto-fix feature coming soon!')}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2 font-medium"
+                    onClick={() => autoFixIssue(issue)}
+                    disabled={fixingIssues[issue.category]}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <FiZap className="w-4 h-4" />
-                    Auto Fix
+                    {fixingIssues[issue.category] ? (
+                      <>
+                        <FiRefreshCw className="w-4 h-4 animate-spin" />
+                        Fixing...
+                      </>
+                    ) : (
+                      <>
+                        <FiZap className="w-4 h-4" />
+                        Auto Fix
+                      </>
+                    )}
                   </button>
                 </div>
               ))}
