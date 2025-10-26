@@ -44,23 +44,26 @@ const pool = new Pool({
  */
 async function getUserPageLimit(userId) {
   try {
-    // Check if user has active subscription
+    // Check if user has active SEO subscription
     const subResult = await pool.query(
-      `SELECT plan_type, scan_limit FROM subscriptions 
-       WHERE user_id = $1 AND status = 'active' 
+      `SELECT plan_type, seo_page_limit, seo_scans_per_month 
+       FROM subscriptions 
+       WHERE user_id = $1 
+       AND status = 'active' 
+       AND plan_type LIKE 'seo_%'
        ORDER BY created_at DESC LIMIT 1`,
       [userId]
     );
     
     if (subResult.rows.length > 0) {
-      return subResult.rows[0].scan_limit || 100;
+      return subResult.rows[0].seo_page_limit || 10;
     }
     
-    // Default limits based on common plans
-    return 10; // Free tier: 10 pages
+    // Default to basic plan: 10 pages
+    return 10;
   } catch (error) {
     console.error('Error getting page limit:', error);
-    return 10; // Default to free tier
+    return 10; // Default to basic plan
   }
 }
 
@@ -100,6 +103,58 @@ router.post('/scan-page', async (req, res) => {
 
     const domain = parsedUrl.hostname;
 
+    // Check subscription limit BEFORE starting scan
+    const pageLimit = await getUserPageLimit(userId);
+    
+    // Get current month's usage
+    const startOfMonth = new Date();
+    startOfMonth.setDate(1);
+    startOfMonth.setHours(0, 0, 0, 0);
+    
+    const usageResult = await pool.query(
+      `SELECT COUNT(*) as pages_scanned 
+       FROM seo_monitoring 
+       WHERE user_id = $1 
+       AND measured_at >= $2`,
+      [userId, startOfMonth]
+    );
+    
+    const pagesScanned = parseInt(usageResult.rows[0].pages_scanned) || 0;
+    
+    // Enforce limit
+    if (pagesScanned >= pageLimit) {
+      // Get subscription details for upgrade options
+      const subResult = await pool.query(
+        `SELECT plan_type, seo_page_limit 
+         FROM subscriptions 
+         WHERE user_id = $1 
+         AND status = 'active' 
+         AND plan_type LIKE 'seo_%'
+         ORDER BY created_at DESC LIMIT 1`,
+        [userId]
+      );
+      
+      const currentPlan = subResult.rows[0]?.plan_type || 'seo_starter';
+      
+      return res.json({
+        success: false,
+        limitReached: true,
+        message: `Monthly page limit reached. You've scanned ${pagesScanned}/${pageLimit} pages this month.`,
+        currentPlan: currentPlan.replace('seo_', ''),
+        pagesScanned,
+        pageLimit,
+        upgradeOptions: [
+          { plan: 'Professional', limit: 500, price: 79, features: 'Priority support, API access, Scheduled scans' },
+          { plan: 'Business', limit: 2500, price: 199, features: 'Dedicated support, White-label, Team collaboration' }
+        ],
+        addOnOptions: [
+          { name: 'Extra 100 pages', pages: 100, price: 10 },
+          { name: 'Extra 500 pages', pages: 500, price: 40 },
+          { name: 'Extra 1,000 pages', pages: 1000, price: 70 }
+        ]
+      });
+    }
+
     // Create initial scan record
     const scanResult = await pool.query(
       `INSERT INTO seo_scans (user_id, url, domain, status, scan_type) 
@@ -109,9 +164,6 @@ router.post('/scan-page', async (req, res) => {
     );
 
     const scanId = scanResult.rows[0].id;
-
-    // Get user's page limit
-    const pageLimit = await getUserPageLimit(userId);
 
     // Perform the scan (async)
     performScan(scanId, url, userId, domain, pageLimit);
@@ -308,12 +360,22 @@ router.get('/scan-progress/:scanId', (req, res) => {
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
   res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx buffering
+  
+  // Send initial connection message
+  res.write(': connected\n\n');
   
   // Register client for progress updates
   progressTracker.registerClient(parseInt(scanId), res);
   
+  // Send heartbeat every 15 seconds to keep connection alive
+  const heartbeat = setInterval(() => {
+    res.write(': heartbeat\n\n');
+  }, 15000);
+  
   // Handle client disconnect
   req.on('close', () => {
+    clearInterval(heartbeat);
     console.log(`Client disconnected from scan ${scanId} progress`);
   });
 });

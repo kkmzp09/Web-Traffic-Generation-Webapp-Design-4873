@@ -33,6 +33,7 @@ class ScanProgressTracker {
     if (progress) {
       progress.pagesDiscovered = pagesDiscovered;
       progress.status = 'crawling';
+      console.log(`[Progress] Scan ${scanId}: Crawling - ${pagesDiscovered} pages discovered`);
       this.broadcast(scanId, progress);
     }
   }
@@ -125,10 +126,13 @@ class ScanProgressTracker {
    */
   broadcast(scanId, progress) {
     const clients = this.clients.get(scanId);
-    if (clients) {
+    if (clients && clients.length > 0) {
+      console.log(`[Progress] Broadcasting to ${clients.length} clients for scan ${scanId}`);
       clients.forEach(res => {
         this.sendToClient(res, progress);
       });
+    } else {
+      console.log(`[Progress] No clients connected for scan ${scanId}`);
     }
   }
 

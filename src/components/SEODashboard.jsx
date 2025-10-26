@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../lib/authContext';
 import * as FiIcons from 'react-icons/fi';
 import ScanProgressModal from './ScanProgressModal';
+import UpgradeModal from './UpgradeModal';
 
 const { FiSearch, FiAlertCircle, FiCheckCircle, FiTrendingUp, FiClock, FiZap, FiRefreshCw } = FiIcons;
 
@@ -23,6 +24,10 @@ export default function SEODashboard() {
   
   // Subscription usage
   const [subscriptionUsage, setSubscriptionUsage] = useState(null);
+  
+  // Limit enforcement
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [limitData, setLimitData] = useState(null);
 
   useEffect(() => {
     if (user) {
@@ -106,6 +111,10 @@ export default function SEODashboard() {
         setShowProgress(true);
         // Reload subscription usage after scan starts
         loadSubscriptionUsage();
+      } else if (data.limitReached) {
+        // Show upgrade modal
+        setLimitData(data);
+        setShowUpgradeModal(true);
       } else {
         alert('❌ Scan failed: ' + (data.error || 'Unknown error'));
       }
@@ -391,6 +400,17 @@ export default function SEODashboard() {
           onClose={() => {
             setShowProgress(false);
             setScanning(false);
+          }}
+        />
+      )}
+
+      {/* Upgrade Modal */}
+      {showUpgradeModal && limitData && (
+        <UpgradeModal
+          limitData={limitData}
+          onClose={() => {
+            setShowUpgradeModal(false);
+            setLimitData(null);
           }}
         />
       )}
