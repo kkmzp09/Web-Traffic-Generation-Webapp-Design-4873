@@ -50,6 +50,9 @@ export default function SEODashboard() {
 
     try {
       setScanning(true);
+      console.log('Starting scan for:', scanUrl);
+      console.log('User ID:', user.id);
+      
       const response = await fetch('https://api.organitrafficboost.com/api/seo/scan-page', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -59,18 +62,30 @@ export default function SEODashboard() {
         })
       });
 
+      console.log('Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Response error:', errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
       const data = await response.json();
+      console.log('Scan response:', data);
 
       if (data.success) {
-        alert('Scan started! Check results in a few moments.');
+        alert('✅ Scan started successfully! Results will appear in 10-15 seconds.');
         setScanUrl('');
-        setTimeout(loadDashboardData, 3000);
+        // Wait longer for scan to complete
+        setTimeout(loadDashboardData, 5000);
+        // Refresh again after 10 seconds
+        setTimeout(loadDashboardData, 10000);
       } else {
-        alert('Scan failed: ' + data.error);
+        alert('❌ Scan failed: ' + (data.error || 'Unknown error'));
       }
     } catch (error) {
       console.error('Scan error:', error);
-      alert('Failed to start scan');
+      alert('❌ Failed to start scan: ' + error.message);
     } finally {
       setScanning(false);
     }
