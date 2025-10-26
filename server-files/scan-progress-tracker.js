@@ -15,12 +15,12 @@ class ScanProgressTracker {
       scanId,
       userId,
       status: 'crawling',
-      totalPages,
+      totalPages: totalPages || 0,
       pagesDiscovered: 0,
       pagesScanned: 0,
       currentPage: null,
       startTime: Date.now(),
-      estimatedTimeRemaining: null,
+      estimatedTimeRemaining: 0,
       errors: []
     });
   }

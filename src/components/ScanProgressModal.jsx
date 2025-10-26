@@ -54,9 +54,14 @@ const ScanProgressModal = ({ scanId, onComplete, onClose }) => {
 
   const getProgressPercentage = () => {
     if (progress.status === 'crawling') {
+      if (!progress.totalPages || progress.totalPages === 0) {
+        // During crawling, show indeterminate progress
+        return Math.min((progress.pagesDiscovered / 10) * 50, 50);
+      }
       return Math.min((progress.pagesDiscovered / progress.totalPages) * 50, 50);
     }
     if (progress.status === 'scanning') {
+      if (!progress.totalPages || progress.totalPages === 0) return 50;
       return 50 + (progress.pagesScanned / progress.totalPages) * 50;
     }
     if (progress.status === 'completed') {
@@ -142,7 +147,7 @@ const ScanProgressModal = ({ scanId, onComplete, onClose }) => {
             textAlign: 'center'
           }}>
             <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#3b82f6' }}>
-              {Math.round(percentage)}%
+              {isNaN(percentage) ? '0' : Math.round(percentage)}%
             </div>
             <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '4px' }}>
               Progress
