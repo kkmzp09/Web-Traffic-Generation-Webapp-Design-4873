@@ -30,6 +30,7 @@ import SEODashboard from './components/SEODashboard';
 import SEOScanResults from './components/SEOScanResults';
 import GSCAnalytics from './components/GSCAnalytics';
 import WidgetInstallation from './components/WidgetInstallation';
+import PricingPlans from './components/PricingPlans';
 
 // --- Auth gate that matches your current context (user + loading) ---
 function RequireAuth({ children }) {
@@ -76,6 +77,7 @@ function AppShell() {
         {/* Public Landing Page - Now the default homepage */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/home" element={<LandingPage />} />
+        <Route path="/pricing" element={<PricingPlans />} />
         <Route path="/payment" element={<PaymentPage />} />
         <Route path="/crypto-payment" element={<CryptoPaymentPage />} />
         
