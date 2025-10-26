@@ -78,20 +78,33 @@ const ScanProgressModal = ({ scanId, onComplete, onClose }) => {
             );
             const data = await response.json();
             if (data.success && data.scan) {
-              console.log('[ScanProgress] Fallback poll:', data.scan.status);
+              console.log('[ScanProgress] Fallback poll:', data.scan.status, data.scan);
               
-              // Update progress based on scan status
+              // Update progress based on scan status and issue counts
+              const totalIssues = data.issues?.length || 0;
+              const pagesScanned = Math.min(totalIssues, 100); // Estimate pages from issues
+              
               if (data.scan.status === 'completed') {
                 setProgress({
                   status: 'completed',
-                  pagesScanned: 100,
-                  totalPages: 100,
+                  pagesScanned: pagesScanned,
+                  totalPages: pagesScanned,
+                  pagesDiscovered: pagesScanned,
                   results: data
                 });
                 clearInterval(fallbackInterval);
                 setTimeout(() => {
                   onComplete(data);
                 }, 2000);
+              } else if (data.scan.status === 'scanning') {
+                // Show progressive updates during scanning
+                setProgress(prev => ({
+                  ...prev,
+                  status: 'scanning',
+                  pagesScanned: pagesScanned,
+                  totalPages: Math.max(pagesScanned, prev.totalPages || 10),
+                  pagesDiscovered: Math.max(pagesScanned, prev.pagesDiscovered || 0)
+                }));
               }
             }
           } catch (error) {
