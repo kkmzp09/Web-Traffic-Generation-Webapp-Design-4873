@@ -116,24 +116,27 @@ const ScanProgressModal = ({ scanId, onComplete, onClose }) => {
                   onComplete(data);
                 }, 2000);
               } else if (data.scan.status === 'scanning') {
-                // Calculate estimated time remaining
-                const now = Date.now();
-                const elapsed = (now - scanStartTimeRef.current) / 1000; // seconds
-                const pagesRemaining = Math.max(pagesScanned, prev.totalPages || 10) - pagesScanned;
-                const avgTimePerPage = pagesScanned > 0 ? elapsed / pagesScanned : 3; // 3 sec default
-                const estimatedSeconds = Math.round(pagesRemaining * avgTimePerPage);
-                
                 // Show progressive updates during scanning
-                setProgress(prev => ({
-                  ...prev,
-                  status: 'scanning',
-                  pagesScanned: pagesScanned,
-                  totalPages: Math.max(pagesScanned, prev.totalPages || 10),
-                  pagesDiscovered: Math.max(pagesScanned, prev.pagesDiscovered || 0),
-                  estimatedTimeRemaining: estimatedSeconds
-                }));
-                
-                lastUpdateTimeRef.current = now;
+                setProgress(prev => {
+                  // Calculate estimated time remaining
+                  const now = Date.now();
+                  const elapsed = (now - scanStartTimeRef.current) / 1000; // seconds
+                  const totalPages = Math.max(pagesScanned, prev.totalPages || 10);
+                  const pagesRemaining = totalPages - pagesScanned;
+                  const avgTimePerPage = pagesScanned > 0 ? elapsed / pagesScanned : 3; // 3 sec default
+                  const estimatedSeconds = Math.round(pagesRemaining * avgTimePerPage);
+                  
+                  lastUpdateTimeRef.current = now;
+                  
+                  return {
+                    ...prev,
+                    status: 'scanning',
+                    pagesScanned: pagesScanned,
+                    totalPages: totalPages,
+                    pagesDiscovered: Math.max(pagesScanned, prev.pagesDiscovered || 0),
+                    estimatedTimeRemaining: estimatedSeconds
+                  };
+                });
               }
             }
           } catch (error) {
