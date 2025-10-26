@@ -496,6 +496,126 @@ router.get('/dashboard-stats', async (req, res) => {
 });
 
 /**
+ * POST /api/seo/auto-fix
+ * Auto-fix issues by category from dashboard
+ */
+router.post('/auto-fix', async (req, res) => {
+  try {
+    const { userId, category, severity } = req.body;
+
+    if (!userId || !category) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'userId and category are required' 
+      });
+    }
+
+    // Get the most recent scan for this user with issues in this category
+    const scanResult = await pool.query(
+      `SELECT DISTINCT s.* 
+       FROM seo_scans s
+       JOIN seo_issues i ON i.scan_id = s.id
+       WHERE s.user_id = $1 
+       AND i.category = $2
+       AND i.fix_status = 'pending'
+       ORDER BY s.scanned_at DESC
+       LIMIT 1`,
+      [userId, category]
+    );
+
+    if (scanResult.rows.length === 0) {
+      return res.json({
+        success: false,
+        error: 'No pending issues found in this category'
+      });
+    }
+
+    const scan = scanResult.rows[0];
+
+    // Get all pending issues in this category
+    const issuesResult = await pool.query(
+      `SELECT * FROM seo_issues 
+       WHERE scan_id = $1 
+       AND category = $2
+       AND fix_status = 'pending'
+       ${severity ? 'AND severity = $3' : ''}
+       ORDER BY severity DESC`,
+      severity ? [scan.id, category, severity] : [scan.id, category]
+    );
+
+    const issues = issuesResult.rows;
+
+    if (issues.length === 0) {
+      return res.json({
+        success: false,
+        error: 'No pending issues found'
+      });
+    }
+
+    // Generate fixes using AI
+    console.log(`Generating AI fixes for ${issues.length} ${category} issues...`);
+    const fixes = await seoAIFixer.generateFixes(scan.url, issues);
+
+    if (fixes.length === 0) {
+      return res.json({
+        success: false,
+        error: 'Failed to generate fixes'
+      });
+    }
+
+    // Store fixes in database and mark issues as fixed
+    let appliedCount = 0;
+    for (const fix of fixes) {
+      // Store the fix
+      const fixResult = await pool.query(
+        `INSERT INTO seo_fixes 
+         (scan_id, issue_id, fix_type, original_content, optimized_content, 
+          ai_model, confidence_score, keywords, status)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'generated')
+         RETURNING id`,
+        [
+          scan.id,
+          fix.issueId,
+          fix.fixType,
+          fix.originalContent,
+          fix.optimizedContent,
+          fix.aiModel,
+          fix.confidenceScore,
+          fix.keywords
+        ]
+      );
+
+      // Update issue status
+      await pool.query(
+        `UPDATE seo_issues 
+         SET fix_status = 'fixed', 
+             fixed_at = NOW(),
+             fix_id = $1
+         WHERE id = $2`,
+        [fixResult.rows[0].id, fix.issueId]
+      );
+
+      appliedCount++;
+    }
+
+    res.json({
+      success: true,
+      message: `Successfully generated fixes for ${appliedCount} issues`,
+      fixedCount: appliedCount,
+      category: category,
+      scanId: scan.id
+    });
+
+  } catch (error) {
+    console.error('Auto-fix error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
+/**
  * POST /api/seo/schedule-scan
  * Schedule automated scans for a URL
  */
