@@ -50,6 +50,30 @@ class SEOAIFixer {
           case 'mobile':
             fix = await this.generateMobileFix(url, issue);
             break;
+          case 'canonical':
+            fix = await this.generateCanonicalFix(url, issue);
+            break;
+          case 'robots':
+            fix = await this.generateRobotsFix(url, issue);
+            break;
+          case 'performance':
+            fix = await this.generatePerformanceFix(url, issue);
+            break;
+          case 'accessibility':
+            fix = await this.generateAccessibilityFix(url, issue);
+            break;
+          case 'keywords':
+            fix = await this.generateKeywordsFix(url, issue);
+            break;
+          case 'url-structure':
+            fix = await this.generateUrlStructureFix(url, issue);
+            break;
+          case 'broken-links':
+            fix = await this.generateBrokenLinksFix(url, issue);
+            break;
+          case 'duplicate-content':
+            fix = await this.generateDuplicateContentFix(url, issue);
+            break;
           default:
             continue;
         }
@@ -493,6 +517,233 @@ Return ONLY the JSON array, nothing else.`;
       console.error('Error generating internal links:', error.message);
       return [];
     }
+  }
+
+  /**
+   * Generate canonical URL fix
+   */
+  async generateCanonicalFix(url, issue) {
+    const prompt = `You are an SEO expert. Generate the correct canonical URL tag for this page.
+
+URL: ${url}
+Issue: ${issue.description}
+Current Value: ${issue.current_value || 'None'}
+
+Requirements:
+- Use the primary URL version (https, www or non-www)
+- Ensure it's the preferred URL for this content
+- Include full absolute URL
+
+Return ONLY the canonical URL (just the URL, not the full tag), nothing else.`;
+
+    const response = await this.callOpenAI(prompt);
+    const canonicalUrl = response.trim();
+
+    return {
+      content: `<link rel="canonical" href="${canonicalUrl}" />`,
+      confidence: 0.9,
+      keywords: []
+    };
+  }
+
+  /**
+   * Generate robots meta tag fix
+   */
+  async generateRobotsFix(url, issue) {
+    const prompt = `You are an SEO expert. Generate the appropriate robots meta tag for this page.
+
+URL: ${url}
+Issue: ${issue.description}
+Current Value: ${issue.current_value || 'None'}
+
+Common directives:
+- index/noindex - Allow/prevent indexing
+- follow/nofollow - Allow/prevent following links
+- noarchive - Prevent cached copy
+- nosnippet - Prevent snippet in search results
+
+Return ONLY the robots directive (e.g., "index, follow"), nothing else.`;
+
+    const response = await this.callOpenAI(prompt);
+    const robotsDirective = response.trim();
+
+    return {
+      content: `<meta name="robots" content="${robotsDirective}" />`,
+      confidence: 0.85,
+      keywords: []
+    };
+  }
+
+  /**
+   * Generate performance optimization suggestions
+   */
+  async generatePerformanceFix(url, issue) {
+    const prompt = `You are a web performance expert. Provide specific optimization recommendations for this issue.
+
+URL: ${url}
+Issue: ${issue.description}
+Current Value: ${issue.current_value || 'None'}
+
+Focus on:
+- Image optimization
+- Code minification
+- Caching strategies
+- Critical CSS
+- Lazy loading
+- Resource hints
+
+Provide 3-5 actionable recommendations in a concise list format.`;
+
+    const response = await this.callOpenAI(prompt);
+
+    return {
+      content: response.trim(),
+      confidence: 0.8,
+      keywords: ['performance', 'speed', 'optimization']
+    };
+  }
+
+  /**
+   * Generate accessibility fix
+   */
+  async generateAccessibilityFix(url, issue) {
+    const prompt = `You are a WCAG accessibility expert. Generate a fix for this accessibility issue.
+
+URL: ${url}
+Issue: ${issue.description}
+Current Value: ${issue.current_value || 'None'}
+
+Requirements:
+- WCAG 2.1 Level AA compliance
+- Screen reader friendly
+- Keyboard navigation support
+- Proper ARIA labels
+- Color contrast requirements
+
+Provide the specific HTML/code fix needed.`;
+
+    const response = await this.callOpenAI(prompt);
+
+    return {
+      content: response.trim(),
+      confidence: 0.85,
+      keywords: ['accessibility', 'a11y', 'wcag']
+    };
+  }
+
+  /**
+   * Generate keyword optimization fix
+   */
+  async generateKeywordsFix(url, issue) {
+    const prompt = `You are an SEO keyword expert. Optimize the content for better keyword usage.
+
+URL: ${url}
+Issue: ${issue.description}
+Current Content: ${issue.current_value || 'None'}
+
+Requirements:
+- Natural keyword integration
+- Avoid keyword stuffing
+- Use semantic variations
+- Maintain readability
+- Target primary and secondary keywords
+
+Return the optimized content with better keyword usage.`;
+
+    const response = await this.callOpenAI(prompt);
+    const optimizedContent = response.trim();
+    const keywords = this.extractKeywords(optimizedContent);
+
+    return {
+      content: optimizedContent,
+      confidence: 0.8,
+      keywords
+    };
+  }
+
+  /**
+   * Generate URL structure fix
+   */
+  async generateUrlStructureFix(url, issue) {
+    const prompt = `You are an SEO expert. Suggest an optimized URL structure for this page.
+
+Current URL: ${url}
+Issue: ${issue.description}
+
+Requirements:
+- Short and descriptive
+- Use hyphens, not underscores
+- Include primary keyword
+- Lowercase only
+- Remove unnecessary parameters
+- Logical hierarchy
+
+Return ONLY the optimized URL path (e.g., /category/product-name), nothing else.`;
+
+    const response = await this.callOpenAI(prompt);
+    const optimizedUrl = response.trim();
+
+    return {
+      content: optimizedUrl,
+      confidence: 0.75,
+      keywords: this.extractKeywords(optimizedUrl)
+    };
+  }
+
+  /**
+   * Generate broken links fix
+   */
+  async generateBrokenLinksFix(url, issue) {
+    const brokenUrl = issue.current_value || '';
+    
+    const prompt = `You are an SEO expert. Suggest a fix for this broken link.
+
+Page URL: ${url}
+Broken Link: ${brokenUrl}
+Issue: ${issue.description}
+
+Suggest:
+1. If it should be removed
+2. If it should be redirected (suggest target)
+3. If it should be updated (suggest correct URL)
+
+Provide a brief, actionable recommendation.`;
+
+    const response = await this.callOpenAI(prompt);
+
+    return {
+      content: response.trim(),
+      confidence: 0.7,
+      keywords: []
+    };
+  }
+
+  /**
+   * Generate duplicate content fix
+   */
+  async generateDuplicateContentFix(url, issue) {
+    const prompt = `You are an SEO content expert. Provide a solution for this duplicate content issue.
+
+URL: ${url}
+Issue: ${issue.description}
+Current Content: ${issue.current_value ? issue.current_value.substring(0, 200) : 'None'}
+
+Solutions may include:
+- Canonical tags
+- 301 redirects
+- Content consolidation
+- Noindex tags
+- Unique content rewrite
+
+Provide specific recommendations for this case.`;
+
+    const response = await this.callOpenAI(prompt);
+
+    return {
+      content: response.trim(),
+      confidence: 0.75,
+      keywords: []
+    };
   }
 
   /**
