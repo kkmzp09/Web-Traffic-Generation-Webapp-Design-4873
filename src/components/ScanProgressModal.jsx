@@ -13,41 +13,63 @@ const ScanProgressModal = ({ scanId, onComplete, onClose }) => {
   useEffect(() => {
     if (!scanId) return;
 
+    console.log('[ScanProgress] Connecting to SSE for scan:', scanId);
+
     // Connect to Server-Sent Events for real-time progress
     const eventSource = new EventSource(
       `https://api.organitrafficboost.com/api/seo/scan-progress/${scanId}`
     );
 
+    eventSource.onopen = () => {
+      console.log('[ScanProgress] SSE connection opened');
+    };
+
     eventSource.onmessage = (event) => {
+      console.log('[ScanProgress] Received message:', event.data);
+      
+      // Skip heartbeat messages
+      if (event.data.startsWith(':')) {
+        return;
+      }
+      
       try {
         const data = JSON.parse(event.data);
+        console.log('[ScanProgress] Parsed data:', data);
         setProgress(data);
 
         // If scan is completed, close after a delay
         if (data.status === 'completed') {
+          console.log('[ScanProgress] Scan completed!');
           setTimeout(() => {
             eventSource.close();
-            onComplete(data.results);
+            onComplete(data.results || {});
           }, 2000);
         }
 
         // If scan failed, close immediately
         if (data.status === 'failed') {
+          console.log('[ScanProgress] Scan failed:', data.errors);
           eventSource.close();
-          alert('❌ Scan failed: ' + (data.errors[0] || 'Unknown error'));
+          alert('❌ Scan failed: ' + (data.errors?.[0] || 'Unknown error'));
           onClose();
         }
       } catch (error) {
-        console.error('Error parsing progress data:', error);
+        console.error('[ScanProgress] Error parsing progress data:', error, event.data);
       }
     };
 
     eventSource.onerror = (error) => {
-      console.error('SSE Error:', error);
-      eventSource.close();
+      console.error('[ScanProgress] SSE Error:', error);
+      console.log('[ScanProgress] EventSource readyState:', eventSource.readyState);
+      
+      // Don't close immediately - let it retry
+      if (eventSource.readyState === EventSource.CLOSED) {
+        console.log('[ScanProgress] Connection closed, cleaning up');
+      }
     };
 
     return () => {
+      console.log('[ScanProgress] Cleaning up SSE connection');
       eventSource.close();
     };
   }, [scanId, onComplete, onClose]);
