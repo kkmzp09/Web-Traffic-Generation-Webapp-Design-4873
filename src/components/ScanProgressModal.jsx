@@ -64,6 +64,81 @@ const ScanProgressModal = ({ scanId, onComplete, onClose }) => {
       }
     };
 
+    let fallbackInterval = null;
+    let sseWorking = false;
+    
+    // Set timeout to start fallback polling if SSE doesn't work
+    const fallbackTimeout = setTimeout(() => {
+      if (!sseWorking) {
+        console.log('[ScanProgress] SSE not working, starting fallback polling');
+        fallbackInterval = setInterval(async () => {
+          try {
+            const response = await fetch(
+              `https://api.organitrafficboost.com/api/seo/scan/${scanId}`
+            );
+            const data = await response.json();
+            if (data.success && data.scan) {
+              console.log('[ScanProgress] Fallback poll:', data.scan.status);
+              
+              // Update progress based on scan status
+              if (data.scan.status === 'completed') {
+                setProgress({
+                  status: 'completed',
+                  pagesScanned: 100,
+                  totalPages: 100,
+                  results: data
+                });
+                clearInterval(fallbackInterval);
+                setTimeout(() => {
+                  onComplete(data);
+                }, 2000);
+              }
+            }
+          } catch (error) {
+            console.error('[ScanProgress] Fallback poll error:', error);
+          }
+        }, 3000); // Poll every 3 seconds
+      }
+    }, 5000); // Wait 5 seconds before starting fallback
+
+    eventSource.onmessage = (event) => {
+      sseWorking = true; // SSE is working!
+      clearTimeout(fallbackTimeout);
+      if (fallbackInterval) clearInterval(fallbackInterval);
+      
+      console.log('[ScanProgress] Received message:', event.data);
+      
+      // Skip heartbeat messages
+      if (event.data.startsWith(':')) {
+        return;
+      }
+      
+      try {
+        const data = JSON.parse(event.data);
+        console.log('[ScanProgress] Parsed data:', data);
+        setProgress(data);
+
+        // If scan is completed, close after a delay
+        if (data.status === 'completed') {
+          console.log('[ScanProgress] Scan completed!');
+          setTimeout(() => {
+            eventSource.close();
+            onComplete(data.results || {});
+          }, 2000);
+        }
+
+        // If scan failed, close immediately
+        if (data.status === 'failed') {
+          console.log('[ScanProgress] Scan failed:', data.errors);
+          eventSource.close();
+          alert('❌ Scan failed: ' + (data.errors?.[0] || 'Unknown error'));
+          onClose();
+        }
+      } catch (error) {
+        console.error('[ScanProgress] Error parsing progress data:', error, event.data);
+      }
+    };
+
     eventSource.onerror = (error) => {
       console.error('[ScanProgress] SSE Error:', error);
       console.log('[ScanProgress] EventSource readyState:', eventSource.readyState);
@@ -80,6 +155,8 @@ const ScanProgressModal = ({ scanId, onComplete, onClose }) => {
         eventSourceRef.current.close();
         eventSourceRef.current = null;
       }
+      if (fallbackTimeout) clearTimeout(fallbackTimeout);
+      if (fallbackInterval) clearInterval(fallbackInterval);
       isConnectedRef.current = false;
     };
   }, [scanId]);
