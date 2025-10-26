@@ -12,6 +12,25 @@ const ScanProgressModal = ({ scanId, onComplete, onClose }) => {
   
   const eventSourceRef = useRef(null);
   const isConnectedRef = useRef(false);
+  const scanStartTimeRef = useRef(Date.now());
+  const lastUpdateTimeRef = useRef(Date.now());
+
+  // Countdown timer - decreases estimated time every second
+  useEffect(() => {
+    const countdownInterval = setInterval(() => {
+      setProgress(prev => {
+        if (prev.estimatedTimeRemaining && prev.estimatedTimeRemaining > 0) {
+          return {
+            ...prev,
+            estimatedTimeRemaining: Math.max(0, prev.estimatedTimeRemaining - 1)
+          };
+        }
+        return prev;
+      });
+    }, 1000);
+
+    return () => clearInterval(countdownInterval);
+  }, []);
 
   useEffect(() => {
     if (!scanId || isConnectedRef.current) return;
@@ -97,14 +116,24 @@ const ScanProgressModal = ({ scanId, onComplete, onClose }) => {
                   onComplete(data);
                 }, 2000);
               } else if (data.scan.status === 'scanning') {
+                // Calculate estimated time remaining
+                const now = Date.now();
+                const elapsed = (now - scanStartTimeRef.current) / 1000; // seconds
+                const pagesRemaining = Math.max(pagesScanned, prev.totalPages || 10) - pagesScanned;
+                const avgTimePerPage = pagesScanned > 0 ? elapsed / pagesScanned : 3; // 3 sec default
+                const estimatedSeconds = Math.round(pagesRemaining * avgTimePerPage);
+                
                 // Show progressive updates during scanning
                 setProgress(prev => ({
                   ...prev,
                   status: 'scanning',
                   pagesScanned: pagesScanned,
                   totalPages: Math.max(pagesScanned, prev.totalPages || 10),
-                  pagesDiscovered: Math.max(pagesScanned, prev.pagesDiscovered || 0)
+                  pagesDiscovered: Math.max(pagesScanned, prev.pagesDiscovered || 0),
+                  estimatedTimeRemaining: estimatedSeconds
                 }));
+                
+                lastUpdateTimeRef.current = now;
               }
             }
           } catch (error) {
@@ -193,11 +222,12 @@ const ScanProgressModal = ({ scanId, onComplete, onClose }) => {
   };
 
   const formatTime = (seconds) => {
-    if (!seconds) return 'Calculating...';
-    if (seconds < 60) return `${seconds}s`;
+    if (!seconds || seconds === null) return 'Calculating...';
+    if (seconds === 0) return 'Almost done...';
+    if (seconds < 60) return `${seconds} seconds`;
     const minutes = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${minutes}m ${secs}s`;
+    return `${minutes}m ${secs}s remaining`;
   };
 
   const percentage = getProgressPercentage();
