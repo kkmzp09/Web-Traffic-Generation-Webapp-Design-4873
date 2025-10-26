@@ -28,6 +28,10 @@ export default function SEODashboard() {
   // Limit enforcement
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [limitData, setLimitData] = useState(null);
+  
+  // Widget validation
+  const [widgetStatus, setWidgetStatus] = useState(null); // null, 'checking', 'live', 'not-found'
+  const [validatingWidget, setValidatingWidget] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -47,6 +51,40 @@ export default function SEODashboard() {
       }
     } catch (error) {
       console.error('Error loading subscription usage:', error);
+    }
+  };
+
+  const validateWidget = async () => {
+    if (!scanUrl) {
+      alert('Please enter a URL first');
+      return;
+    }
+
+    setValidatingWidget(true);
+    setWidgetStatus('checking');
+
+    try {
+      const response = await fetch(
+        'https://api.organitrafficboost.com/api/seo/validate-widget',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: scanUrl })
+        }
+      );
+
+      const data = await response.json();
+      
+      if (data.success && data.widgetInstalled) {
+        setWidgetStatus('live');
+      } else {
+        setWidgetStatus('not-found');
+      }
+    } catch (error) {
+      console.error('Widget validation error:', error);
+      setWidgetStatus('not-found');
+    } finally {
+      setValidatingWidget(false);
     }
   };
 
@@ -237,13 +275,37 @@ export default function SEODashboard() {
           <div className="lg:col-span-2 bg-white rounded-2xl shadow-lg p-6 border border-indigo-100">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900">Quick Scan</h2>
-              <button
-                onClick={() => navigate('/widget-setup')}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 font-medium transition-all text-sm"
-              >
-                <FiCheckCircle className="w-4 h-4" />
-                Validate Widget
-              </button>
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-gray-600 font-medium">Widget Status:</span>
+                {widgetStatus === null && (
+                  <button
+                    onClick={validateWidget}
+                    disabled={validatingWidget || !scanUrl}
+                    className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center gap-2 text-sm font-medium transition-all disabled:opacity-50"
+                  >
+                    <FiCheckCircle className="w-4 h-4" />
+                    Check
+                  </button>
+                )}
+                {widgetStatus === 'checking' && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm">
+                    <FiRefreshCw className="w-4 h-4 animate-spin" />
+                    Checking...
+                  </div>
+                )}
+                {widgetStatus === 'live' && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-sm font-medium">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    Live
+                  </div>
+                )}
+                {widgetStatus === 'not-found' && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-700 rounded-lg text-sm font-medium">
+                    <FiAlertCircle className="w-4 h-4" />
+                    Not Found
+                  </div>
+                )}
+              </div>
             </div>
             <div className="flex items-center gap-4">
               <FiSearch className="w-6 h-6 text-indigo-600" />

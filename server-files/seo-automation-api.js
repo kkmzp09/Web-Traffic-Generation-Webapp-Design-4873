@@ -68,6 +68,59 @@ async function getUserPageLimit(userId) {
 }
 
 /**
+ * POST /api/seo/validate-widget
+ * Check if SEO widget is installed on a website
+ */
+router.post('/validate-widget', async (req, res) => {
+  try {
+    const { url } = req.body;
+
+    if (!url) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'URL is required' 
+      });
+    }
+
+    console.log(`🔍 Checking widget installation on: ${url}`);
+
+    // Fetch the page HTML
+    const response = await axios.get(url, {
+      timeout: 10000,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+      }
+    });
+
+    const html = response.data;
+
+    // Check for widget script tag
+    const widgetScriptPattern = /organitrafficboost\.com\/widget\.js|seo-auto-fix-widget/i;
+    const widgetInstalled = widgetScriptPattern.test(html);
+
+    console.log(`Widget status for ${url}: ${widgetInstalled ? '✅ FOUND' : '❌ NOT FOUND'}`);
+
+    res.json({
+      success: true,
+      widgetInstalled,
+      url,
+      message: widgetInstalled 
+        ? 'Widget is installed and active' 
+        : 'Widget not found on this page'
+    });
+
+  } catch (error) {
+    console.error('Widget validation error:', error.message);
+    res.json({
+      success: true,
+      widgetInstalled: false,
+      error: error.message,
+      message: 'Could not verify widget installation'
+    });
+  }
+});
+
+/**
  * POST /api/seo/scan-page
  * Scan a page for SEO issues
  */
