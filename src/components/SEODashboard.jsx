@@ -281,28 +281,33 @@ export default function SEODashboard() {
                   <button
                     onClick={validateWidget}
                     disabled={validatingWidget || !scanUrl}
-                    className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 flex items-center gap-2 text-sm font-medium transition-all disabled:opacity-50"
+                    className={`px-4 py-2 rounded-lg flex items-center gap-2 text-sm font-medium transition-all ${
+                      !scanUrl 
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                        : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-sm'
+                    }`}
+                    title={!scanUrl ? 'Enter a URL first' : 'Check if widget is installed'}
                   >
                     <FiCheckCircle className="w-4 h-4" />
-                    Check
+                    {!scanUrl ? 'Enter URL First' : 'Check Widget'}
                   </button>
                 )}
                 {widgetStatus === 'checking' && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg text-sm">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium border border-blue-200">
                     <FiRefreshCw className="w-4 h-4 animate-spin" />
                     Checking...
                   </div>
                 )}
                 {widgetStatus === 'live' && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 rounded-lg text-sm font-medium">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    Live
+                  <div className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-lg text-sm font-bold border-2 border-green-500">
+                    <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse"></div>
+                    ✓ Widget Installed
                   </div>
                 )}
                 {widgetStatus === 'not-found' && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-700 rounded-lg text-sm font-medium">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-700 rounded-lg text-sm font-bold border-2 border-red-500">
                     <FiAlertCircle className="w-4 h-4" />
-                    Not Found
+                    ✗ Widget Not Found
                   </div>
                 )}
               </div>
