@@ -17,6 +17,7 @@ export default function SEOScanResults() {
   const [applyingFix, setApplyingFix] = useState(null);
   const [applyingAll, setApplyingAll] = useState(false);
   const [autoFixing, setAutoFixing] = useState(null);
+  const [autoFixingAll, setAutoFixingAll] = useState(false);
 
   useEffect(() => {
     if (scanId) {
@@ -147,6 +148,153 @@ export default function SEOScanResults() {
   const isAutoFixable = (issue) => {
     const autoFixableCategories = ['title', 'meta', 'headings', 'images', 'schema', 'technical'];
     return autoFixableCategories.includes(issue.category);
+  };
+
+  // Auto-fix all fixable issues at once
+  const autoFixAllIssues = async () => {
+    const autoFixableIssues = [...criticalIssues, ...warnings].filter(isAutoFixable);
+    
+    if (autoFixableIssues.length === 0) {
+      alert('No auto-fixable issues found!');
+      return;
+    }
+
+    if (!confirm(`Apply auto-fix to all ${autoFixableIssues.length} fixable issue(s)?\n\nThis will enable widget-based fixes for:\n${autoFixableIssues.map(i => `• ${i.title}`).join('\n')}`)) {
+      return;
+    }
+
+    try {
+      setAutoFixingAll(true);
+      const urlObj = new URL(scan.url);
+      const siteId = urlObj.hostname.replace(/\./g, '-') + '-001';
+      
+      let successCount = 0;
+      let failCount = 0;
+      const results = [];
+
+      for (const issue of autoFixableIssues) {
+        try {
+          // Prepare fix data
+          let fixData = {};
+          let optimizedContent = '';
+          
+          if (issue.category === 'title') {
+            optimizedContent = issue.recommendation || `${urlObj.hostname} - Professional Services`;
+            fixData = { optimized_content: optimizedContent };
+          } else if (issue.category === 'meta') {
+            optimizedContent = issue.recommendation || `Discover quality services at ${urlObj.hostname}. Professional solutions tailored to your needs.`;
+            fixData = { optimized_content: optimizedContent };
+          } else if (issue.category === 'headings') {
+            optimizedContent = issue.recommendation || `Welcome to ${urlObj.hostname}`;
+            fixData = { optimized_content: optimizedContent };
+          } else if (issue.category === 'images') {
+            optimizedContent = 'Descriptive image showing relevant content';
+            fixData = { 
+              optimized_content: optimizedContent,
+              selector: 'img:not([alt])'
+            };
+          } else if (issue.category === 'schema') {
+            fixData = {
+              schema: {
+                "@context": "https://schema.org",
+                "@type": "WebSite",
+                "name": urlObj.hostname,
+                "url": scan.url
+              }
+            };
+            optimizedContent = 'Schema markup';
+          }
+
+          // Apply fix
+          const response = await fetch(
+            'https://api.organitrafficboost.com/api/seo/widget/fixes/apply',
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                siteId,
+                domain: urlObj.hostname,
+                scanId: parseInt(scanId),
+                fixType: issue.category,
+                fixData,
+                priority: issue.severity === 'critical' ? 80 : 50
+              })
+            }
+          );
+
+          const data = await response.json();
+          
+          if (data.success) {
+            successCount++;
+            results.push({
+              issue: issue.title,
+              status: 'success',
+              before: issue.current_value || 'Not set',
+              after: optimizedContent
+            });
+          } else {
+            failCount++;
+            results.push({
+              issue: issue.title,
+              status: 'failed',
+              error: data.error
+            });
+          }
+        } catch (error) {
+          failCount++;
+          results.push({
+            issue: issue.title,
+            status: 'failed',
+            error: error.message
+          });
+        }
+      }
+
+      // Show comprehensive results
+      const successResults = results.filter(r => r.status === 'success');
+      const failedResults = results.filter(r => r.status === 'failed');
+      
+      let resultMessage = `
+🎉 Auto-Fix Complete!
+
+✅ Successfully Applied: ${successCount}
+${failCount > 0 ? `❌ Failed: ${failCount}` : ''}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 Applied Fixes:
+${successResults.map(r => `
+✓ ${r.issue}
+  Before: ${r.before}
+  After: ${r.after}
+`).join('\n')}
+
+${failedResults.length > 0 ? `
+❌ Failed Fixes:
+${failedResults.map(r => `
+  • ${r.issue}: ${r.error}
+`).join('\n')}
+` : ''}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⏱️ Next Steps:
+1. Wait 5-10 seconds for widget to fetch fixes
+2. Visit your website
+3. View page source (Ctrl+U) to verify
+4. All fixes are applied automatically!
+
+💡 Fixes are stored in database and will be applied by the widget within 5 seconds.
+      `;
+
+      alert(resultMessage);
+      loadScanResults();
+    } catch (error) {
+      console.error('Error auto-fixing all issues:', error);
+      alert('Failed to apply auto-fixes: ' + error.message);
+    } finally {
+      setAutoFixingAll(false);
+    }
   };
 
   // Apply auto-fix via widget
@@ -363,6 +511,41 @@ ${optimizedContent}
             </div>
           </div>
         </div>
+
+        {/* Auto-Fix All Issues Button */}
+        {([...criticalIssues, ...warnings].filter(isAutoFixable).length > 0) && (
+          <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl shadow-lg p-8 mb-8 text-white">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-2xl font-bold mb-2 flex items-center gap-2">
+                  <FiZap className="w-7 h-7" />
+                  Widget Auto-Fix Available
+                </h3>
+                <p className="text-green-100">
+                  Automatically fix {[...criticalIssues, ...warnings].filter(isAutoFixable).length} issue(s) using the widget. 
+                  No file modifications needed - fixes are applied in real-time!
+                </p>
+              </div>
+              <button
+                onClick={autoFixAllIssues}
+                disabled={autoFixingAll}
+                className="px-8 py-4 bg-white text-green-600 rounded-lg hover:bg-green-50 disabled:opacity-50 flex items-center gap-2 font-bold transition-all shadow-lg text-lg whitespace-nowrap"
+              >
+                {autoFixingAll ? (
+                  <>
+                    <FiRefreshCw className="w-6 h-6 animate-spin" />
+                    Applying...
+                  </>
+                ) : (
+                  <>
+                    <FiZap className="w-6 h-6" />
+                    Auto-Fix All Issues
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* AI Fix Generator */}
         {fixableIssues.length > 0 && (
