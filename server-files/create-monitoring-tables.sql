@@ -12,7 +12,7 @@ ADD COLUMN IF NOT EXISTS next_scan_at TIMESTAMP;
 -- Create ranking history table
 CREATE TABLE IF NOT EXISTS ranking_history (
   id SERIAL PRIMARY KEY,
-  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  user_id INTEGER,
   domain VARCHAR(255) NOT NULL,
   keyword VARCHAR(255) NOT NULL,
   position INTEGER NOT NULL,
@@ -30,7 +30,7 @@ CREATE INDEX IF NOT EXISTS idx_ranking_history_recorded_at ON ranking_history(re
 -- Create competitor analysis table
 CREATE TABLE IF NOT EXISTS competitor_analysis (
   id SERIAL PRIMARY KEY,
-  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  user_id INTEGER,
   domain VARCHAR(255) NOT NULL,
   competitor_url VARCHAR(500) NOT NULL,
   keyword VARCHAR(255) NOT NULL,
@@ -47,9 +47,9 @@ CREATE INDEX IF NOT EXISTS idx_competitor_analysis_keyword ON competitor_analysi
 -- Create auto-fix history table
 CREATE TABLE IF NOT EXISTS auto_fix_history (
   id SERIAL PRIMARY KEY,
-  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  user_id INTEGER,
   domain VARCHAR(255) NOT NULL,
-  scan_id INTEGER REFERENCES seo_scans(id) ON DELETE CASCADE,
+  scan_id INTEGER,
   fix_type VARCHAR(100) NOT NULL,
   issue_title VARCHAR(500),
   before_value TEXT,
@@ -65,7 +65,7 @@ CREATE INDEX IF NOT EXISTS idx_auto_fix_history_applied_at ON auto_fix_history(a
 -- Create email reports table
 CREATE TABLE IF NOT EXISTS email_reports (
   id SERIAL PRIMARY KEY,
-  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  user_id INTEGER,
   domain VARCHAR(255) NOT NULL,
   report_type VARCHAR(50) DEFAULT 'automated_scan',
   sent_at TIMESTAMP DEFAULT NOW(),

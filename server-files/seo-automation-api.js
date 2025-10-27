@@ -13,6 +13,7 @@ const progressTracker = require('./scan-progress-tracker');
 const quickAuditRoutes = require('./seo-quick-audit-api');
 const comprehensiveAuditRoutes = require('./comprehensive-seo-audit');
 const scanHistoryRoutes = require('./seo-scan-history-api');
+const { sendScanEmail } = require('./send-scan-email');
 
 // Use Puppeteer scanner for JavaScript-rendered pages (set to true to enable)
 const USE_PUPPETEER = process.env.USE_PUPPETEER_SCANNER === 'true' || false;
@@ -366,6 +367,63 @@ async function performScan(scanId, url, userId, domain, pageLimit = 10) {
       totalWarnings,
       scannedCount
     });
+
+    // Send email notification
+    try {
+      // Get user email
+      const userResult = await pool.query(
+        `SELECT u.email, u.name 
+         FROM users u 
+         WHERE u.id = $1`,
+        [userId]
+      );
+
+      if (userResult.rows.length > 0 && userResult.rows[0].email) {
+        const userEmail = userResult.rows[0].email;
+        const userName = userResult.rows[0].name || 'there';
+
+        // Get top issues for email
+        const topIssuesResult = await pool.query(
+          `SELECT title, description, severity 
+           FROM seo_issues 
+           WHERE scan_id = $1 
+           ORDER BY 
+             CASE severity 
+               WHEN 'critical' THEN 1 
+               WHEN 'warning' THEN 2 
+               ELSE 3 
+             END,
+             id 
+           LIMIT 5`,
+          [scanId]
+        );
+
+        // Send email
+        await sendScanEmail({
+          scanId,
+          domain,
+          seoScore: avgScore,
+          criticalIssues: totalCritical,
+          warnings: totalWarnings,
+          passedChecks: totalPassed,
+          pagesScanned: scannedCount,
+          scanDuration: scanDuration,
+          topIssues: topIssuesResult.rows
+        }, userEmail, userName);
+
+        // Log email in database
+        await pool.query(
+          `INSERT INTO email_reports (user_id, domain, report_type, email_to, subject, fixes_count, issues_found, status)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+          [userId, domain, 'manual_scan', userEmail, `SEO Scan Complete: ${avgScore}/100`, 0, totalIssues, 'sent']
+        );
+
+        console.log(`📧 Email notification sent to ${userEmail}`);
+      }
+    } catch (emailError) {
+      console.error('❌ Error sending email notification:', emailError.message);
+      // Don't fail the scan if email fails
+    }
 
   } catch (error) {
     console.error('Scan execution error:', error);
