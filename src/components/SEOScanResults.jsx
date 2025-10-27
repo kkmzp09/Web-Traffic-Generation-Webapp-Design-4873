@@ -160,15 +160,21 @@ export default function SEOScanResults() {
 
       // Prepare fix data based on issue type
       let fixData = {};
+      let optimizedContent = '';
+      
       if (issue.category === 'title') {
-        fixData = { optimized_content: issue.recommendation || 'Optimized Title' };
+        optimizedContent = issue.recommendation || `${urlObj.hostname} - Professional Services`;
+        fixData = { optimized_content: optimizedContent };
       } else if (issue.category === 'meta') {
-        fixData = { optimized_content: issue.recommendation || 'Optimized meta description' };
+        optimizedContent = issue.recommendation || `Discover quality services at ${urlObj.hostname}. Professional solutions tailored to your needs.`;
+        fixData = { optimized_content: optimizedContent };
       } else if (issue.category === 'headings') {
-        fixData = { optimized_content: issue.recommendation || 'Optimized H1 Heading' };
+        optimizedContent = issue.recommendation || `Welcome to ${urlObj.hostname}`;
+        fixData = { optimized_content: optimizedContent };
       } else if (issue.category === 'images') {
+        optimizedContent = 'Descriptive image showing relevant content';
         fixData = { 
-          optimized_content: 'Descriptive alt text',
+          optimized_content: optimizedContent,
           selector: 'img:not([alt])'
         };
       } else if (issue.category === 'schema') {
@@ -180,6 +186,7 @@ export default function SEOScanResults() {
             "url": scan.url
           }
         };
+        optimizedContent = JSON.stringify(fixData.schema, null, 2);
       }
 
       // Send to widget fixes API
@@ -202,7 +209,39 @@ export default function SEOScanResults() {
       const data = await response.json();
 
       if (data.success) {
-        alert('✅ Auto-fix enabled! The widget will apply this fix within 5 seconds.');
+        // Show detailed before/after modal
+        const beforeAfterMessage = `
+🎯 Auto-Fix Applied Successfully!
+
+📋 Issue: ${issue.title}
+📍 URL: ${issue.page_url || scan.url}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+❌ BEFORE (Current State):
+${issue.current_value || 'Not set'}
+
+✅ AFTER (Widget Will Apply):
+${optimizedContent}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⏱️ Timeline:
+• Fix stored in database: ✅ Done
+• Widget will fetch: Within 5 seconds
+• Fix will be applied: Automatically
+• Visible on page: After refresh
+
+🔍 Verification:
+1. Wait 5-10 seconds
+2. Visit: ${issue.page_url || scan.url}
+3. View page source (Ctrl+U)
+4. Search for the new content above
+
+💡 The widget injects this fix in real-time without modifying your files!
+        `;
+        
+        alert(beforeAfterMessage);
         loadScanResults();
       } else {
         alert('Failed to enable auto-fix: ' + data.error);
