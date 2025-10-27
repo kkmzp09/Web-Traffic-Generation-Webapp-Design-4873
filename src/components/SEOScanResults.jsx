@@ -16,6 +16,7 @@ export default function SEOScanResults() {
   const [generatingFixes, setGeneratingFixes] = useState(false);
   const [applyingFix, setApplyingFix] = useState(null);
   const [applyingAll, setApplyingAll] = useState(false);
+  const [autoFixing, setAutoFixing] = useState(null);
 
   useEffect(() => {
     if (scanId) {
@@ -139,6 +140,78 @@ export default function SEOScanResults() {
       alert('Failed to apply fixes');
     } finally {
       setApplyingAll(false);
+    }
+  };
+
+  // Determine if an issue can be auto-fixed via widget
+  const isAutoFixable = (issue) => {
+    const autoFixableCategories = ['title', 'meta', 'headings', 'images', 'schema', 'technical'];
+    return autoFixableCategories.includes(issue.category);
+  };
+
+  // Apply auto-fix via widget
+  const applyAutoFix = async (issue) => {
+    try {
+      setAutoFixing(issue.id);
+
+      // Extract site ID from scan URL
+      const urlObj = new URL(scan.url);
+      const siteId = urlObj.hostname.replace(/\./g, '-') + '-001';
+
+      // Prepare fix data based on issue type
+      let fixData = {};
+      if (issue.category === 'title') {
+        fixData = { optimized_content: issue.recommendation || 'Optimized Title' };
+      } else if (issue.category === 'meta') {
+        fixData = { optimized_content: issue.recommendation || 'Optimized meta description' };
+      } else if (issue.category === 'headings') {
+        fixData = { optimized_content: issue.recommendation || 'Optimized H1 Heading' };
+      } else if (issue.category === 'images') {
+        fixData = { 
+          optimized_content: 'Descriptive alt text',
+          selector: 'img:not([alt])'
+        };
+      } else if (issue.category === 'schema') {
+        fixData = {
+          schema: {
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            "name": urlObj.hostname,
+            "url": scan.url
+          }
+        };
+      }
+
+      // Send to widget fixes API
+      const response = await fetch(
+        'https://api.organitrafficboost.com/api/seo/widget/fixes/apply',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            siteId,
+            domain: urlObj.hostname,
+            scanId: parseInt(scanId),
+            fixType: issue.category,
+            fixData,
+            priority: issue.severity === 'critical' ? 80 : 50
+          })
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        alert('✅ Auto-fix enabled! The widget will apply this fix within 5 seconds.');
+        loadScanResults();
+      } else {
+        alert('Failed to enable auto-fix: ' + data.error);
+      }
+    } catch (error) {
+      console.error('Error enabling auto-fix:', error);
+      alert('Failed to enable auto-fix');
+    } finally {
+      setAutoFixing(null);
     }
   };
 
@@ -335,7 +408,14 @@ export default function SEOScanResults() {
             </h2>
             <div className="space-y-4">
               {criticalIssues.map((issue) => (
-                <IssueCard key={issue.id} issue={issue} severity="critical" />
+                <IssueCard 
+                  key={issue.id} 
+                  issue={issue} 
+                  severity="critical"
+                  isAutoFixable={isAutoFixable(issue)}
+                  applyAutoFix={applyAutoFix}
+                  autoFixing={autoFixing === issue.id}
+                />
               ))}
             </div>
           </div>
@@ -350,7 +430,14 @@ export default function SEOScanResults() {
             </h2>
             <div className="space-y-4">
               {warnings.map((issue) => (
-                <IssueCard key={issue.id} issue={issue} severity="warning" />
+                <IssueCard 
+                  key={issue.id} 
+                  issue={issue} 
+                  severity="warning"
+                  isAutoFixable={isAutoFixable(issue)}
+                  applyAutoFix={applyAutoFix}
+                  autoFixing={autoFixing === issue.id}
+                />
               ))}
             </div>
           </div>
@@ -422,7 +509,7 @@ function FixCard({ fix, applyFix, applying }) {
   );
 }
 
-function IssueCard({ issue, severity }) {
+function IssueCard({ issue, severity, isAutoFixable, applyAutoFix, autoFixing }) {
   const colors = {
     critical: 'border-red-200 bg-red-50',
     warning: 'border-yellow-200 bg-yellow-50'
@@ -430,16 +517,46 @@ function IssueCard({ issue, severity }) {
 
   return (
     <div className={`border rounded-lg p-4 ${colors[severity]}`}>
-      <h3 className="font-semibold text-gray-900 mb-2">{issue.title}</h3>
-      <p className="text-sm text-gray-700 mb-3">{issue.description}</p>
-      {issue.current_value && (
-        <div className="text-xs text-gray-600 bg-white p-2 rounded">
-          <span className="font-medium">Current: </span>
-          {issue.current_value}
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <h3 className="font-semibold text-gray-900 mb-2">{issue.title}</h3>
+          <p className="text-sm text-gray-700 mb-3">{issue.description}</p>
+          {issue.current_value && (
+            <div className="text-xs text-gray-600 bg-white p-2 rounded mb-2">
+              <span className="font-medium">Current: </span>
+              {issue.current_value}
+            </div>
+          )}
+          <div className="flex items-center gap-3 mt-2">
+            <div className="text-xs text-gray-500 capitalize">
+              Category: {issue.category}
+            </div>
+            {isAutoFixable && (
+              <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
+                ⚡ Auto-fixable via widget
+              </span>
+            )}
+          </div>
         </div>
-      )}
-      <div className="mt-2 text-xs text-gray-500 capitalize">
-        Category: {issue.category}
+        {isAutoFixable && (
+          <button
+            onClick={() => applyAutoFix(issue)}
+            disabled={autoFixing}
+            className="ml-4 px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 flex items-center gap-2 font-medium transition-all shadow-md whitespace-nowrap"
+          >
+            {autoFixing ? (
+              <>
+                <FiRefreshCw className="w-4 h-4 animate-spin" />
+                Enabling...
+              </>
+            ) : (
+              <>
+                <FiZap className="w-4 h-4" />
+                Auto-Fix
+              </>
+            )}
+          </button>
+        )}
       </div>
     </div>
   );
