@@ -133,19 +133,13 @@
    * Check for pending fixes
    */
   async function checkForFixes() {
-    if (!widgetKey) return;
-
     try {
-      const response = await fetch(`${API_BASE}/api/widget/pending-fixes?siteId=${siteId}`, {
-        headers: {
-          'X-Widget-Key': widgetKey
-        }
-      });
+      const response = await fetch(`${API_BASE}/api/widget/fixes/${siteId}`);
 
       const data = await response.json();
 
       if (data.success && data.fixes && data.fixes.length > 0) {
-        console.log(`[OrganiTraffic] Found ${data.fixes.length} pending fix(es)`);
+        console.log(`[OrganiTraffic] Found ${data.fixes.length} active fix(es)`);
         
         for (const fix of data.fixes) {
           await applyFix(fix);

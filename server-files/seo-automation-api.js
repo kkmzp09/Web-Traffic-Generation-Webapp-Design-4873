@@ -4,6 +4,7 @@
 const express = require('express');
 const router = express.Router();
 const { Pool } = require('pg');
+const axios = require('axios');
 const seoScanner = require('./seo-scanner-service');
 const seoScannerPuppeteer = require('./seo-scanner-puppeteer');
 const seoAIFixer = require('./seo-ai-fixer');
@@ -94,19 +95,42 @@ router.post('/validate-widget', async (req, res) => {
 
     const html = response.data;
 
-    // Check for widget script tag
-    const widgetScriptPattern = /organitrafficboost\.com\/widget\.js|seo-auto-fix-widget/i;
-    const widgetInstalled = widgetScriptPattern.test(html);
+    // Check for widget script tag with multiple patterns
+    const patterns = [
+      /organitrafficboost\.com\/widget\/widget\.js/i,  // Main widget script
+      /organitrafficboost\.com\/widget\.js/i,          // Alternative path
+      /api\.organitrafficboost\.com\/widget/i,         // API subdomain
+      /data-site-id/i,                                  // Widget data attribute
+      /seo-auto-fix-widget/i,
+      /organitrafficboost\.com\/seo-widget/i
+    ];
 
-    console.log(`Widget status for ${url}: ${widgetInstalled ? '✅ FOUND' : '❌ NOT FOUND'}`);
+    let widgetInstalled = false;
+    let foundPattern = null;
+
+    for (const pattern of patterns) {
+      if (pattern.test(html)) {
+        widgetInstalled = true;
+        foundPattern = pattern.toString();
+        break;
+      }
+    }
+
+    console.log(`Widget validation for ${url}:`);
+    console.log(`  Status: ${widgetInstalled ? '✅ FOUND' : '❌ NOT FOUND'}`);
+    if (foundPattern) {
+      console.log(`  Pattern matched: ${foundPattern}`);
+    }
+    console.log(`  HTML length: ${html.length} chars`);
 
     res.json({
       success: true,
       widgetInstalled,
       url,
+      foundPattern,
       message: widgetInstalled 
         ? 'Widget is installed and active' 
-        : 'Widget not found on this page'
+        : 'Widget not found on this page. Make sure the widget script is properly installed.'
     });
 
   } catch (error) {
@@ -1066,5 +1090,9 @@ router.use('/', comprehensiveAuditRoutes);
 
 // Mount scan history routes
 router.use('/', scanHistoryRoutes);
+
+// Mount widget fixes routes
+const widgetFixesRoutes = require('./widget-fixes-api');
+router.use('/widget', widgetFixesRoutes);
 
 module.exports = router;
