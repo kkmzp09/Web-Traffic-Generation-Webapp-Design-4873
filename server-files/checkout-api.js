@@ -121,12 +121,12 @@ router.post('/subscriptions/create', async (req, res) => {
       );
     }
 
-    // Reset monthly page count
+    // Reset monthly page count (if seo_monitoring record exists)
+    // Note: seo_monitoring records are created when first scan happens
     await pool.query(
-      `INSERT INTO seo_monitoring (user_id, pages_scanned_this_month, last_reset)
-       VALUES ($1, 0, NOW())
-       ON CONFLICT (user_id) 
-       DO UPDATE SET pages_scanned_this_month = 0, last_reset = NOW()`,
+      `UPDATE seo_monitoring 
+       SET pages_scanned_this_month = 0, last_reset = NOW()
+       WHERE user_id = $1`,
       [userId]
     );
 
