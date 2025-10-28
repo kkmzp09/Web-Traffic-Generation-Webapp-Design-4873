@@ -20,7 +20,6 @@ export default function Sidebar() {
     { name: 'Direct Traffic', href: '/direct-traffic', icon: FiZap, description: 'Run direct campaigns' },
     { name: 'SEO Traffic', href: '/seo-traffic', icon: FiSearch, description: 'Run SEO campaigns' },
     { name: 'Domain Analytics', href: '/domain-analytics', icon: FiBarChart2, description: 'SEO insights & data' },
-    { name: 'Widget Setup', href: '/widget-installation', icon: FiCode, description: 'Install auto-fix widget' },
     { name: 'Keyword Tracker', href: '/keyword-tracker', icon: FiTarget, description: 'Track keyword rankings' },
     { name: 'On-Page SEO', href: '/onpage-seo', icon: FiCheckCircle, description: 'Analyze & optimize pages' },
     { name: 'Settings', href: '/settings', icon: FiSettings, description: 'Profile management' },
