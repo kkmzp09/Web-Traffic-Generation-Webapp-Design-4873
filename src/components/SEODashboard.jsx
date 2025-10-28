@@ -277,78 +277,36 @@ export default function SEODashboard() {
           </div>
         )}
 
-        {/* Quick Scan & Recent Scans */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {/* Scan Input */}
-          <div className="lg:col-span-2 bg-white rounded-2xl shadow-lg p-6 border border-indigo-100">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Scan</h2>
-            <div className="flex items-center gap-4">
-              <FiSearch className="w-6 h-6 text-indigo-600" />
-              <input
-                type="url"
-                placeholder="Enter URL to scan (e.g., https://example.com)"
-                value={scanUrl}
-                onChange={(e) => setScanUrl(e.target.value)}
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
-                disabled={scanning}
-              />
-              <button
-                onClick={startScan}
-                disabled={scanning}
-                className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium transition-all"
-              >
-                {scanning ? (
-                  <>
-                    <FiRefreshCw className="w-5 h-5 animate-spin" />
-                    Scanning...
-                  </>
-                ) : (
-                  <>
-                    <FiZap className="w-5 h-5" />
-                    Scan Now
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* Recent Scans */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Recent Scans</h2>
-              <button
-                onClick={loadDashboardData}
-                className="text-indigo-600 hover:text-indigo-700"
-              >
-                <FiRefreshCw className="w-5 h-5" />
-              </button>
-            </div>
-            {recentScans.length === 0 ? (
-              <div className="text-center py-8">
-                <FiSearch className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                <p className="text-gray-500 text-sm">No scans yet</p>
-              </div>
-            ) : (
-              <div className="space-y-3 max-h-64 overflow-y-auto">
-                {recentScans.slice(0, 5).map((scan) => (
-                  <div
-                    key={scan.id}
-                    onClick={() => navigate(`/seo-scan/${scan.id}`)}
-                    className="border border-gray-200 rounded-lg p-3 hover:border-indigo-300 hover:shadow-sm transition-all cursor-pointer"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 text-sm truncate">{scan.url}</p>
-                        <p className="text-xs text-gray-500">{new Date(scan.scanned_at).toLocaleDateString()}</p>
-                      </div>
-                      <div className={`ml-2 px-2 py-1 rounded text-xs font-bold ${getScoreBg(scan.seo_score)} ${getScoreColor(scan.seo_score)}`}>
-                        {scan.seo_score}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+        {/* Quick Scan - Full Width */}
+        <div className="bg-white rounded-2xl shadow-lg p-6 border border-indigo-100 mb-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-4">Quick Scan</h2>
+          <div className="flex items-center gap-4">
+            <FiSearch className="w-6 h-6 text-indigo-600" />
+            <input
+              type="url"
+              placeholder="Enter URL to scan (e.g., https://example.com)"
+              value={scanUrl}
+              onChange={(e) => setScanUrl(e.target.value)}
+              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              disabled={scanning}
+            />
+            <button
+              onClick={startScan}
+              disabled={scanning}
+              className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-medium transition-all"
+            >
+              {scanning ? (
+                <>
+                  <FiRefreshCw className="w-5 h-5 animate-spin" />
+                  Scanning...
+                </>
+              ) : (
+                <>
+                  <FiZap className="w-5 h-5" />
+                  Scan Now
+                </>
+              )}
+            </button>
           </div>
         </div>
 
@@ -383,6 +341,43 @@ export default function SEODashboard() {
                   ℹ️ Pages with unfixed issues are automatically skipped to maximize your subscription value
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Recent Scans - Moved below Smart Scan */}
+        {recentScans.length > 0 && (
+          <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-gray-900">Recent Scans</h2>
+              <button
+                onClick={loadDashboardData}
+                className="text-indigo-600 hover:text-indigo-700"
+              >
+                <FiRefreshCw className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {recentScans.slice(0, 6).map((scan) => (
+                <div
+                  key={scan.id}
+                  onClick={() => navigate(`/seo-scan/${scan.id}`)}
+                  className="border border-gray-200 rounded-lg p-4 hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer"
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex-1 min-w-0 mr-2">
+                      <p className="font-semibold text-gray-900 text-sm truncate">{scan.url}</p>
+                      <p className="text-xs text-gray-500 mt-1">{new Date(scan.scanned_at).toLocaleDateString()}</p>
+                    </div>
+                    <div className={`px-3 py-1 rounded-full text-sm font-bold ${getScoreBg(scan.seo_score)} ${getScoreColor(scan.seo_score)}`}>
+                      {scan.seo_score}
+                    </div>
+                  </div>
+                  <div className="text-xs text-gray-600 mt-2">
+                    Click to view details →
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}

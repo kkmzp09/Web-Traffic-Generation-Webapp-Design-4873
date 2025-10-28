@@ -613,11 +613,35 @@ ${optimizedContent}
                 <FixCard
                   key={fix.id}
                   fix={fix}
+                  scan={scan}
                   applyFix={applyFix}
                   applying={applyingFix === fix.id}
                 />
               ))}
             </div>
+            
+            {/* Validate Button - Show after fixes are applied */}
+            {fixes.filter(f => f.applied).length > 0 && (
+              <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-blue-900 mb-1">
+                      ✅ {fixes.filter(f => f.applied).length} Fix(es) Applied Successfully!
+                    </h3>
+                    <p className="text-sm text-blue-700">
+                      Validate the current status of your page with On-Page SEO analysis
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => navigate('/onpage-seo', { state: { url: scan.url } })}
+                    className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2 font-semibold transition-all shadow-md"
+                  >
+                    <FiCheckCircle className="w-5 h-5" />
+                    Validate with On-Page SEO
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -669,16 +693,29 @@ ${optimizedContent}
   );
 }
 
-function FixCard({ fix, applyFix, applying }) {
+function FixCard({ fix, scan, applyFix, applying }) {
   const isSuggestion = ['headings', 'content', 'links'].includes(fix.fix_type);
   
   return (
     <div className="border border-green-200 rounded-lg p-6 bg-green-50">
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
-          <h3 className="font-semibold text-gray-900 mb-2 capitalize">
-            {fix.fix_type} {isSuggestion ? 'Suggestions' : 'Optimization'}
-          </h3>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-semibold text-gray-900 capitalize">
+              {fix.fix_type} {isSuggestion ? 'Suggestions' : 'Optimization'}
+            </h3>
+            {fix.applied && (
+              <span className="text-xs bg-green-600 text-white px-2 py-1 rounded-full font-medium">
+                ✓ Applied
+              </span>
+            )}
+          </div>
+          <div className="mb-3 text-xs text-gray-600">
+            <span className="font-medium">Page URL:</span>{' '}
+            <a href={scan.url} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-700 underline">
+              {scan.url}
+            </a>
+          </div>
           <div className="space-y-3">
             {fix.original_content && !isSuggestion && (
               <div>
