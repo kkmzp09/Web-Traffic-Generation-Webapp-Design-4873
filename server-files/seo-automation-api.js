@@ -387,9 +387,11 @@ async function performScan(scanId, url, userId, domain, pageLimit = 10) {
            warnings = $3, 
            passed_checks = $4,
            scan_duration_ms = $5,
+           pages_scanned = $6,
+           pages_skipped = $7,
            scanned_at = NOW()
-       WHERE id = $6`,
-      [avgScore, totalCritical, totalWarnings, totalPassed, scanDuration, scanId]
+       WHERE id = $8`,
+      [avgScore, totalCritical, totalWarnings, totalPassed, scanDuration, scannedCount, skippedPages.length, scanId]
     );
 
     console.log(`✅ Scan ${scanId} completed: ${scannedCount} pages scanned, ${skippedPages.length} pages skipped (pending issues), avg score ${avgScore}, ${totalIssues} total issues`);

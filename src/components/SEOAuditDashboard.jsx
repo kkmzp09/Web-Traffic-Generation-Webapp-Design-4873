@@ -518,6 +518,40 @@ const SEOAuditDashboard = () => {
                   </div>
                 </div>
 
+                {/* Credit Savings & Skipped Pages Info */}
+                {auditData.pagesSkipped > 0 && (
+                  <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border border-blue-200 p-6 mb-8">
+                    <div className="flex items-start gap-4">
+                      <div className="flex-shrink-0">
+                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                          <Zap className="w-6 h-6 text-blue-600" />
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-blue-900 mb-2">
+                          💰 Smart Scan Optimization
+                        </h3>
+                        <p className="text-blue-700 mb-3">
+                          We skipped <span className="font-bold">{auditData.pagesSkipped} page(s)</span> with pending issues to save your page credits!
+                        </p>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="bg-white rounded-lg p-4 border border-blue-100">
+                            <div className="text-sm text-gray-600 mb-1">Pages Scanned</div>
+                            <div className="text-2xl font-bold text-gray-900">{auditData.pagesScanned || 1}</div>
+                          </div>
+                          <div className="bg-white rounded-lg p-4 border border-blue-100">
+                            <div className="text-sm text-gray-600 mb-1">Credits Saved</div>
+                            <div className="text-2xl font-bold text-green-600">{auditData.pagesSkipped}</div>
+                          </div>
+                        </div>
+                        <div className="mt-4 text-sm text-blue-600">
+                          ℹ️ Pages with unfixed issues are automatically skipped to maximize your subscription value
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Chart Placeholder */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                   <h3 className="text-lg font-semibold text-gray-900 mb-4">Issue Distribution</h3>
