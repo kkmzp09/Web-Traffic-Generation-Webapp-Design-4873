@@ -299,7 +299,7 @@ async function performScan(scanId, url, userId, domain, pageLimit = 10) {
          JOIN seo_scans ss ON si.scan_id = ss.id
          WHERE si.user_id = $1 
          AND si.title LIKE $2
-         AND si.status != 'fixed'
+         AND si.fix_status != 'fixed'
          AND ss.domain = $3
          AND ss.scanned_at > NOW() - INTERVAL '30 days'`,
         [userId, `%${pageUrl}%`, domain]
