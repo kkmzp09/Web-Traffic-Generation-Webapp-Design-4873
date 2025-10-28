@@ -4,6 +4,11 @@
 const nodemailer = require('nodemailer');
 const { Pool } = require('pg');
 
+// Ensure nodemailer is properly loaded
+if (!nodemailer || typeof nodemailer.createTransport !== 'function') {
+  throw new Error('Nodemailer not properly loaded');
+}
+
 // PostgreSQL connection
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
