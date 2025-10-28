@@ -29,11 +29,11 @@ router.get('/', async (req, res) => {
 
     // Get user's subscription plan
     const userResult = await pool.query(
-      `SELECT subscription_plan FROM users WHERE id = $1`,
+      `SELECT plan_type FROM users WHERE id = $1`,
       [userId]
     );
 
-    const subscriptionPlan = userResult.rows[0]?.subscription_plan || 'seo_starter';
+    const subscriptionPlan = userResult.rows[0]?.plan_type || 'seo_starter';
     const websiteLimit = WEBSITE_LIMITS[subscriptionPlan] || 3;
 
     // Get user's websites
@@ -82,11 +82,11 @@ router.post('/', async (req, res) => {
 
     // Check subscription limit
     const userResult = await pool.query(
-      `SELECT subscription_plan FROM users WHERE id = $1`,
+      `SELECT plan_type FROM users WHERE id = $1`,
       [userId]
     );
 
-    const subscriptionPlan = userResult.rows[0]?.subscription_plan || 'seo_starter';
+    const subscriptionPlan = userResult.rows[0]?.plan_type || 'seo_starter';
     const websiteLimit = WEBSITE_LIMITS[subscriptionPlan] || 3;
 
     // Count existing websites
