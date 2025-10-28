@@ -1210,4 +1210,8 @@ router.use('/', scanHistoryRoutes);
 const widgetFixesRoutes = require('./widget-fixes-api');
 router.use('/widget', widgetFixesRoutes);
 
+// Website management routes
+const websitesRoutes = require('./websites-api');
+router.use('/websites', websitesRoutes);
+
 module.exports = router;

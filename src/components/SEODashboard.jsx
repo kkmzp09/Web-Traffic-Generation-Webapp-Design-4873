@@ -4,6 +4,7 @@ import { useAuth } from '../lib/authContext';
 import * as FiIcons from 'react-icons/fi';
 import ScanProgressModal from './ScanProgressModal';
 import UpgradeModal from './UpgradeModal';
+import WebsiteManager from './WebsiteManager';
 
 const { FiSearch, FiAlertCircle, FiCheckCircle, FiTrendingUp, FiClock, FiZap, FiRefreshCw } = FiIcons;
 
@@ -247,6 +248,9 @@ export default function SEODashboard() {
           <h1 className="text-4xl font-bold text-gray-900 mb-2">SEO Auto Fix</h1>
           <p className="text-gray-600">Scan, analyze, and auto-fix your pages with AI-powered optimization</p>
         </div>
+
+        {/* Website Manager - Replaces search bar */}
+        <WebsiteManager />
 
         {/* Subscription Usage */}
         {subscriptionUsage && (
