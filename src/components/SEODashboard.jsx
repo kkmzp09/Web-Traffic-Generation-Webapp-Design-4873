@@ -443,57 +443,6 @@ export default function SEODashboard() {
             </div>
           </div>
         )}
-
-        {/* Top Issues */}
-        {topIssues.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Top Issues</h2>
-            <div className="space-y-3">
-              {topIssues.map((issue, idx) => (
-                <div key={idx} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-indigo-300 transition-all">
-                  <div className="flex items-center gap-4 flex-1">
-                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                      issue.severity === 'critical' ? 'bg-red-100' :
-                      issue.severity === 'warning' ? 'bg-yellow-100' : 'bg-blue-100'
-                    }`}>
-                      <FiAlertCircle className={`w-6 h-6 ${
-                        issue.severity === 'critical' ? 'text-red-600' :
-                        issue.severity === 'warning' ? 'text-yellow-600' : 'text-blue-600'
-                      }`} />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900 capitalize">{issue.category}</h3>
-                      <p className="text-sm text-gray-600">
-                        <span className="font-bold text-gray-900">{issue.count}</span> issues found · 
-                        <span className={`uppercase text-xs font-medium ml-1 ${
-                          issue.severity === 'critical' ? 'text-red-600' :
-                          issue.severity === 'warning' ? 'text-yellow-600' : 'text-blue-600'
-                        }`}>{issue.severity}</span>
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => autoFixIssue(issue)}
-                    disabled={fixingIssues[issue.category]}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    {fixingIssues[issue.category] ? (
-                      <>
-                        <FiRefreshCw className="w-4 h-4 animate-spin" />
-                        Fixing...
-                      </>
-                    ) : (
-                      <>
-                        <FiZap className="w-4 h-4" />
-                        Auto Fix
-                      </>
-                    )}
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Progress Modal */}
