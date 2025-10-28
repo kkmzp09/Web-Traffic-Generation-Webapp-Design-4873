@@ -387,33 +387,6 @@ export default function SEODashboard() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <StatCard
-            icon={<FiSearch className="w-8 h-8" />}
-            title="Pages Scanned"
-            value={stats?.total_pages_scanned || 0}
-            color="indigo"
-          />
-          <StatCard
-            icon={<FiAlertCircle className="w-8 h-8" />}
-            title="Critical Issues"
-            value={stats?.total_critical_issues || 0}
-            color="red"
-          />
-          <StatCard
-            icon={<FiCheckCircle className="w-8 h-8" />}
-            title="Avg SEO Score"
-            value={Math.round(stats?.avg_seo_score || 0)}
-            color="green"
-          />
-          <StatCard
-            icon={<FiTrendingUp className="w-8 h-8" />}
-            title="Domains"
-            value={stats?.total_domains || 0}
-            color="purple"
-          />
-        </div>
-
         {/* Credit Savings & Skipped Pages Info */}
         {stats?.pages_skipped > 0 && (
           <div className="bg-gradient-to-r from-blue-50 to-cyan-50 rounded-xl border border-blue-200 p-6 mb-6">
