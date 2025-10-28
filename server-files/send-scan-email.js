@@ -74,7 +74,7 @@ async function sendScanEmail(scanData, userEmail, userName = 'there') {
     <div class="section">
       <h2>🎯 Quick Actions</h2>
       <p>View your full scan results and apply fixes:</p>
-      <a href="${process.env.APP_URL || 'https://organitrafficboost.com'}/seo-dashboard?scanId=${scanData.scanId}" class="button">
+      <a href="${process.env.APP_URL || 'https://organitrafficboost.com'}/seo-scan/${scanData.scanId}" class="button">
         View Full Report & Apply Fixes
       </a>
     </div>
