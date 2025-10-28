@@ -867,15 +867,34 @@ router.get('/dashboard-stats', async (req, res) => {
       [userId]
     );
 
+    // Get pages_scanned and pages_skipped from most recent scan
+    const latestScanStats = await pool.query(
+      `SELECT pages_scanned, pages_skipped
+       FROM seo_scans 
+       WHERE user_id = $1 
+       AND pages_scanned IS NOT NULL
+       ORDER BY scanned_at DESC 
+       LIMIT 1`,
+      [userId]
+    );
+
+    const stats = statsResult.rows[0] || {
+      total_domains: 0,
+      total_pages_scanned: 0,
+      total_critical_issues: 0,
+      total_warnings: 0,
+      avg_seo_score: 0
+    };
+
+    // Add latest scan stats
+    if (latestScanStats.rows.length > 0) {
+      stats.pages_scanned = latestScanStats.rows[0].pages_scanned || 0;
+      stats.pages_skipped = latestScanStats.rows[0].pages_skipped || 0;
+    }
+
     res.json({
       success: true,
-      stats: statsResult.rows[0] || {
-        total_domains: 0,
-        total_pages_scanned: 0,
-        total_critical_issues: 0,
-        total_warnings: 0,
-        avg_seo_score: 0
-      },
+      stats,
       recentScans: recentScans.rows,
       topIssues: topIssues.rows
     });
