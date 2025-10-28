@@ -31,6 +31,7 @@ import SEOScanResults from './components/SEOScanResults';
 import GSCAnalytics from './components/GSCAnalytics';
 import WidgetInstallation from './components/WidgetInstallation';
 import PricingPlans from './components/PricingPlans';
+import Checkout from './components/Checkout';
 
 // --- Auth gate that matches your current context (user + loading) ---
 function RequireAuth({ children }) {
@@ -98,6 +99,7 @@ function AppShell() {
           <Route path="/seo-dashboard" element={<RequireAuth><SubscriptionGuard><SEODashboard /></SubscriptionGuard></RequireAuth>} />
           <Route path="/seo-scan/:scanId" element={<RequireAuth><SubscriptionGuard><SEOScanResults /></SubscriptionGuard></RequireAuth>} />
           <Route path="/widget-installation" element={<RequireAuth><SubscriptionGuard><WidgetInstallation /></SubscriptionGuard></RequireAuth>} />
+          <Route path="/checkout" element={<RequireAuth><Checkout /></RequireAuth>} />
           <Route path="/settings" element={<RequireAuth><Settings /></RequireAuth>} />
           <Route path="/invoice" element={<RequireAuth><Invoice /></RequireAuth>} />
         </Route>

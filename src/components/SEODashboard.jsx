@@ -293,23 +293,19 @@ export default function SEODashboard() {
                     onClick={() => {
                       const code = prompt('Enter your discount code:');
                       if (code) {
-                        alert(`Discount code "${code}" will be applied at checkout!`);
-                        setLimitData({
-                          currentPlan: subscriptionUsage.currentPlan,
-                          pagesScanned: subscriptionUsage.pagesScanned,
-                          pageLimit: subscriptionUsage.pageLimit,
-                          discountCode: code,
-                          upgradeOptions: [
-                            { plan: 'Professional', limit: 500, price: 79, features: 'Priority support, API access, Scheduled scans' },
-                            { plan: 'Business', limit: 2500, price: 199, features: 'Dedicated support, White-label, Team collaboration' }
-                          ],
-                          addOnOptions: [
-                            { name: 'Extra 100 pages', pages: 100, price: 10 },
-                            { name: 'Extra 250 pages', pages: 250, price: 20 },
-                            { name: 'Extra 500 pages', pages: 500, price: 35 }
-                          ]
+                        // Navigate directly to checkout with discount code
+                        navigate('/checkout', {
+                          state: {
+                            plan: {
+                              name: 'Professional',
+                              type: 'seo_professional',
+                              price: 79,
+                              pages: 500,
+                              features: ['Priority support', 'API access', 'Scheduled scans', 'Advanced analytics']
+                            },
+                            discountCode: code
+                          }
                         });
-                        setShowUpgradeModal(true);
                       }
                     }}
                     className="px-6 py-3 bg-yellow-400 text-gray-900 rounded-lg hover:bg-yellow-300 font-semibold transition-all shadow-md flex items-center gap-2"
