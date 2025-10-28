@@ -2,11 +2,14 @@
 const express = require('express');
 const router = express.Router();
 const { Pool } = require('pg');
+const SEOEmailService = require('./seo-email-service');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
+
+const emailService = new SEOEmailService();
 
 // Validate discount code
 router.post('/validate-discount', async (req, res) => {
@@ -124,6 +127,26 @@ router.post('/subscriptions/create', async (req, res) => {
       );
 
       await client.query('COMMIT');
+
+      // Get user email and name
+      const userResult = await client.query(
+        `SELECT email, name FROM users WHERE id = $1`,
+        [userId]
+      );
+      
+      const user = userResult.rows[0];
+      
+      // Send email notification
+      if (user && user.email) {
+        await emailService.sendSubscriptionNotification({
+          to: user.email,
+          userName: user.name || 'User',
+          planType,
+          action: existingResult.rows.length > 0 ? 'upgrade' : 'activate',
+          previousPlan: existingResult.rows[0]?.plan_type,
+          discountCode
+        });
+      }
 
       res.json({
         success: true,

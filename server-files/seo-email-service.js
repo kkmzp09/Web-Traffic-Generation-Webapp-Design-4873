@@ -25,6 +25,159 @@ class SEOEmailService {
   }
 
   /**
+   * Send subscription change notification
+   */
+  async sendSubscriptionNotification(data) {
+    const { to, userName, planType, action, previousPlan, discountCode } = data;
+    
+    const planNames = {
+      'seo_starter': 'Starter',
+      'seo_professional': 'Professional',
+      'seo_business': 'Business'
+    };
+    
+    const planLimits = {
+      'seo_starter': '100 pages/month',
+      'seo_professional': '500 pages/month',
+      'seo_business': '2,500 pages/month'
+    };
+    
+    const currentPlanName = planNames[planType] || planType;
+    const previousPlanName = previousPlan ? planNames[previousPlan] : null;
+    
+    const isUpgrade = action === 'upgrade';
+    const subject = isUpgrade 
+      ? `🎉 Subscription Upgraded to ${currentPlanName}!`
+      : `✅ Subscription Activated - ${currentPlanName} Plan`;
+    
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+    .content { background: #f9fafb; padding: 30px; border-radius: 0 0 10px 10px; }
+    .plan-box { background: white; border-radius: 10px; padding: 25px; margin: 20px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    .plan-name { font-size: 32px; font-weight: bold; color: #667eea; margin-bottom: 10px; }
+    .plan-limit { font-size: 18px; color: #6b7280; }
+    .features { margin: 20px 0; }
+    .feature { padding: 10px 0; border-bottom: 1px solid #e5e7eb; }
+    .feature:last-child { border-bottom: none; }
+    .checkmark { color: #10b981; font-weight: bold; margin-right: 10px; }
+    .discount-badge { background: #fef3c7; color: #92400e; padding: 8px 16px; border-radius: 20px; display: inline-block; margin: 10px 0; font-weight: bold; }
+    .button { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; display: inline-block; margin: 20px 0; font-weight: bold; }
+    .footer { text-align: center; color: #6b7280; font-size: 14px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 style="margin: 0;">${isUpgrade ? '🎉 Subscription Upgraded!' : '✅ Subscription Activated!'}</h1>
+      <p style="margin: 10px 0 0 0; opacity: 0.9;">Welcome to ${currentPlanName} Plan</p>
+    </div>
+    
+    <div class="content">
+      <p>Hi ${userName},</p>
+      
+      ${previousPlanName ? `
+        <p>Great news! Your subscription has been upgraded from <strong>${previousPlanName}</strong> to <strong>${currentPlanName}</strong>.</p>
+      ` : `
+        <p>Your <strong>${currentPlanName}</strong> subscription is now active!</p>
+      `}
+      
+      ${discountCode ? `
+        <div class="discount-badge">
+          🎁 Discount Code Applied: ${discountCode}
+        </div>
+      ` : ''}
+      
+      <div class="plan-box">
+        <div class="plan-name">${currentPlanName}</div>
+        <div class="plan-limit">${planLimits[planType]}</div>
+        
+        <div class="features">
+          <div class="feature">
+            <span class="checkmark">✓</span>
+            Unlimited website scans
+          </div>
+          <div class="feature">
+            <span class="checkmark">✓</span>
+            AI-powered SEO fixes
+          </div>
+          <div class="feature">
+            <span class="checkmark">✓</span>
+            Auto-fix widget
+          </div>
+          ${planType !== 'seo_starter' ? `
+          <div class="feature">
+            <span class="checkmark">✓</span>
+            Priority support
+          </div>
+          <div class="feature">
+            <span class="checkmark">✓</span>
+            API access
+          </div>
+          ` : ''}
+          ${planType === 'seo_business' ? `
+          <div class="feature">
+            <span class="checkmark">✓</span>
+            White-label options
+          </div>
+          <div class="feature">
+            <span class="checkmark">✓</span>
+            Dedicated account manager
+          </div>
+          ` : ''}
+        </div>
+      </div>
+      
+      <p style="text-align: center;">
+        <a href="https://www.organitrafficboost.com/seo-dashboard" class="button">
+          Start Scanning Now →
+        </a>
+      </p>
+      
+      <p><strong>What's Next?</strong></p>
+      <ol>
+        <li>Add your websites in the Website Manager</li>
+        <li>Run your first SEO scan</li>
+        <li>Install the auto-fix widget</li>
+        <li>Watch your SEO score improve!</li>
+      </ol>
+      
+      <div class="footer">
+        <p><strong>Need Help?</strong></p>
+        <p>Contact our support team anytime at support@organitrafficboost.com</p>
+        <p style="margin-top: 20px; font-size: 12px;">
+          This is an automated notification from OrganiTraffic Boost.<br>
+          You're receiving this because you upgraded your subscription.
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+
+    try {
+      await this.transporter.sendMail({
+        from: `"OrganiTraffic Boost" <${process.env.SMTP_USER}>`,
+        to,
+        subject,
+        html
+      });
+      
+      console.log(`✅ Subscription notification sent to ${to}`);
+      return { success: true };
+    } catch (error) {
+      console.error('❌ Failed to send subscription notification:', error);
+      return { success: false, error: error.message };
+    }
+  }
+
+  /**
    * Send scan alert email
    */
   async sendScanAlert(data) {
