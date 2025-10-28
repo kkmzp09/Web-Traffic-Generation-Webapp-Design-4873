@@ -32,6 +32,10 @@ export default function SEODashboard() {
   // Widget validation
   const [widgetStatus, setWidgetStatus] = useState(null); // null, 'checking', 'live', 'not-found'
   const [validatingWidget, setValidatingWidget] = useState(false);
+  
+  // Current scan results (to display inline)
+  const [currentScanResults, setCurrentScanResults] = useState(null);
+  const [currentScanIssues, setCurrentScanIssues] = useState([]);
 
   useEffect(() => {
     if (user) {
@@ -443,19 +447,142 @@ export default function SEODashboard() {
             </div>
           </div>
         )}
+
+        {/* Inline Scan Results */}
+        {currentScanResults && (
+          <div id="scan-results" className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100 mt-6">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900">Scan Results</h2>
+                <p className="text-sm text-gray-600 mt-1">{currentScanResults.url}</p>
+              </div>
+              <div className="text-right">
+                <div className={`text-4xl font-bold ${
+                  currentScanResults.seo_score >= 80 ? 'text-green-600' :
+                  currentScanResults.seo_score >= 60 ? 'text-yellow-600' : 'text-red-600'
+                }`}>
+                  {currentScanResults.seo_score}
+                </div>
+                <div className="text-sm text-gray-600">SEO Score</div>
+              </div>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-4 mb-6">
+              <div className="bg-red-50 rounded-lg p-4 border border-red-200">
+                <div className="text-sm text-red-600 mb-1">Critical Issues</div>
+                <div className="text-2xl font-bold text-red-700">{currentScanResults.critical_issues || 0}</div>
+              </div>
+              <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
+                <div className="text-sm text-yellow-600 mb-1">Warnings</div>
+                <div className="text-2xl font-bold text-yellow-700">{currentScanResults.warnings || 0}</div>
+              </div>
+              <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                <div className="text-sm text-green-600 mb-1">Passed</div>
+                <div className="text-2xl font-bold text-green-700">{currentScanResults.passed_checks || 0}</div>
+              </div>
+            </div>
+
+            {/* Issues List */}
+            {currentScanIssues.length > 0 && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">Issues Found</h3>
+                <div className="space-y-3">
+                  {currentScanIssues.slice(0, 10).map((issue, idx) => (
+                    <div key={idx} className="flex items-start justify-between p-4 border border-gray-200 rounded-lg hover:border-indigo-300 transition-all">
+                      <div className="flex items-start gap-4 flex-1">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
+                          issue.severity === 'critical' ? 'bg-red-100' :
+                          issue.severity === 'warning' ? 'bg-yellow-100' : 'bg-blue-100'
+                        }`}>
+                          <FiAlertCircle className={`w-5 h-5 ${
+                            issue.severity === 'critical' ? 'text-red-600' :
+                            issue.severity === 'warning' ? 'text-yellow-600' : 'text-blue-600'
+                          }`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-gray-900 mb-1">{issue.title}</h4>
+                          <p className="text-sm text-gray-600 mb-2">{issue.description}</p>
+                          <div className="flex items-center gap-3 text-xs">
+                            <span className={`px-2 py-1 rounded font-medium ${
+                              issue.severity === 'critical' ? 'bg-red-100 text-red-700' :
+                              issue.severity === 'warning' ? 'bg-yellow-100 text-yellow-700' : 'bg-blue-100 text-blue-700'
+                            }`}>
+                              {issue.severity?.toUpperCase()}
+                            </span>
+                            <span className="text-gray-500">{issue.category}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => autoFixIssue({ category: issue.category, severity: issue.severity, count: 1 })}
+                        disabled={fixingIssues[issue.category]}
+                        className="ml-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2 font-medium disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                      >
+                        {fixingIssues[issue.category] ? (
+                          <>
+                            <FiRefreshCw className="w-4 h-4 animate-spin" />
+                            Fixing...
+                          </>
+                        ) : (
+                          <>
+                            <FiZap className="w-4 h-4" />
+                            Auto Fix
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                {currentScanIssues.length > 10 && (
+                  <div className="mt-4 text-center">
+                    <button
+                      onClick={() => navigate(`/seo-scan/${currentScanResults.id}`)}
+                      className="text-indigo-600 hover:text-indigo-700 font-medium"
+                    >
+                      View all {currentScanIssues.length} issues →
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {currentScanIssues.length === 0 && (
+              <div className="text-center py-8">
+                <FiCheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No Issues Found!</h3>
+                <p className="text-gray-600">Your website is in great shape.</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Progress Modal */}
       {showProgress && currentScanId && (
         <ScanProgressModal
           scanId={currentScanId}
-          onComplete={(results) => {
+          onComplete={async (results) => {
             setShowProgress(false);
             setScanning(false);
             loadDashboardData();
             loadSubscriptionUsage();
-            // Navigate to scan details page to apply fixes
-            navigate(`/seo-scan/${currentScanId}`);
+            
+            // Load scan results inline instead of navigating
+            try {
+              const response = await fetch(`https://api.organitrafficboost.com/api/seo/scan/${currentScanId}`);
+              const data = await response.json();
+              if (data.success) {
+                setCurrentScanResults(data.scan);
+                setCurrentScanIssues(data.issues || []);
+                // Scroll to results
+                setTimeout(() => {
+                  document.getElementById('scan-results')?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              }
+            } catch (error) {
+              console.error('Error loading scan results:', error);
+            }
           }}
           onClose={() => {
             setShowProgress(false);
