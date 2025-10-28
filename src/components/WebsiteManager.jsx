@@ -217,10 +217,28 @@ export default function WebsiteManager() {
                   )}
                 </div>
 
-                {website.widget_status === 'not_connected' && (
-                  <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
-                    <FiAlertCircle className="w-3 h-3 inline mr-1" />
-                    Widget not detected. Install widget code to enable auto-fix.
+                {website.widget_status === 'not_connected' && website.site_id && (
+                  <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                    <div className="flex items-start gap-2 mb-2">
+                      <FiAlertCircle className="w-4 h-4 text-yellow-600 flex-shrink-0 mt-0.5" />
+                      <div className="text-xs text-yellow-800">
+                        <strong>Widget not detected.</strong> Install this code before {`</head>`}:
+                      </div>
+                    </div>
+                    <div className="relative">
+                      <code className="block text-xs bg-gray-900 text-green-400 p-2 rounded overflow-x-auto">
+                        {`<script src="https://api.organitrafficboost.com/widget.js" data-site-id="${website.site_id}"></script>`}
+                      </code>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(`<script src="https://api.organitrafficboost.com/widget.js" data-site-id="${website.site_id}"></script>`);
+                          alert('Widget code copied!');
+                        }}
+                        className="absolute top-1 right-1 px-2 py-1 bg-indigo-600 text-white text-xs rounded hover:bg-indigo-700"
+                      >
+                        Copy
+                      </button>
+                    </div>
                   </div>
                 )}
 

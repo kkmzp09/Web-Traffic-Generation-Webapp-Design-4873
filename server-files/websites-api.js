@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const { Pool } = require('pg');
+const fetch = (...args) => import('node-fetch').then(({default: fetch}) => fetch(...args));
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -81,6 +82,9 @@ router.post('/', async (req, res) => {
     }
 
     const domain = parsedUrl.hostname.replace('www.', '');
+    
+    // Generate unique site ID
+    const siteId = `site_${userId.replace(/-/g, '')}_${domain.replace(/\./g, '_')}_${Date.now()}`;
 
     // Check subscription limit
     const subResult = await pool.query(
@@ -128,10 +132,10 @@ router.post('/', async (req, res) => {
 
     // Add website
     const insertResult = await pool.query(
-      `INSERT INTO user_websites (user_id, domain, url, widget_status)
-       VALUES ($1, $2, $3, 'checking')
+      `INSERT INTO user_websites (user_id, domain, url, site_id, widget_status)
+       VALUES ($1, $2, $3, $4, 'checking')
        RETURNING *`,
-      [userId, domain, url]
+      [userId, domain, url, siteId]
     );
 
     const website = insertResult.rows[0];
