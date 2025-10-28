@@ -24,7 +24,7 @@ export default function WebsiteManager() {
     try {
       setLoading(true);
       const response = await fetch(
-        `https://api.organitrafficboost.com/api/websites?userId=${user.id}`
+        `https://api.organitrafficboost.com/api/seo/websites?userId=${user.id}`
       );
       const data = await response.json();
 
@@ -48,7 +48,7 @@ export default function WebsiteManager() {
 
     try {
       setAdding(true);
-      const response = await fetch('https://api.organitrafficboost.com/api/websites', {
+      const response = await fetch('https://api.organitrafficboost.com/api/seo/websites', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -81,7 +81,7 @@ export default function WebsiteManager() {
 
     try {
       const response = await fetch(
-        `https://api.organitrafficboost.com/api/websites/${websiteId}?userId=${user.id}`,
+        `https://api.organitrafficboost.com/api/seo/websites/${websiteId}?userId=${user.id}`,
         { method: 'DELETE' }
       );
 
@@ -98,7 +98,7 @@ export default function WebsiteManager() {
   const checkWidget = async (websiteId) => {
     try {
       await fetch(
-        `https://api.organitrafficboost.com/api/websites/${websiteId}/check-widget`,
+        `https://api.organitrafficboost.com/api/seo/websites/${websiteId}/check-widget`,
         { method: 'POST' }
       );
 
