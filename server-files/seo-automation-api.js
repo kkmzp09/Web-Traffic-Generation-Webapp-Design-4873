@@ -326,6 +326,17 @@ async function performScan(scanId, url, userId, domain, pageLimit = 10) {
           );
         }
         
+        // Track each page in monitoring for subscription usage
+        await pool.query(
+          `INSERT INTO seo_monitoring 
+           (user_id, url, domain, seo_score, total_issues, critical_issues, warnings)
+           VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+          [userId, pageUrl, domain, scanResults.seoScore, 
+           scanResults.issues.length,
+           scanResults.issues.filter(i => i.severity === 'critical').length,
+           scanResults.issues.filter(i => i.severity === 'warning').length]
+        );
+        
       } catch (error) {
         console.error(`Error scanning ${pageUrl}:`, error.message);
       }
@@ -347,14 +358,6 @@ async function performScan(scanId, url, userId, domain, pageLimit = 10) {
            scanned_at = NOW()
        WHERE id = $6`,
       [avgScore, totalCritical, totalWarnings, totalPassed, scanDuration, scanId]
-    );
-
-    // Add to monitoring
-    await pool.query(
-      `INSERT INTO seo_monitoring 
-       (user_id, url, domain, seo_score, total_issues, critical_issues, warnings)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [userId, url, domain, avgScore, totalIssues, totalCritical, totalWarnings]
     );
 
     console.log(`✅ Scan ${scanId} completed: ${scannedCount} pages, avg score ${avgScore}, ${totalIssues} total issues`);
