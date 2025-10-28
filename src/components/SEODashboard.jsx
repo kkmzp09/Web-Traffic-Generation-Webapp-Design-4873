@@ -271,7 +271,16 @@ export default function SEODashboard() {
                       setLimitData({
                         currentPlan: subscriptionUsage.currentPlan,
                         pagesScanned: subscriptionUsage.pagesScanned,
-                        pageLimit: subscriptionUsage.pageLimit
+                        pageLimit: subscriptionUsage.pageLimit,
+                        upgradeOptions: [
+                          { plan: 'Professional', limit: 500, price: 79, features: 'Priority support, API access, Scheduled scans' },
+                          { plan: 'Business', limit: 2500, price: 199, features: 'Dedicated support, White-label, Team collaboration' }
+                        ],
+                        addOnOptions: [
+                          { name: 'Extra 100 pages', pages: 100, price: 10 },
+                          { name: 'Extra 250 pages', pages: 250, price: 20 },
+                          { name: 'Extra 500 pages', pages: 500, price: 35 }
+                        ]
                       });
                       setShowUpgradeModal(true);
                     }}
@@ -289,7 +298,16 @@ export default function SEODashboard() {
                           currentPlan: subscriptionUsage.currentPlan,
                           pagesScanned: subscriptionUsage.pagesScanned,
                           pageLimit: subscriptionUsage.pageLimit,
-                          discountCode: code
+                          discountCode: code,
+                          upgradeOptions: [
+                            { plan: 'Professional', limit: 500, price: 79, features: 'Priority support, API access, Scheduled scans' },
+                            { plan: 'Business', limit: 2500, price: 199, features: 'Dedicated support, White-label, Team collaboration' }
+                          ],
+                          addOnOptions: [
+                            { name: 'Extra 100 pages', pages: 100, price: 10 },
+                            { name: 'Extra 250 pages', pages: 250, price: 20 },
+                            { name: 'Extra 500 pages', pages: 500, price: 35 }
+                          ]
                         });
                         setShowUpgradeModal(true);
                       }
@@ -349,7 +367,16 @@ export default function SEODashboard() {
                     setLimitData({
                       currentPlan: subscriptionUsage.currentPlan,
                       pagesScanned: subscriptionUsage.pagesScanned,
-                      pageLimit: subscriptionUsage.pageLimit
+                      pageLimit: subscriptionUsage.pageLimit,
+                      upgradeOptions: [
+                        { plan: 'Professional', limit: 500, price: 79, features: 'Priority support, API access, Scheduled scans' },
+                        { plan: 'Business', limit: 2500, price: 199, features: 'Dedicated support, White-label, Team collaboration' }
+                      ],
+                      addOnOptions: [
+                        { name: 'Extra 100 pages', pages: 100, price: 10 },
+                        { name: 'Extra 250 pages', pages: 250, price: 20 },
+                        { name: 'Extra 500 pages', pages: 500, price: 35 }
+                      ]
                     });
                     setShowUpgradeModal(true);
                   }}
