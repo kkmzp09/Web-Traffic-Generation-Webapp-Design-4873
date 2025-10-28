@@ -1,28 +1,12 @@
 // Checkout API for subscription purchases with discount codes
 const express = require('express');
 const router = express.Router();
-const fetch = require('node-fetch');
+const { Pool } = require('pg');
 
-const NEON_API_URL = process.env.NEON_API_URL;
-const NEON_API_KEY = process.env.NEON_API_KEY;
-
-// Helper function to query Neon database
-async function queryNeon(sql, params = []) {
-  const response = await fetch(NEON_API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${NEON_API_KEY}`
-    },
-    body: JSON.stringify({ query: sql, params })
-  });
-  
-  if (!response.ok) {
-    throw new Error(`Neon API error: ${response.statusText}`);
-  }
-  
-  return await response.json();
-}
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
 
 // Try to load email service, but don't fail if it's not available
 let emailService = null;
@@ -44,7 +28,7 @@ router.post('/validate-discount', async (req, res) => {
     }
 
     // Check if discount code exists and is valid
-    const result = await queryNeon(
+    const result = await pool.query(
       `SELECT * FROM discount_codes 
        WHERE code = $1 
        AND active = true 
@@ -53,7 +37,7 @@ router.post('/validate-discount', async (req, res) => {
       [code.toUpperCase()]
     );
 
-    if (!result.rows || result.rows.length === 0) {
+    if (result.rows.length === 0) {
       return res.json({ success: false, error: 'Invalid or expired discount code' });
     }
 
@@ -93,15 +77,15 @@ router.post('/subscriptions/create', async (req, res) => {
     }
 
     // Check if user already has an active subscription
-    const existingResult = await queryNeon(
+    const existingResult = await pool.query(
       `SELECT * FROM subscriptions 
        WHERE user_id = $1 AND status = 'active' AND plan_type LIKE 'seo_%'`,
       [userId]
     );
 
-    if (existingResult.rows && existingResult.rows.length > 0) {
+    if (existingResult.rows.length > 0) {
       // Update existing subscription
-      await queryNeon(
+      await pool.query(
         `UPDATE subscriptions 
          SET plan_type = $1, 
              updated_at = NOW(),
@@ -111,7 +95,7 @@ router.post('/subscriptions/create', async (req, res) => {
       );
     } else {
       // Create new subscription
-      await queryNeon(
+      await pool.query(
         `INSERT INTO subscriptions 
          (user_id, plan_type, status, start_date, next_billing_date)
          VALUES ($1, $2, 'active', NOW(), NOW() + INTERVAL '1 month')`,
@@ -121,7 +105,7 @@ router.post('/subscriptions/create', async (req, res) => {
 
     // If discount code was used, increment usage
     if (discountCode) {
-      await queryNeon(
+      await pool.query(
         `UPDATE discount_codes 
          SET uses = uses + 1, last_used_at = NOW()
          WHERE code = $1`,
@@ -129,7 +113,7 @@ router.post('/subscriptions/create', async (req, res) => {
       );
 
       // Log discount usage
-      await queryNeon(
+      await pool.query(
         `INSERT INTO discount_usage 
          (user_id, discount_code, plan_type, amount_saved)
          VALUES ($1, $2, $3, $4)`,
@@ -138,7 +122,7 @@ router.post('/subscriptions/create', async (req, res) => {
     }
 
     // Reset monthly page count
-    await queryNeon(
+    await pool.query(
       `INSERT INTO seo_monitoring (user_id, pages_scanned_this_month, last_reset)
        VALUES ($1, 0, NOW())
        ON CONFLICT (user_id) 
@@ -147,12 +131,12 @@ router.post('/subscriptions/create', async (req, res) => {
     );
 
     // Get user email and name
-    const userResult = await queryNeon(
+    const userResult = await pool.query(
       `SELECT email, name FROM users WHERE id = $1`,
       [userId]
     );
     
-    const user = userResult.rows && userResult.rows[0];
+    const user = userResult.rows[0];
     
     // Send email notification (if email service is available)
     if (emailService && user && user.email) {
@@ -161,8 +145,8 @@ router.post('/subscriptions/create', async (req, res) => {
           to: user.email,
           userName: user.name || 'User',
           planType,
-          action: existingResult.rows && existingResult.rows.length > 0 ? 'upgrade' : 'activate',
-          previousPlan: existingResult.rows && existingResult.rows[0]?.plan_type,
+          action: existingResult.rows.length > 0 ? 'upgrade' : 'activate',
+          previousPlan: existingResult.rows[0]?.plan_type,
           discountCode
         });
       } catch (emailError) {
