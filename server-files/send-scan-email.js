@@ -96,6 +96,7 @@ async function sendScanEmail(scanData, userEmail, userName = 'there') {
     <div class="footer">
       <p>This scan was performed on ${new Date().toLocaleString()}</p>
       <p>Scanned ${scanData.pagesScanned || 1} page(s) in ${Math.round((scanData.scanDuration || 0) / 1000)}s</p>
+      ${scanData.pagesSkipped > 0 ? `<p style="color: #0ea5e9;">⏭️ Skipped ${scanData.pagesSkipped} page(s) with pending issues (saved page credits!)</p>` : ''}
       <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
       <p>OrganiTraffic - Automated SEO Monitoring</p>
       <p><a href="${process.env.APP_URL || 'https://organitrafficboost.com'}/seo-dashboard">Dashboard</a> | <a href="${process.env.APP_URL || 'https://organitrafficboost.com'}/settings">Settings</a></p>

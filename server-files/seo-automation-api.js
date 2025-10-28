@@ -286,7 +286,39 @@ async function performScan(scanId, url, userId, domain, pageLimit = 10) {
     const discoveredPages = await multiPageScanner.crawlWebsite(url);
     
     console.log(`📄 Found ${discoveredPages.length} pages to scan`);
-    progressTracker.startScanning(scanId, discoveredPages.length);
+    
+    // Step 1.5: Filter out pages with pending issues (smart skip)
+    const pagesToScan = [];
+    const skippedPages = [];
+    
+    for (const pageUrl of discoveredPages) {
+      // Check if page was scanned before and has pending issues
+      const pendingIssuesResult = await pool.query(
+        `SELECT COUNT(*) as pending_count
+         FROM seo_issues si
+         JOIN seo_scans ss ON si.scan_id = ss.id
+         WHERE si.user_id = $1 
+         AND si.title LIKE $2
+         AND si.status != 'fixed'
+         AND ss.domain = $3
+         AND ss.scanned_at > NOW() - INTERVAL '30 days'`,
+        [userId, `%${pageUrl}%`, domain]
+      );
+      
+      const pendingCount = parseInt(pendingIssuesResult.rows[0]?.pending_count || 0);
+      
+      if (pendingCount > 0) {
+        // Skip this page - it has pending issues
+        skippedPages.push(pageUrl);
+        console.log(`⏭️  Skipping ${pageUrl} (${pendingCount} pending issues)`);
+      } else {
+        // Scan this page - either new or issues were fixed
+        pagesToScan.push(pageUrl);
+      }
+    }
+    
+    console.log(`✅ Pages to scan: ${pagesToScan.length} (Skipped: ${skippedPages.length} with pending issues)`);
+    progressTracker.startScanning(scanId, pagesToScan.length);
     
     // Step 2: Scan each page
     const scanner = USE_PUPPETEER ? seoScannerPuppeteer : seoScanner;
@@ -297,7 +329,7 @@ async function performScan(scanId, url, userId, domain, pageLimit = 10) {
     let totalScore = 0;
     let scannedCount = 0;
     
-    for (const pageUrl of discoveredPages) {
+    for (const pageUrl of pagesToScan) {
       try {
         // Update progress before scanning
         progressTracker.updateScanning(scanId, scannedCount, pageUrl);
@@ -360,7 +392,7 @@ async function performScan(scanId, url, userId, domain, pageLimit = 10) {
       [avgScore, totalCritical, totalWarnings, totalPassed, scanDuration, scanId]
     );
 
-    console.log(`✅ Scan ${scanId} completed: ${scannedCount} pages, avg score ${avgScore}, ${totalIssues} total issues`);
+    console.log(`✅ Scan ${scanId} completed: ${scannedCount} pages scanned, ${skippedPages.length} pages skipped (pending issues), avg score ${avgScore}, ${totalIssues} total issues`);
     
     // Mark progress as complete
     progressTracker.completeScan(scanId, {
@@ -410,6 +442,7 @@ async function performScan(scanId, url, userId, domain, pageLimit = 10) {
           warnings: totalWarnings,
           passedChecks: totalPassed,
           pagesScanned: scannedCount,
+          pagesSkipped: skippedPages.length,
           scanDuration: scanDuration,
           topIssues: topIssuesResult.rows
         }, userEmail, userName);
