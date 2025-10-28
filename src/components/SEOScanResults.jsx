@@ -712,8 +712,8 @@ function FixCard({ fix, scan, applyFix, applying }) {
           </div>
           <div className="mb-3 text-xs text-gray-600">
             <span className="font-medium">Page URL:</span>{' '}
-            <a href={scan.url} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-700 underline">
-              {scan.url}
+            <a href={fix.page_url || scan.url} target="_blank" rel="noopener noreferrer" className="text-indigo-600 hover:text-indigo-700 underline">
+              {fix.page_url || scan.url}
             </a>
           </div>
           <div className="space-y-3">

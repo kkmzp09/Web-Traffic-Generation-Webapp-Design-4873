@@ -350,11 +350,11 @@ async function performScan(scanId, url, userId, domain, pageLimit = 10) {
         for (const issue of scanResults.issues) {
           await pool.query(
             `INSERT INTO seo_issues 
-             (scan_id, user_id, category, severity, title, description, current_value, element_selector)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+             (scan_id, user_id, category, severity, title, description, current_value, element_selector, page_url)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
             [scanId, userId, issue.category, issue.severity, 
-             `${issue.title} (${pageUrl})`, issue.description, 
-             issue.currentValue, issue.elementSelector]
+             issue.title, issue.description, 
+             issue.currentValue, issue.elementSelector, pageUrl]
           );
         }
         
@@ -700,13 +700,20 @@ router.post('/generate-fixes/:scanId', async (req, res) => {
 
     // Store fixes in database
     for (const fix of fixes) {
+      // Get page_url from the issue
+      const issueResult = await pool.query(
+        `SELECT page_url FROM seo_issues WHERE id = $1`,
+        [fix.issueId]
+      );
+      const pageUrl = issueResult.rows[0]?.page_url || scan.url;
+      
       await pool.query(
         `INSERT INTO seo_fixes 
          (issue_id, scan_id, user_id, fix_type, original_content, optimized_content, 
-          ai_model, confidence_score, keywords_used)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+          ai_model, confidence_score, keywords_used, page_url)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
         [fix.issueId, scanId, scan.user_id, fix.fixType, fix.originalContent, 
-         fix.optimizedContent, fix.aiModel, fix.confidenceScore, fix.keywords]
+         fix.optimizedContent, fix.aiModel, fix.confidenceScore, fix.keywords, pageUrl]
       );
     }
 
