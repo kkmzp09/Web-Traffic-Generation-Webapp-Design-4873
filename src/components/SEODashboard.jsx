@@ -252,28 +252,93 @@ export default function SEODashboard() {
         {/* Website Manager - Replaces search bar */}
         <WebsiteManager />
 
-        {/* Subscription Usage */}
-        {subscriptionUsage && (
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl shadow-lg p-6 mb-6 text-white">
+        {/* Subscription Limit Reached - Upgrade Notification */}
+        {subscriptionUsage && subscriptionUsage.percentUsed >= 100 && (
+          <div className="bg-gradient-to-r from-red-600 to-orange-600 rounded-2xl shadow-lg p-6 mb-6 text-white">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <FiAlertCircle className="w-6 h-6" />
+                  <h3 className="text-2xl font-bold">Subscription Limit Reached!</h3>
+                </div>
+                <p className="text-red-100 mb-4">
+                  You've used all {subscriptionUsage.pageLimit} pages in your {subscriptionUsage.currentPlan} plan. 
+                  Upgrade now to continue scanning or purchase additional credits.
+                </p>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setShowUpgradeModal(true)}
+                    className="px-6 py-3 bg-white text-red-600 rounded-lg hover:bg-red-50 font-semibold transition-all shadow-md flex items-center gap-2"
+                  >
+                    <FiZap className="w-5 h-5" />
+                    Upgrade Subscription
+                  </button>
+                  <button
+                    onClick={() => {
+                      const code = prompt('Enter your discount code:');
+                      if (code) {
+                        alert(`Discount code "${code}" will be applied at checkout!`);
+                        setShowUpgradeModal(true);
+                      }
+                    }}
+                    className="px-6 py-3 bg-yellow-400 text-gray-900 rounded-lg hover:bg-yellow-300 font-semibold transition-all shadow-md flex items-center gap-2"
+                  >
+                    <FiCheckCircle className="w-5 h-5" />
+                    Apply Discount Code
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Subscription Usage - Show when not at limit */}
+        {subscriptionUsage && subscriptionUsage.percentUsed < 100 && (
+          <div className={`rounded-2xl shadow-lg p-6 mb-6 text-white ${
+            subscriptionUsage.percentUsed >= 80 
+              ? 'bg-gradient-to-r from-orange-600 to-red-600' 
+              : 'bg-gradient-to-r from-indigo-600 to-purple-600'
+          }`}>
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold mb-1">Subscription Usage</h3>
-                <p className="text-indigo-100 text-sm">Pages scanned this month</p>
+                <p className={subscriptionUsage.percentUsed >= 80 ? 'text-orange-100' : 'text-indigo-100'} className="text-sm">
+                  Pages scanned this month
+                </p>
               </div>
               <div className="text-right">
                 <div className="text-3xl font-bold">{subscriptionUsage.pagesScanned} / {subscriptionUsage.pageLimit}</div>
-                <p className="text-indigo-100 text-sm">{subscriptionUsage.pagesRemaining} pages remaining</p>
+                <p className={subscriptionUsage.percentUsed >= 80 ? 'text-orange-100' : 'text-indigo-100'} className="text-sm">
+                  {subscriptionUsage.pagesRemaining} pages remaining
+                </p>
               </div>
             </div>
             <div className="mt-4">
-              <div className="w-full bg-indigo-800 rounded-full h-3">
+              <div className={`w-full rounded-full h-3 ${
+                subscriptionUsage.percentUsed >= 80 ? 'bg-orange-800' : 'bg-indigo-800'
+              }`}>
                 <div 
                   className="bg-white rounded-full h-3 transition-all duration-500"
                   style={{ width: `${subscriptionUsage.percentUsed}%` }}
                 />
               </div>
-              <p className="text-indigo-100 text-xs mt-2">{subscriptionUsage.percentUsed}% used</p>
+              <p className={subscriptionUsage.percentUsed >= 80 ? 'text-orange-100' : 'text-indigo-100'} className="text-xs mt-2">
+                {subscriptionUsage.percentUsed}% used
+              </p>
             </div>
+            {subscriptionUsage.percentUsed >= 80 && (
+              <div className="mt-4 pt-4 border-t border-orange-400">
+                <p className="text-orange-100 text-sm mb-3">
+                  ⚠️ Running low on pages! Upgrade now to avoid interruption.
+                </p>
+                <button
+                  onClick={() => setShowUpgradeModal(true)}
+                  className="px-4 py-2 bg-white text-orange-600 rounded-lg hover:bg-orange-50 font-semibold transition-all text-sm"
+                >
+                  View Upgrade Options
+                </button>
+              </div>
+            )}
           </div>
         )}
 
