@@ -267,7 +267,14 @@ export default function SEODashboard() {
                 </p>
                 <div className="flex items-center gap-3">
                   <button
-                    onClick={() => setShowUpgradeModal(true)}
+                    onClick={() => {
+                      setLimitData({
+                        currentPlan: subscriptionUsage.currentPlan,
+                        pagesScanned: subscriptionUsage.pagesScanned,
+                        pageLimit: subscriptionUsage.pageLimit
+                      });
+                      setShowUpgradeModal(true);
+                    }}
                     className="px-6 py-3 bg-white text-red-600 rounded-lg hover:bg-red-50 font-semibold transition-all shadow-md flex items-center gap-2"
                   >
                     <FiZap className="w-5 h-5" />
@@ -278,6 +285,12 @@ export default function SEODashboard() {
                       const code = prompt('Enter your discount code:');
                       if (code) {
                         alert(`Discount code "${code}" will be applied at checkout!`);
+                        setLimitData({
+                          currentPlan: subscriptionUsage.currentPlan,
+                          pagesScanned: subscriptionUsage.pagesScanned,
+                          pageLimit: subscriptionUsage.pageLimit,
+                          discountCode: code
+                        });
                         setShowUpgradeModal(true);
                       }
                     }}
@@ -302,13 +315,13 @@ export default function SEODashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-semibold mb-1">Subscription Usage</h3>
-                <p className={subscriptionUsage.percentUsed >= 80 ? 'text-orange-100' : 'text-indigo-100'} className="text-sm">
+                <p className={`text-sm ${subscriptionUsage.percentUsed >= 80 ? 'text-orange-100' : 'text-indigo-100'}`}>
                   Pages scanned this month
                 </p>
               </div>
               <div className="text-right">
                 <div className="text-3xl font-bold">{subscriptionUsage.pagesScanned} / {subscriptionUsage.pageLimit}</div>
-                <p className={subscriptionUsage.percentUsed >= 80 ? 'text-orange-100' : 'text-indigo-100'} className="text-sm">
+                <p className={`text-sm ${subscriptionUsage.percentUsed >= 80 ? 'text-orange-100' : 'text-indigo-100'}`}>
                   {subscriptionUsage.pagesRemaining} pages remaining
                 </p>
               </div>
@@ -322,7 +335,7 @@ export default function SEODashboard() {
                   style={{ width: `${subscriptionUsage.percentUsed}%` }}
                 />
               </div>
-              <p className={subscriptionUsage.percentUsed >= 80 ? 'text-orange-100' : 'text-indigo-100'} className="text-xs mt-2">
+              <p className={`text-xs mt-2 ${subscriptionUsage.percentUsed >= 80 ? 'text-orange-100' : 'text-indigo-100'}`}>
                 {subscriptionUsage.percentUsed}% used
               </p>
             </div>
@@ -332,7 +345,14 @@ export default function SEODashboard() {
                   ⚠️ Running low on pages! Upgrade now to avoid interruption.
                 </p>
                 <button
-                  onClick={() => setShowUpgradeModal(true)}
+                  onClick={() => {
+                    setLimitData({
+                      currentPlan: subscriptionUsage.currentPlan,
+                      pagesScanned: subscriptionUsage.pagesScanned,
+                      pageLimit: subscriptionUsage.pageLimit
+                    });
+                    setShowUpgradeModal(true);
+                  }}
                   className="px-4 py-2 bg-white text-orange-600 rounded-lg hover:bg-orange-50 font-semibold transition-all text-sm"
                 >
                   View Upgrade Options
