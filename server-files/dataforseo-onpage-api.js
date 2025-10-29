@@ -9,6 +9,11 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
+// Set search_path for Neon database
+pool.on('connect', (client) => {
+  client.query('SET search_path TO public');
+});
+
 // CORS middleware
 router.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
@@ -63,10 +68,10 @@ router.post('/scan', async (req, res) => {
     // Save scan to database
     const scanResult = await pool.query(
       `INSERT INTO seo_scans 
-       (user_id, url, status, dataforseo_task_id, created_at, updated_at)
-       VALUES ($1, $2, $3, $4, NOW(), NOW())
+       (url, status, dataforseo_task_id, created_at, updated_at)
+       VALUES ($1, $2, $3, NOW(), NOW())
        RETURNING id`,
-      [userId || null, url, 'crawling', taskResult.taskId]
+      [url, 'crawling', taskResult.taskId]
     );
 
     const scanId = scanResult.rows[0].id;

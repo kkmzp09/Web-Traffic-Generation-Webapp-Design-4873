@@ -75,21 +75,29 @@ async function postOnPageTask(params) {
       { headers: authHeader() }
     );
 
-    if (response.data.tasks && response.data.tasks[0].result) {
+    if (response.data.tasks && response.data.tasks[0]) {
       const task = response.data.tasks[0];
       
+      // Check if task was created successfully
+      if (task.status_code === 20100 || task.status_message === 'Task Created.') {
+        return {
+          success: true,
+          taskId: task.id,
+          status: task.status_message,
+          cost: task.cost || 0,
+          data: task.data
+        };
+      }
+      
       return {
-        success: true,
-        taskId: task.id,
-        status: task.status_message,
-        cost: task.cost || 0,
-        result: task.result
+        success: false,
+        error: task.status_message || 'Task creation failed'
       };
     }
 
     return {
       success: false,
-      error: 'No task created'
+      error: 'No response from DataForSEO'
     };
   } catch (error) {
     console.error('❌ DataForSEO On-Page Task Post Error:', error.response?.data || error.message);
