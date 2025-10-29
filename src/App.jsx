@@ -25,6 +25,7 @@ import ResetPasswordPage from './pages/ResetPasswordPage.jsx';
 import Invoice from './components/Invoice';
 import DomainAnalytics from './components/DomainAnalytics';
 import KeywordTracker from './components/KeywordTracker';
+import KeywordResearch from './components/KeywordResearch';
 import OnPageSEO from './components/OnPageSEO';
 import SEODashboard from './components/SEODashboard';
 import SEOScanResults from './components/SEOScanResults';
@@ -94,6 +95,7 @@ function AppShell() {
           <Route path="/analytics" element={<RequireAuth><Analytics /></RequireAuth>} />
           <Route path="/domain-analytics" element={<RequireAuth><DomainAnalytics /></RequireAuth>} />
           <Route path="/keyword-tracker" element={<RequireAuth><KeywordTracker /></RequireAuth>} />
+          <Route path="/keyword-research" element={<RequireAuth><KeywordResearch /></RequireAuth>} />
           <Route path="/onpage-seo" element={<RequireAuth><OnPageSEO /></RequireAuth>} />
           <Route path="/gsc-analytics" element={<RequireAuth><GSCAnalytics /></RequireAuth>} />
           <Route path="/seo-dashboard" element={<RequireAuth><SubscriptionGuard><SEODashboard /></SubscriptionGuard></RequireAuth>} />

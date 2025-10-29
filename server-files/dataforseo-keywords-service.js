@@ -312,10 +312,82 @@ async function getLocations(searchTerm = '') {
   }
 }
 
+/**
+ * Get full SERP results for keyword research
+ * Returns all ranking sites with details
+ */
+async function getSerpResults(keyword, locationCode = 2840, languageCode = 'en', depth = 100) {
+  try {
+    console.log(`🔍 Getting SERP results for "${keyword}"`);
+    
+    const response = await axios.post(
+      `${DATAFORSEO_API_BASE}/v3/serp/google/organic/live/advanced`,
+      [{
+        keyword: keyword,
+        location_code: locationCode,
+        language_code: languageCode,
+        device: 'desktop',
+        os: 'windows',
+        depth: depth,
+        calculate_rectangles: false
+      }],
+      { 
+        headers: authHeader(),
+        timeout: 30000
+      }
+    );
+
+    if (response.data.tasks && response.data.tasks[0].result && response.data.tasks[0].result[0]) {
+      const result = response.data.tasks[0].result[0];
+      const items = result.items || [];
+      
+      // Extract organic results with details
+      const organicResults = items
+        .filter(item => item.type === 'organic')
+        .map(item => ({
+          position: item.rank_absolute,
+          url: item.url,
+          domain: item.domain,
+          title: item.title,
+          description: item.description,
+          breadcrumb: item.breadcrumb,
+          isAmp: item.is_amp || false,
+          rating: item.rating ? {
+            value: item.rating.rating_value,
+            votesCount: item.rating.votes_count,
+            ratingType: item.rating.rating_type
+          } : null
+        }));
+      
+      return {
+        success: true,
+        keyword: keyword,
+        location: result.location_code,
+        results: organicResults,
+        totalResults: result.items_count || 0,
+        checkUrl: result.check_url,
+        totalCost: response.data.cost || 0
+      };
+    }
+
+    return {
+      success: false,
+      error: 'No SERP data returned'
+    };
+  } catch (error) {
+    console.error('Get SERP Results Error:', error.message);
+    return {
+      success: false,
+      error: error.response?.data?.status_message || error.message
+    };
+  }
+}
+
 module.exports = {
   getKeywordMetrics,
   getKeywordIdeas,
   getKeywordRanking,
   getBatchKeywordRankings,
-  getLocations
+  getLocations,
+  getSerpResults
 };

@@ -347,4 +347,68 @@ router.post('/keyword-ideas', async (req, res) => {
   }
 });
 
+// ============================================
+// POST /api/seo/analyze-serp
+// Analyze SERP for a keyword (show all ranking sites)
+// ============================================
+router.post('/analyze-serp', async (req, res) => {
+  try {
+    const { keyword, locationCode = 2840, languageCode = 'en', depth = 100 } = req.body;
+
+    if (!keyword) {
+      return res.json({ success: false, error: 'Keyword required' });
+    }
+
+    console.log(`🔍 Analyzing SERP for: "${keyword}"`);
+
+    // Get keyword metrics (search volume, CPC, competition)
+    const metricsPromise = dataforSEOKeywords.getKeywordMetrics(
+      [keyword],
+      locationCode,
+      languageCode
+    );
+
+    // Get SERP results
+    const serpPromise = dataforSEOKeywords.getSerpResults(
+      keyword,
+      locationCode,
+      languageCode,
+      depth
+    );
+
+    // Run both in parallel
+    const [metricsResult, serpResult] = await Promise.all([metricsPromise, serpPromise]);
+
+    if (!serpResult.success) {
+      return res.json({ success: false, error: serpResult.error });
+    }
+
+    // Extract metrics
+    let keywordMetrics = null;
+    if (metricsResult.success && metricsResult.keywords.length > 0) {
+      const kw = metricsResult.keywords[0];
+      keywordMetrics = {
+        searchVolume: kw.search_volume,
+        cpc: kw.cpc,
+        competition: kw.competition,
+        competitionLevel: kw.competition_level
+      };
+    }
+
+    res.json({
+      success: true,
+      keyword: keyword,
+      location: serpResult.location,
+      metrics: keywordMetrics,
+      results: serpResult.results,
+      totalResults: serpResult.totalResults,
+      checkUrl: serpResult.checkUrl
+    });
+
+  } catch (error) {
+    console.error('SERP Analysis Error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 module.exports = router;

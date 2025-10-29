@@ -21,6 +21,7 @@ export default function Sidebar() {
     { name: 'SEO Traffic', href: '/seo-traffic', icon: FiSearch, description: 'Run SEO campaigns' },
     { name: 'Domain Analytics', href: '/domain-analytics', icon: FiBarChart2, description: 'SEO insights & data' },
     { name: 'Keyword Tracker', href: '/keyword-tracker', icon: FiTarget, description: 'Track keyword rankings' },
+    { name: 'Keyword Research', href: '/keyword-research', icon: FiSearch, description: 'Discover ranking sites' },
     { name: 'On-Page SEO', href: '/onpage-seo', icon: FiCheckCircle, description: 'Analyze & optimize pages' },
     { name: 'Settings', href: '/settings', icon: FiSettings, description: 'Profile management' },
     { name: 'Invoice', href: '/invoice', icon: FiFileText, description: 'Billing & invoices' },
