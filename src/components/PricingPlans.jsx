@@ -5,8 +5,85 @@ import { Check, Zap, TrendingUp, Star } from 'lucide-react';
 export default function PricingPlans() {
   const navigate = useNavigate();
   const [billingCycle, setBillingCycle] = useState('monthly'); // monthly or yearly
+  const [serviceType, setServiceType] = useState('traffic'); // 'traffic' or 'seo'
 
-  const plans = [
+  // Traffic Generation Plans
+  const trafficPlans = [
+    {
+      name: 'Starter',
+      price: {
+        monthly: 15,
+        yearly: 150
+      },
+      visits: '500 Visits',
+      description: 'Perfect for testing and small campaigns',
+      features: [
+        '500 quality visits',
+        'Basic geo-targeting',
+        'Real-time analytics',
+        'Email support'
+      ],
+      popular: false,
+      color: 'indigo'
+    },
+    {
+      name: 'Growth',
+      price: {
+        monthly: 35,
+        yearly: 350
+      },
+      visits: '2,000 Visits',
+      description: 'For growing businesses',
+      features: [
+        '2,000 quality visits',
+        'Advanced geo-targeting',
+        'Priority email support',
+        'Multiple campaigns',
+        'Traffic scheduling'
+      ],
+      popular: true,
+      color: 'blue'
+    },
+    {
+      name: 'Professional',
+      price: {
+        monthly: 59,
+        yearly: 590
+      },
+      visits: '5,000 Visits',
+      description: 'For established businesses',
+      features: [
+        '5,000 quality visits',
+        'Priority delivery',
+        'Advanced analytics',
+        'Priority 24/7 support',
+        'Custom sources'
+      ],
+      popular: false,
+      color: 'purple'
+    },
+    {
+      name: 'Business',
+      price: {
+        monthly: 99,
+        yearly: 990
+      },
+      visits: '15,000 Visits',
+      description: 'For large scale operations',
+      features: [
+        '15,000 quality visits',
+        'Fastest delivery',
+        'Dedicated manager',
+        'Unlimited campaigns',
+        'API access'
+      ],
+      popular: false,
+      color: 'green'
+    }
+  ];
+
+  // SEO Tools Plans
+  const seoPlans = [
     {
       name: 'Starter',
       price: {
@@ -100,13 +177,17 @@ export default function PricingPlans() {
     { name: 'Extra 1,000 scans', price: 70 }
   ];
 
+  // Get current plans based on service type
+  const plans = serviceType === 'traffic' ? trafficPlans : seoPlans;
+
   const handleSelectPlan = (plan) => {
     // Navigate to checkout or subscription page
     navigate('/checkout', { 
       state: { 
         plan: plan.name, 
         price: plan.price[billingCycle],
-        billingCycle 
+        billingCycle,
+        serviceType
       } 
     });
   };
@@ -120,8 +201,59 @@ export default function PricingPlans() {
             Simple, Transparent Pricing
           </h1>
           <p className="text-xl text-gray-600 mb-8">
-            Choose the perfect plan for your SEO automation needs
+            Choose the plan that fits your needs. No hidden fees, cancel anytime.
           </p>
+
+          {/* Service Type Selector */}
+          <div className="flex justify-center mb-8">
+            <div className="inline-flex bg-white rounded-xl shadow-lg p-2 border border-gray-200">
+              <button
+                onClick={() => setServiceType('traffic')}
+                className={`px-8 py-3 rounded-lg font-semibold transition-all duration-200 ${
+                  serviceType === 'traffic'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <Zap className="w-5 h-5" />
+                  <span>Traffic Generation</span>
+                </div>
+              </button>
+              <button
+                onClick={() => setServiceType('seo')}
+                className={`px-8 py-3 rounded-lg font-semibold transition-all duration-200 ${
+                  serviceType === 'seo'
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5" />
+                  <span>SEO Tools Suite</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* Service Description */}
+          <div className="max-w-3xl mx-auto mb-8">
+            {serviceType === 'traffic' ? (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-blue-900 font-medium">
+                  🚀 <strong>Traffic Generation Service:</strong> Get real, high-quality visitors to your website. 
+                  Perfect for boosting rankings, testing campaigns, and increasing visibility.
+                </p>
+              </div>
+            ) : (
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                <p className="text-purple-900 font-medium">
+                  🔍 <strong>SEO Tools Suite:</strong> Professional SEO tools including keyword tracking, 
+                  on-page SEO analysis, keyword research, and automated fixes powered by AI.
+                </p>
+              </div>
+            )}
+          </div>
 
           {/* Billing Toggle */}
           <div className="inline-flex items-center bg-white rounded-full p-1 shadow-md">
@@ -221,11 +353,12 @@ export default function PricingPlans() {
           ))}
         </div>
 
-        {/* Add-ons */}
-        <div className="bg-white rounded-2xl shadow-lg p-8 mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 mb-6 text-center">
-            Need More Scans? Add Extra Credits
-          </h2>
+        {/* Add-ons - Only for SEO Plans */}
+        {serviceType === 'seo' && (
+          <div className="bg-white rounded-2xl shadow-lg p-8 mb-16">
+            <h2 className="text-3xl font-bold text-gray-900 mb-6 text-center">
+              Need More Scans? Add Extra Credits
+            </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {addOns.map((addon) => (
               <div
@@ -244,6 +377,7 @@ export default function PricingPlans() {
             ))}
           </div>
         </div>
+        )}
 
         {/* Features Comparison */}
         <div className="bg-white rounded-2xl shadow-lg p-8">
