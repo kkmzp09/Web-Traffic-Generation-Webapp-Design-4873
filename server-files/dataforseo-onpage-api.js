@@ -204,7 +204,7 @@ router.get('/results/:scanId', async (req, res) => {
            updated_at = NOW()
        WHERE id = $3`,
       [
-        analysis.summary?.onPageScore || 0,
+        Math.round(analysis.summary?.onPageScore || 0),
         analysis.totalPages || 0,
         scanId
       ]

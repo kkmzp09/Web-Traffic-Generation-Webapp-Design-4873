@@ -461,50 +461,66 @@ async function getComprehensiveAnalysis(taskId) {
   try {
     console.log(`📊 Fetching comprehensive analysis for task: ${taskId}`);
 
-    // Wait for task completion
-    let status = await getTaskStatus(taskId);
-    let attempts = 0;
-    const maxAttempts = 60; // 5 minutes max
+    // Get summary directly (fast, single API call)
+    const response = await axios.post(
+      `${DATAFORSEO_API_BASE}/v3/on_page/summary`,
+      [{ id: taskId }],
+      { headers: authHeader(), timeout: 30000 }
+    );
 
-    while (!status.completed && attempts < maxAttempts) {
-      await new Promise(resolve => setTimeout(resolve, 5000)); // Wait 5 seconds
-      status = await getTaskStatus(taskId);
-      attempts++;
-      console.log(`⏳ Crawl progress: ${status.pagesCrawled} pages, ${status.pagesInQueue} in queue`);
-    }
-
-    if (!status.completed) {
+    if (response.data.tasks && response.data.tasks[0].result && response.data.tasks[0].result[0]) {
+      const result = response.data.tasks[0].result[0];
+      const domainInfo = result.domain_info || {};
+      const pageMetrics = result.page_metrics || {};
+      
       return {
-        success: false,
-        error: 'Task did not complete in time'
+        success: true,
+        taskId: taskId,
+        summary: {
+          crawlProgress: result.crawl_progress,
+          crawlStatus: result.crawl_status,
+          onPageScore: pageMetrics.onpage_score || 0,
+          totalPages: domainInfo.total_pages || 0,
+          pagesCrawled: result.crawl_status?.pages_crawled || 0,
+          pagesInQueue: result.crawl_status?.pages_in_queue || 0,
+          
+          // Issues
+          brokenLinks: pageMetrics.broken_links || 0,
+          brokenResources: pageMetrics.broken_resources || 0,
+          duplicateTitle: pageMetrics.duplicate_title || 0,
+          duplicateDescription: pageMetrics.duplicate_description || 0,
+          duplicateContent: pageMetrics.duplicate_content || 0,
+          
+          // Links
+          linksExternal: pageMetrics.links_external || 0,
+          linksInternal: pageMetrics.links_internal || 0,
+          
+          // Checks
+          checks: pageMetrics.checks || {},
+          
+          // Domain info
+          domain: domainInfo.name,
+          crawlStart: domainInfo.crawl_start,
+          crawlEnd: domainInfo.crawl_end
+        },
+        pages: [],
+        totalPages: domainInfo.total_pages || 0,
+        resources: [],
+        duplicateTags: [],
+        links: [],
+        generatedAt: new Date().toISOString()
       };
     }
 
-    // Fetch all data in parallel
-    const [summary, pages, resources, duplicateTags, links] = await Promise.all([
-      getSummary(taskId),
-      getPages(taskId, 50),
-      getResources(taskId, 50),
-      getDuplicateTags(taskId),
-      getLinks(taskId, 50)
-    ]);
-
     return {
-      success: true,
-      taskId: taskId,
-      summary: summary.success ? summary.data : null,
-      pages: pages.success ? pages.pages : [],
-      totalPages: pages.success ? pages.totalCount : 0,
-      resources: resources.success ? resources.resources : [],
-      duplicateTags: duplicateTags.success ? duplicateTags.duplicates : [],
-      links: links.success ? links.links : [],
-      generatedAt: new Date().toISOString()
+      success: false,
+      error: 'No analysis data available'
     };
   } catch (error) {
     console.error('Comprehensive Analysis Error:', error.message);
     return {
       success: false,
-      error: error.message
+      error: error.response?.data?.status_message || error.message
     };
   }
 }
