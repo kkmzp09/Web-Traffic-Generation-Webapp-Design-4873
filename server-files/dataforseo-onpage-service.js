@@ -114,25 +114,26 @@ async function postOnPageTask(params) {
 
 async function getTaskStatus(taskId) {
   try {
-    const response = await axios.get(
-      `${DATAFORSEO_API_BASE}/v3/on_page/tasks_ready`,
-      { headers: authHeader() }
+    // Check summary endpoint directly to get actual crawl status
+    const response = await axios.post(
+      `${DATAFORSEO_API_BASE}/v3/on_page/summary`,
+      [{ id: taskId }],
+      { headers: authHeader(), timeout: 10000 }
     );
 
-    if (response.data.tasks && response.data.tasks[0].result) {
-      const tasks = response.data.tasks[0].result;
-      const task = tasks.find(t => t.id === taskId);
+    if (response.data.tasks && response.data.tasks[0].result && response.data.tasks[0].result[0]) {
+      const result = response.data.tasks[0].result[0];
+      const crawlStatus = result.crawl_status || {};
+      const isFinished = result.crawl_progress === 'finished';
 
-      if (task) {
-        return {
-          success: true,
-          taskId: taskId,
-          status: task.status_message,
-          pagesInQueue: task.pages_in_queue || 0,
-          pagesCrawled: task.pages_crawled || 0,
-          completed: task.status_message === 'Ok.',
-        };
-      }
+      return {
+        success: true,
+        taskId: taskId,
+        status: isFinished ? 'Ok.' : 'In Progress',
+        pagesInQueue: crawlStatus.pages_in_queue || 0,
+        pagesCrawled: crawlStatus.pages_crawled || 0,
+        completed: isFinished
+      };
     }
 
     return {
@@ -473,14 +474,44 @@ async function getComprehensiveAnalysis(taskId) {
       const domainInfo = result.domain_info || {};
       const pageMetrics = result.page_metrics || {};
       
+      console.log('📊 DataForSEO Response Structure:');
+      console.log('- crawl_progress:', result.crawl_progress);
+      console.log('- domain_info.total_pages:', domainInfo.total_pages);
+      console.log('- page_metrics.onpage_score:', pageMetrics.onpage_score);
+      console.log('- page_metrics keys:', Object.keys(pageMetrics));
+      
+      // If page_metrics is empty, fetch page data directly
+      let onPageScore = pageMetrics.onpage_score || 0;
+      let checks = pageMetrics.checks || {};
+      
+      if (!onPageScore && result.crawl_status?.pages_crawled > 0) {
+        console.log('⚠️ page_metrics empty, fetching pages data...');
+        try {
+          const pagesResponse = await axios.post(
+            `${DATAFORSEO_API_BASE}/v3/on_page/pages`,
+            [{ id: taskId, limit: 1 }],
+            { headers: authHeader(), timeout: 10000 }
+          );
+          
+          if (pagesResponse.data.tasks && pagesResponse.data.tasks[0].result && pagesResponse.data.tasks[0].result[0]?.items?.[0]) {
+            const page = pagesResponse.data.tasks[0].result[0].items[0];
+            onPageScore = page.onpage_score || 0;
+            checks = page.checks || {};
+            console.log('✅ Got score from pages:', onPageScore);
+          }
+        } catch (err) {
+          console.error('Failed to fetch pages:', err.message);
+        }
+      }
+      
       return {
         success: true,
         taskId: taskId,
         summary: {
           crawlProgress: result.crawl_progress,
           crawlStatus: result.crawl_status,
-          onPageScore: pageMetrics.onpage_score || 0,
-          totalPages: domainInfo.total_pages || 0,
+          onPageScore: onPageScore,
+          totalPages: domainInfo.total_pages || result.crawl_status?.pages_crawled || 0,
           pagesCrawled: result.crawl_status?.pages_crawled || 0,
           pagesInQueue: result.crawl_status?.pages_in_queue || 0,
           
@@ -496,7 +527,7 @@ async function getComprehensiveAnalysis(taskId) {
           linksInternal: pageMetrics.links_internal || 0,
           
           // Checks
-          checks: pageMetrics.checks || {},
+          checks: checks,
           
           // Domain info
           domain: domainInfo.name,
@@ -504,7 +535,7 @@ async function getComprehensiveAnalysis(taskId) {
           crawlEnd: domainInfo.crawl_end
         },
         pages: [],
-        totalPages: domainInfo.total_pages || 0,
+        totalPages: domainInfo.total_pages || result.crawl_status?.pages_crawled || 0,
         resources: [],
         duplicateTags: [],
         links: [],

@@ -1,0 +1,37 @@
+MANUAL INSTRUCTIONS TO ADD KEYWORD TRACKER ROUTES:
+
+1. SSH to server:
+   ssh root@67.217.60.57
+
+2. Edit server.js:
+   cd /root/relay
+   nano server.js
+
+3. Find the section where other API routes are registered (look for lines like):
+   app.use('/api/dataforseo', ...)
+   app.use('/api/seo-automation', ...)
+
+4. Add these lines AFTER the other routes but BEFORE app.listen():
+
+// Keyword Tracker API
+const keywordTrackerAPI = require('./keyword-tracker-api');
+app.use('/api/seo', keywordTrackerAPI);
+console.log('✅ Keyword Tracker routes initialized');
+
+5. Save and exit (Ctrl+X, Y, Enter)
+
+6. Restart:
+   pm2 restart relay-api
+
+7. Test:
+   curl https://api.organitrafficboost.com/api/seo/locations
+
+---
+
+The files are already uploaded:
+✅ keyword-tracker-schema.sql
+✅ dataforseo-keywords-service.js  
+✅ keyword-tracker-api.js
+✅ Database tables created
+
+Only need to add the routes to server.js manually.
