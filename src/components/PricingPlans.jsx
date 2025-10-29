@@ -19,10 +19,17 @@ export default function PricingPlans() {
         'AI-powered SEO fixes (GPT-4)',
         'Auto-apply widget',
         '18 SEO categories',
+        '10 tracked keywords',
+        '50 keyword research queries/month',
         'Basic support',
         'Email reports',
         'Manual fix option'
       ],
+      limits: {
+        pageScans: 100,
+        trackedKeywords: 10,
+        keywordResearch: 50
+      },
       popular: false,
       color: 'indigo'
     },
@@ -38,12 +45,19 @@ export default function PricingPlans() {
         'AI-powered SEO fixes (GPT-4)',
         'Auto-apply widget',
         '18 SEO categories',
+        '50 tracked keywords',
+        '200 keyword research queries/month',
         'Priority support',
         'Advanced analytics',
         'Scheduled scans',
         'API access',
         'White-label reports'
       ],
+      limits: {
+        pageScans: 500,
+        trackedKeywords: 50,
+        keywordResearch: 200
+      },
       popular: true,
       color: 'purple'
     },
@@ -59,6 +73,8 @@ export default function PricingPlans() {
         'AI-powered SEO fixes (GPT-4)',
         'Auto-apply widget',
         '18 SEO categories',
+        '200 tracked keywords',
+        'Unlimited keyword research',
         'Dedicated support',
         'Advanced analytics',
         'Scheduled scans',
@@ -68,6 +84,11 @@ export default function PricingPlans() {
         'Team collaboration',
         'Priority processing'
       ],
+      limits: {
+        pageScans: 2500,
+        trackedKeywords: 200,
+        keywordResearch: -1 // -1 = unlimited
+      },
       popular: false,
       color: 'green'
     }

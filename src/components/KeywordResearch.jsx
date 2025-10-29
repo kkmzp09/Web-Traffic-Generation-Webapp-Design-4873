@@ -2,27 +2,45 @@
 // Keyword Research & SERP Analyzer - See which sites rank for any keyword
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
+import { useSubscription } from '../lib/subscriptionContext';
 
 const { 
   FiSearch, FiLoader, FiExternalLink, FiTrendingUp, FiDollarSign,
-  FiBarChart2, FiGlobe, FiAward, FiCopy, FiCheck
+  FiBarChart2, FiGlobe, FiAward, FiCopy, FiCheck, FiLock
 } = FiIcons;
 
 const KeywordResearch = () => {
+  const { subscription, canUseKeywordResearch, useKeywordResearch } = useSubscription();
+  const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
   const [location, setLocation] = useState('United States');
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState(null);
   const [error, setError] = useState(null);
+  const [limitError, setLimitError] = useState(null);
   const [copiedUrl, setCopiedUrl] = useState(null);
 
   const analyzeKeyword = async () => {
     if (!keyword.trim()) return;
 
+    // Check subscription limit
+    if (!canUseKeywordResearch()) {
+      const limit = subscription?.limits?.keywordResearch || 0;
+      const used = subscription?.usage?.keywordResearchQueries || 0;
+      if (limit === -1) {
+        // Unlimited - shouldn't happen
+      } else {
+        setLimitError(`You've reached your limit of ${limit} keyword research queries this month. Upgrade your plan for more queries.`);
+        return;
+      }
+    }
+
     setLoading(true);
     setError(null);
+    setLimitError(null);
     setResults(null);
 
     try {
@@ -41,6 +59,9 @@ const KeywordResearch = () => {
       const data = await response.json();
 
       if (data.success) {
+        // Update subscription usage
+        useKeywordResearch();
+        
         setResults(data);
       } else {
         setError(data.error || 'Failed to analyze keyword');
@@ -68,18 +89,51 @@ const KeywordResearch = () => {
     <div className="min-h-screen bg-gray-50 p-6">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center space-x-4 mb-4">
-          <div className="p-3 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl shadow-lg">
-            <SafeIcon icon={FiSearch} className="w-8 h-8 text-white" />
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-4">
+            <div className="p-3 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl shadow-lg">
+              <SafeIcon icon={FiSearch} className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Keyword Research</h1>
+              <p className="text-gray-600 mt-1">
+                Discover which sites rank for any keyword
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Keyword Research</h1>
-            <p className="text-gray-600 mt-1">
-              Discover which sites rank for any keyword
-            </p>
-          </div>
+          
+          {/* Usage Stats */}
+          {subscription && subscription.limits && (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              <div className="text-sm text-gray-600 mb-1">Research Queries</div>
+              <div className="text-2xl font-bold text-gray-900">
+                {subscription.usage?.keywordResearchQueries || 0} / {subscription.limits.keywordResearch === -1 ? '∞' : subscription.limits.keywordResearch}
+              </div>
+              {subscription.limits.keywordResearch !== -1 && (
+                <div className="text-xs text-gray-500 mt-1">
+                  {subscription.limits.keywordResearch - (subscription.usage?.keywordResearchQueries || 0)} remaining
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Limit Error */}
+      {limitError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-start gap-3">
+          <SafeIcon icon={FiLock} className="w-5 h-5 text-red-600 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-red-800 font-medium">{limitError}</p>
+            <button
+              onClick={() => navigate('/pricing')}
+              className="mt-2 text-sm text-red-700 underline hover:text-red-800"
+            >
+              View Pricing Plans
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Search Box */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">

@@ -51,6 +51,18 @@ export const SubscriptionProvider = ({ children }) => {
       totalVisits: parseInt(plan.visits.replace(/,/g, '')),
       usedVisits: 0,
       remainingVisits: parseInt(plan.visits.replace(/,/g, '')),
+      
+      // Keyword tracking limits
+      limits: plan.limits || {
+        pageScans: 0,
+        trackedKeywords: 0,
+        keywordResearch: 0
+      },
+      usage: {
+        trackedKeywords: 0,
+        keywordResearchQueries: 0
+      },
+      
       price: plan.price,
       finalPrice: paymentDetails.finalPrice || plan.price,
       discount: paymentDetails.discount || 0,
@@ -164,6 +176,77 @@ export const SubscriptionProvider = ({ children }) => {
     return subscription.remainingVisits >= requiredVisits;
   };
 
+  const canTrackKeyword = () => {
+    if (!hasActiveSubscription()) return false;
+    if (!subscription.limits || !subscription.usage) return false;
+    
+    const limit = subscription.limits.trackedKeywords || 0;
+    const used = subscription.usage.trackedKeywords || 0;
+    
+    return used < limit;
+  };
+
+  const canUseKeywordResearch = () => {
+    if (!hasActiveSubscription()) return false;
+    if (!subscription.limits || !subscription.usage) return false;
+    
+    const limit = subscription.limits.keywordResearch || 0;
+    const used = subscription.usage.keywordResearchQueries || 0;
+    
+    // -1 means unlimited
+    if (limit === -1) return true;
+    
+    return used < limit;
+  };
+
+  const useKeywordTracking = () => {
+    if (!canTrackKeyword()) return false;
+    
+    const updated = {
+      ...subscription,
+      usage: {
+        ...subscription.usage,
+        trackedKeywords: (subscription.usage.trackedKeywords || 0) + 1
+      }
+    };
+    
+    localStorage.setItem(`subscription_${user.id}`, JSON.stringify(updated));
+    setSubscription(updated);
+    return true;
+  };
+
+  const removeKeywordTracking = () => {
+    if (!subscription) return false;
+    
+    const updated = {
+      ...subscription,
+      usage: {
+        ...subscription.usage,
+        trackedKeywords: Math.max(0, (subscription.usage.trackedKeywords || 0) - 1)
+      }
+    };
+    
+    localStorage.setItem(`subscription_${user.id}`, JSON.stringify(updated));
+    setSubscription(updated);
+    return true;
+  };
+
+  const useKeywordResearch = () => {
+    if (!canUseKeywordResearch()) return false;
+    
+    const updated = {
+      ...subscription,
+      usage: {
+        ...subscription.usage,
+        keywordResearchQueries: (subscription.usage.keywordResearchQueries || 0) + 1
+      }
+    };
+    
+    localStorage.setItem(`subscription_${user.id}`, JSON.stringify(updated));
+    setSubscription(updated);
+    return true;
+  };
+
   const updateSubscription = (updatedData) => {
     if (!user) return;
     
@@ -189,7 +272,13 @@ export const SubscriptionProvider = ({ children }) => {
     cancelSubscription,
     renewSubscription,
     loadSubscription,
-    updateSubscription
+    updateSubscription,
+    // Keyword tracking functions
+    canTrackKeyword,
+    canUseKeywordResearch,
+    useKeywordTracking,
+    removeKeywordTracking,
+    useKeywordResearch
   };
 
   return (

@@ -5,20 +5,25 @@ import React, { useState, useEffect } from 'react';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
 import { useAuth } from '../lib/authContext';
+import { useSubscription } from '../lib/subscriptionContext';
+import { useNavigate } from 'react-router-dom';
 
 const { 
   FiTarget, FiPlus, FiTrash2, FiTrendingUp, FiTrendingDown, FiMinus,
-  FiLoader, FiAlertCircle, FiRefreshCw, FiDownload, FiSearch
+  FiLoader, FiAlertCircle, FiRefreshCw, FiDownload, FiSearch, FiLock
 } = FiIcons;
 
 const KeywordTracker = () => {
   const { user } = useAuth();
+  const { subscription, canTrackKeyword, useKeywordTracking, removeKeywordTracking } = useSubscription();
+  const navigate = useNavigate();
   const [keywords, setKeywords] = useState([]);
   const [loading, setLoading] = useState(false);
   const [newKeyword, setNewKeyword] = useState('');
   const [newDomain, setNewDomain] = useState('');
   const [location, setLocation] = useState('United States');
   const [refreshing, setRefreshing] = useState(false);
+  const [limitError, setLimitError] = useState(null);
 
   // Load tracked keywords on mount
   useEffect(() => {
@@ -53,7 +58,16 @@ const KeywordTracker = () => {
     const userId = user?.id || user?.userId;
     if (!userId) return;
 
+    // Check subscription limit
+    if (!canTrackKeyword()) {
+      const limit = subscription?.limits?.trackedKeywords || 0;
+      const used = subscription?.usage?.trackedKeywords || 0;
+      setLimitError(`You've reached your limit of ${limit} tracked keywords. Upgrade your plan to track more keywords.`);
+      return;
+    }
+
     setLoading(true);
+    setLimitError(null);
     try {
       const apiBase = import.meta.env.VITE_API_BASE || 'https://api.organitrafficboost.com';
       const response = await fetch(`${apiBase}/api/seo/track-keyword`, {
@@ -70,6 +84,9 @@ const KeywordTracker = () => {
       const data = await response.json();
       
       if (data.success) {
+        // Update subscription usage
+        useKeywordTracking();
+        
         setNewKeyword('');
         setNewDomain('');
         loadTrackedKeywords();
@@ -113,6 +130,9 @@ const KeywordTracker = () => {
       const data = await response.json();
       
       if (data.success) {
+        // Update subscription usage (decrement)
+        removeKeywordTracking();
+        
         loadTrackedKeywords();
       }
     } catch (err) {
@@ -139,18 +159,49 @@ const KeywordTracker = () => {
     <div className="min-h-screen bg-gray-50 p-6">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center space-x-4 mb-4">
-          <div className="p-3 bg-gradient-to-r from-green-600 to-blue-600 rounded-xl shadow-lg">
-            <SafeIcon icon={FiTarget} className="w-8 h-8 text-white" />
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-4">
+            <div className="p-3 bg-gradient-to-r from-green-600 to-blue-600 rounded-xl shadow-lg">
+              <SafeIcon icon={FiTarget} className="w-8 h-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Keyword Tracker</h1>
+              <p className="text-gray-600 mt-1">
+                Monitor your keyword rankings and track progress over time
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Keyword Tracker</h1>
-            <p className="text-gray-600 mt-1">
-              Monitor your keyword rankings and track progress over time
-            </p>
-          </div>
+          
+          {/* Usage Stats */}
+          {subscription && subscription.limits && (
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+              <div className="text-sm text-gray-600 mb-1">Tracked Keywords</div>
+              <div className="text-2xl font-bold text-gray-900">
+                {subscription.usage?.trackedKeywords || 0} / {subscription.limits.trackedKeywords}
+              </div>
+              <div className="text-xs text-gray-500 mt-1">
+                {subscription.limits.trackedKeywords - (subscription.usage?.trackedKeywords || 0)} remaining
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Limit Error */}
+      {limitError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-start gap-3">
+          <SafeIcon icon={FiLock} className="w-5 h-5 text-red-600 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-red-800 font-medium">{limitError}</p>
+            <button
+              onClick={() => navigate('/pricing')}
+              className="mt-2 text-sm text-red-700 underline hover:text-red-800"
+            >
+              View Pricing Plans
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Add New Keyword */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
