@@ -29,62 +29,77 @@ const OnPageSEO = () => {
     try {
       const apiBase = import.meta.env.VITE_API_BASE || 'https://api.organitrafficboost.com';
       
-      // Start the scan
-      const response = await fetch(`${apiBase}/api/seo/scan-page`, {
+      console.log('🚀 Starting DataForSEO On-Page crawl...');
+      
+      // Start the DataForSEO On-Page crawl
+      const response = await fetch(`${apiBase}/api/dataforseo/onpage/scan`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
           url: url.trim(),
-          userId: '00000000-0000-0000-0000-000000000000'
+          userId: '00000000-0000-0000-0000-000000000000',
+          maxPages: 1, // Single page analysis
+          enableJavaScript: true,
+          enableBrowserRendering: false,
+          calculateKeywordDensity: true
         })
       });
 
       const data = await response.json();
+      console.log('Crawl started:', data);
 
       if (data.success && data.scanId) {
-        // Poll for scan completion
         const scanId = data.scanId;
         let attempts = 0;
-        const maxAttempts = 120; // 2 minutes max (increased from 30s)
+        const maxAttempts = 120; // 10 minutes max for DataForSEO crawl
         
         const pollInterval = setInterval(async () => {
           attempts++;
           
           try {
-            const scanResponse = await fetch(`${apiBase}/api/seo/scan/${scanId}`);
-            const scanData = await scanResponse.json();
+            // Check status
+            const statusResponse = await fetch(`${apiBase}/api/dataforseo/onpage/status/${scanId}`);
+            const statusData = await statusResponse.json();
             
-            console.log(`Poll attempt ${attempts}:`, scanData.scan?.status);
+            console.log(`Poll attempt ${attempts}:`, statusData.scan?.status, 
+                       `(${statusData.scan?.pagesCrawled || 0} pages)`);
             
-            if (scanData.success && scanData.scan.status === 'completed') {
+            if (statusData.success && statusData.scan.status === 'completed') {
               clearInterval(pollInterval);
-              setAnalysis({
-                score: scanData.scan.seo_score,
-                issues: scanData.issues || [],
-                url: scanData.scan.url
-              });
+              
+              // Fetch full results
+              const resultsResponse = await fetch(`${apiBase}/api/dataforseo/onpage/results/${scanId}`);
+              const resultsData = await resultsResponse.json();
+              
+              if (resultsData.success) {
+                // Transform DataForSEO data to our format
+                const analysis = transformDataForSEOResults(resultsData.analysis);
+                setAnalysis(analysis);
+              } else {
+                setError('Failed to fetch results');
+              }
               setLoading(false);
-            } else if (scanData.scan.status === 'failed') {
+            } else if (statusData.scan?.status === 'failed') {
               clearInterval(pollInterval);
-              setError(scanData.scan.error_message || 'Scan failed');
+              setError('Crawl failed');
               setLoading(false);
             } else if (attempts >= maxAttempts) {
               clearInterval(pollInterval);
-              setError('Scan timed out after 2 minutes. Please try a simpler page or try again later.');
+              setError('Crawl timed out. DataForSEO crawls can take several minutes for complex pages.');
               setLoading(false);
             }
           } catch (pollErr) {
             console.error('Poll error:', pollErr);
             if (attempts >= maxAttempts) {
               clearInterval(pollInterval);
-              setError('Failed to check scan status');
+              setError('Failed to check crawl status');
               setLoading(false);
             }
           }
-        }, 1000);
+        }, 5000); // Poll every 5 seconds (DataForSEO takes longer)
       } else {
-        console.error('Scan start failed:', data);
-        setError(data.error || 'Failed to start scan');
+        console.error('Crawl start failed:', data);
+        setError(data.error || 'Failed to start crawl');
         setLoading(false);
       }
     } catch (err) {
@@ -92,6 +107,53 @@ const OnPageSEO = () => {
       setError('Failed to analyze page. Please try again.');
       setLoading(false);
     }
+  };
+
+  // Transform DataForSEO results to our analysis format
+  const transformDataForSEOResults = (analysis) => {
+    const summary = analysis.summary || {};
+    const pages = analysis.pages || [];
+    const firstPage = pages[0] || {};
+    
+    // Extract issues from checks
+    const issues = [];
+    if (summary.checks) {
+      Object.keys(summary.checks).forEach(checkType => {
+        const count = summary.checks[checkType];
+        if (count > 0) {
+          issues.push({
+            type: checkType.replace(/_/g, ' '),
+            count: count,
+            severity: getSeverityFromCheck(checkType)
+          });
+        }
+      });
+    }
+
+    return {
+      score: summary.onPageScore || 0,
+      url: firstPage.url || url,
+      pages: pages,
+      summary: {
+        pagesCrawled: summary.pagesCrawled || 0,
+        brokenPages: summary.brokenPages || 0,
+        duplicateTitle: summary.duplicateTitle || 0,
+        duplicateDescription: summary.duplicateDescription || 0,
+        duplicateContent: summary.duplicateContent || 0
+      },
+      issues: issues,
+      resources: analysis.resources || [],
+      links: analysis.links || []
+    };
+  };
+
+  const getSeverityFromCheck = (checkType) => {
+    const criticalChecks = ['broken_page', 'broken_resources', 'no_h1_tag', 'no_title_tag'];
+    const warningChecks = ['duplicate_title', 'duplicate_description', 'large_page_size'];
+    
+    if (criticalChecks.some(check => checkType.includes(check))) return 'critical';
+    if (warningChecks.some(check => checkType.includes(check))) return 'warning';
+    return 'info';
   };
 
   const getScoreColor = (score) => {
@@ -185,7 +247,9 @@ Fix: ${issue.fix}
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-lg font-semibold text-gray-900 mb-2">Overall SEO Score</h2>
-                <p className="text-sm text-gray-600">Based on {analysis.checks_performed} checks</p>
+                <p className="text-sm text-gray-600">
+                  Powered by DataForSEO | {analysis.summary?.pagesCrawled || 0} pages crawled
+                </p>
               </div>
               <div className="text-center">
                 <div className={`text-6xl font-bold ${getScoreColor(analysis.score)}`}>
@@ -203,35 +267,39 @@ Fix: ${issue.fix}
             </div>
           </div>
 
-          {/* Issues Breakdown */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center gap-3 mb-2">
-                <SafeIcon icon={FiXCircle} className="w-6 h-6 text-red-600" />
-                <h3 className="font-semibold text-gray-900">Critical Issues</h3>
+          {/* Summary Stats */}
+          {analysis.summary && (
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              <div className="bg-white rounded-lg border border-gray-200 p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <SafeIcon icon={FiXCircle} className="w-5 h-5 text-red-600" />
+                  <h4 className="font-semibold text-gray-900">Broken Pages</h4>
+                </div>
+                <div className="text-2xl font-bold text-red-600">{analysis.summary.brokenPages || 0}</div>
               </div>
-              <div className="text-3xl font-bold text-red-600">{analysis.critical || 0}</div>
-              <p className="text-sm text-gray-600 mt-1">Must fix immediately</p>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center gap-3 mb-2">
-                <SafeIcon icon={FiAlertCircle} className="w-6 h-6 text-yellow-600" />
-                <h3 className="font-semibold text-gray-900">Warnings</h3>
+              <div className="bg-white rounded-lg border border-gray-200 p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <SafeIcon icon={FiAlertCircle} className="w-5 h-5 text-yellow-600" />
+                  <h4 className="font-semibold text-gray-900">Duplicate Titles</h4>
+                </div>
+                <div className="text-2xl font-bold text-yellow-600">{analysis.summary.duplicateTitle || 0}</div>
               </div>
-              <div className="text-3xl font-bold text-yellow-600">{analysis.warnings || 0}</div>
-              <p className="text-sm text-gray-600 mt-1">Should be addressed</p>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center gap-3 mb-2">
-                <SafeIcon icon={FiCheckCircle} className="w-6 h-6 text-green-600" />
-                <h3 className="font-semibold text-gray-900">Passed</h3>
+              <div className="bg-white rounded-lg border border-gray-200 p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <SafeIcon icon={FiAlertCircle} className="w-5 h-5 text-yellow-600" />
+                  <h4 className="font-semibold text-gray-900">Duplicate Descriptions</h4>
+                </div>
+                <div className="text-2xl font-bold text-yellow-600">{analysis.summary.duplicateDescription || 0}</div>
               </div>
-              <div className="text-3xl font-bold text-green-600">{analysis.passed || 0}</div>
-              <p className="text-sm text-gray-600 mt-1">Working correctly</p>
+              <div className="bg-white rounded-lg border border-gray-200 p-4">
+                <div className="flex items-center gap-2 mb-1">
+                  <SafeIcon icon={FiAlertCircle} className="w-5 h-5 text-orange-600" />
+                  <h4 className="font-semibold text-gray-900">Duplicate Content</h4>
+                </div>
+                <div className="text-2xl font-bold text-orange-600">{analysis.summary.duplicateContent || 0}</div>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Detailed Issues */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
@@ -289,7 +357,7 @@ const IssueCard = ({ issue }) => {
     switch (severity) {
       case 'critical': return FiXCircle;
       case 'warning': return FiAlertCircle;
-      case 'passed': return FiCheckCircle;
+      case 'info': return FiCheckCircle;
       default: return FiAlertCircle;
     }
   };
@@ -298,7 +366,7 @@ const IssueCard = ({ issue }) => {
     switch (severity) {
       case 'critical': return 'text-red-600 bg-red-50 border-red-200';
       case 'warning': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-      case 'passed': return 'text-green-600 bg-green-50 border-green-200';
+      case 'info': return 'text-blue-600 bg-blue-50 border-blue-200';
       default: return 'text-gray-600 bg-gray-50 border-gray-200';
     }
   };
@@ -308,17 +376,11 @@ const IssueCard = ({ issue }) => {
       <div className="flex items-start gap-3">
         <SafeIcon icon={getSeverityIcon(issue.severity)} className="w-5 h-5 flex-shrink-0 mt-0.5" />
         <div className="flex-1">
-          <h3 className="font-semibold mb-1">{issue.title}</h3>
-          <p className="text-sm mb-2">{issue.description}</p>
-          {issue.fix && (
-            <div className="mt-2 p-3 bg-white rounded border">
-              <div className="flex items-center gap-2 mb-1">
-                <SafeIcon icon={FiZap} className="w-4 h-4" />
-                <span className="text-sm font-medium">How to Fix:</span>
-              </div>
-              <p className="text-sm">{issue.fix}</p>
-            </div>
-          )}
+          <h3 className="font-semibold mb-1 capitalize">{issue.type}</h3>
+          <p className="text-sm mb-2">{issue.count} instance(s) found</p>
+          <div className="text-xs text-gray-600">
+            <strong>Severity:</strong> {issue.severity.toUpperCase()}
+          </div>
         </div>
       </div>
     </div>
