@@ -111,35 +111,40 @@ const OnPageSEO = () => {
 
   // Transform DataForSEO results to our analysis format
   const transformDataForSEOResults = (analysis) => {
+    console.log('Transforming analysis:', analysis);
+    
     const summary = analysis.summary || {};
-    const pages = analysis.pages || [];
-    const firstPage = pages[0] || {};
+    const checks = summary.checks || {};
     
     // Extract issues from checks
     const issues = [];
-    if (summary.checks) {
-      Object.keys(summary.checks).forEach(checkType => {
-        const count = summary.checks[checkType];
-        if (count > 0) {
-          issues.push({
-            type: checkType.replace(/_/g, ' '),
-            count: count,
-            severity: getSeverityFromCheck(checkType)
-          });
-        }
-      });
-    }
+    Object.keys(checks).forEach(checkType => {
+      const count = checks[checkType];
+      if (count > 0) {
+        issues.push({
+          type: checkType.replace(/_/g, ' '),
+          title: checkType.replace(/_/g, ' ').toUpperCase(),
+          description: `Found ${count} page(s) with ${checkType.replace(/_/g, ' ')}`,
+          fix: `Review and fix ${checkType.replace(/_/g, ' ')} issues`,
+          count: count,
+          severity: getSeverityFromCheck(checkType)
+        });
+      }
+    });
 
     return {
-      score: summary.onPageScore || 0,
-      url: firstPage.url || url,
-      pages: pages,
+      score: Math.round(summary.onPageScore || 0),
+      url: summary.domain || url,
+      pages: analysis.pages || [],
       summary: {
         pagesCrawled: summary.pagesCrawled || 0,
-        brokenPages: summary.brokenPages || 0,
+        brokenPages: summary.brokenLinks || 0,
         duplicateTitle: summary.duplicateTitle || 0,
         duplicateDescription: summary.duplicateDescription || 0,
-        duplicateContent: summary.duplicateContent || 0
+        duplicateContent: summary.duplicateContent || 0,
+        brokenResources: summary.brokenResources || 0,
+        linksExternal: summary.linksExternal || 0,
+        linksInternal: summary.linksInternal || 0
       },
       issues: issues,
       resources: analysis.resources || [],
