@@ -45,7 +45,7 @@ const OnPageSEO = () => {
         // Poll for scan completion
         const scanId = data.scanId;
         let attempts = 0;
-        const maxAttempts = 30; // 30 seconds max
+        const maxAttempts = 120; // 2 minutes max (increased from 30s)
         
         const pollInterval = setInterval(async () => {
           attempts++;
@@ -53,6 +53,8 @@ const OnPageSEO = () => {
           try {
             const scanResponse = await fetch(`${apiBase}/api/seo/scan/${scanId}`);
             const scanData = await scanResponse.json();
+            
+            console.log(`Poll attempt ${attempts}:`, scanData.scan?.status);
             
             if (scanData.success && scanData.scan.status === 'completed') {
               clearInterval(pollInterval);
@@ -62,17 +64,28 @@ const OnPageSEO = () => {
                 url: scanData.scan.url
               });
               setLoading(false);
-            } else if (scanData.scan.status === 'failed' || attempts >= maxAttempts) {
+            } else if (scanData.scan.status === 'failed') {
               clearInterval(pollInterval);
-              setError('Scan failed or timed out');
+              setError(scanData.scan.error_message || 'Scan failed');
+              setLoading(false);
+            } else if (attempts >= maxAttempts) {
+              clearInterval(pollInterval);
+              setError('Scan timed out after 2 minutes. Please try a simpler page or try again later.');
               setLoading(false);
             }
           } catch (pollErr) {
             console.error('Poll error:', pollErr);
+            if (attempts >= maxAttempts) {
+              clearInterval(pollInterval);
+              setError('Failed to check scan status');
+              setLoading(false);
+            }
           }
         }, 1000);
       } else {
+        console.error('Scan start failed:', data);
         setError(data.error || 'Failed to start scan');
+        setLoading(false);
       }
     } catch (err) {
       console.error('Analysis Error:', err);
