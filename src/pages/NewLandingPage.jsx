@@ -21,32 +21,60 @@ export default function NewLandingPage() {
     setScanning(true);
     setShowEmailCapture(false);
     
-    // Simulate scan (replace with actual API call)
-    setTimeout(() => {
+    try {
+      const apiBase = import.meta.env.VITE_API_BASE || 'https://api.organitrafficboost.com';
+      
+      // Use existing scan API
+      const response = await fetch(`${apiBase}/api/dataforseo/onpage/scan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: scanUrl,
+          maxPages: 10,
+          userId: 'free-scan-user',
+          enableJavaScript: true
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        // Store scan ID for email
+        localStorage.setItem('freeScanId', data.taskId);
+        setScanning(false);
+        setShowEmailCapture(true);
+      } else {
+        alert('Scan failed: ' + (data.error || 'Unknown error'));
+        setScanning(false);
+      }
+    } catch (error) {
+      console.error('Free scan error:', error);
+      alert('Failed to start scan. Please try again.');
       setScanning(false);
-      setShowEmailCapture(true);
-    }, 3000);
+    }
   };
 
   const handleEmailSubmit = async () => {
     if (!scanEmail.trim()) return;
     
-    // Send email with scan report
     try {
       const apiBase = import.meta.env.VITE_API_BASE || 'https://api.organitrafficboost.com';
+      const scanId = localStorage.getItem('freeScanId');
       
-      // Trigger scan and send email
-      const response = await fetch(`${apiBase}/api/seo/free-scan`, {
+      // Send email with scan results
+      const response = await fetch(`${apiBase}/api/seo/send-scan-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          url: scanUrl,
-          email: scanEmail
+          email: scanEmail,
+          scanId: scanId,
+          url: scanUrl
         })
       });
       
       if (response.ok) {
         setScanComplete(true);
+        localStorage.removeItem('freeScanId');
         // Reset after 5 seconds
         setTimeout(() => {
           setScanUrl('');
@@ -54,9 +82,12 @@ export default function NewLandingPage() {
           setScanComplete(false);
           setShowEmailCapture(false);
         }, 5000);
+      } else {
+        alert('Failed to send email. Please try again.');
       }
     } catch (error) {
-      console.error('Free scan error:', error);
+      console.error('Email send error:', error);
+      alert('Failed to send email. Please try again.');
     }
   };
 
