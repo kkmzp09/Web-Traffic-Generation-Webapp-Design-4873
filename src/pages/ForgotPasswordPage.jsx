@@ -22,21 +22,21 @@ export default function ForgotPasswordPage() {
     }
 
     try {
-      // Generate reset token (in production, this should be done on backend)
-      const resetToken = Math.random().toString(36).substring(2, 15);
-      const resetLink = `${window.location.origin}/reset-password?token=${resetToken}`;
-
-      // Send password reset email
-      const result = await sendPasswordResetEmail({
-        to: email,
-        userName: email.split('@')[0], // Use email username as name
-        resetLink: resetLink
+      const apiBase = import.meta.env.VITE_API_BASE || 'https://api.organitrafficboost.com';
+      
+      // Call backend to generate token and send email
+      const response = await fetch(`${apiBase}/api/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
       });
 
-      if (result.success) {
+      const data = await response.json();
+
+      if (response.ok && data.success) {
         setSuccess(true);
       } else {
-        setError('Failed to send reset email. Please try again.');
+        setError(data.error || 'Failed to send reset email. Please try again.');
       }
     } catch (err) {
       setError('An error occurred. Please try again later.');

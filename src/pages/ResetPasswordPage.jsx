@@ -38,9 +38,22 @@ export default function ResetPasswordPage() {
     setLoading(true);
 
     try {
-      // In production, this would call your backend API
-      // For now, we'll simulate success
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const apiBase = import.meta.env.VITE_API_BASE || 'https://api.organitrafficboost.com';
+      
+      const response = await fetch(`${apiBase}/api/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          token,
+          newPassword: password
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to reset password');
+      }
       
       setSuccess(true);
       
@@ -49,7 +62,7 @@ export default function ResetPasswordPage() {
         navigate('/login');
       }, 3000);
     } catch (err) {
-      setError('Failed to reset password. Please try again.');
+      setError(err.message || 'Failed to reset password. Please try again.');
       console.error('Reset password error:', err);
     } finally {
       setLoading(false);
