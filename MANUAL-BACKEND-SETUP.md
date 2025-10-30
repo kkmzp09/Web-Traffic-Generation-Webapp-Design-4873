@@ -1,3 +1,102 @@
+# Manual Backend Setup for Free Scan Feature
+
+Since SSH password authentication is having issues, here's the manual setup:
+
+## Option 1: Use PuTTY/SSH Client
+
+### Step 1: Connect to VPS
+```
+Open PuTTY or your SSH client
+Host: 165.232.177.47
+Username: root
+Enter your password when prompted
+```
+
+### Step 2: Upload free-scan-api.js
+
+**Using WinSCP or FileZilla:**
+1. Connect to: 165.232.177.47
+2. Username: root
+3. Password: [your password]
+4. Navigate to: `/root/traffic-app/server-files/`
+5. Upload: `server-files/free-scan-api.js`
+
+**OR using command in SSH session:**
+```bash
+cd /root/traffic-app/server-files/
+nano free-scan-api.js
+```
+Then paste the contents from your local `server-files/free-scan-api.js`
+
+### Step 3: Update server.js
+
+```bash
+cd /root/traffic-app
+nano server.js
+```
+
+Find the line with `keyword-tracker-api` and add these lines after it:
+
+```javascript
+// Free Scan API
+const freeScanAPI = require('./server-files/free-scan-api');
+app.use('/api/seo', freeScanAPI);
+```
+
+Save and exit (Ctrl+X, then Y, then Enter)
+
+### Step 4: Verify Resend API Key
+
+```bash
+cat .env | grep RESEND
+```
+
+You should see:
+```
+RESEND_API_KEY=re_xxxxxxxxxxxxx
+```
+
+If not, add it:
+```bash
+nano .env
+```
+
+Add this line:
+```
+RESEND_API_KEY=your_resend_api_key_here
+```
+
+### Step 5: Restart API Server
+
+```bash
+pm2 restart traffic-api
+pm2 logs traffic-api --lines 50
+```
+
+### Step 6: Test the Endpoint
+
+```bash
+curl -X POST https://api.organitrafficboost.com/api/seo/free-scan \
+  -H "Content-Type: application/json" \
+  -d '{"url":"https://example.com","email":"test@example.com"}'
+```
+
+---
+
+## Option 2: Copy-Paste Method
+
+If you can't upload files, here's the complete `free-scan-api.js` content to copy-paste:
+
+### SSH into your server:
+```bash
+ssh root@165.232.177.47
+cd /root/traffic-app/server-files/
+nano free-scan-api.js
+```
+
+### Paste this entire content:
+
+```javascript
 // server-files/free-scan-api.js
 // Free SEO Scan API - 10 pages free for lead generation
 
@@ -151,8 +250,7 @@ function generateEmailReport(url, scanData) {
       </p>
       <p style="margin: 0; font-size: 12px;">
         <a href="https://organitrafficboost.com" style="color: #60a5fa; text-decoration: none;">Visit Website</a> | 
-        <a href="https://organitrafficboost.com/pricing" style="color: #60a5fa; text-decoration: none;">Pricing</a> | 
-        <a href="#" style="color: #60a5fa; text-decoration: none;">Unsubscribe</a>
+        <a href="https://organitrafficboost.com/pricing" style="color: #60a5fa; text-decoration: none;">Pricing</a>
       </p>
     </div>
   </div>
@@ -210,3 +308,48 @@ function generateIssuesList(scanData) {
 }
 
 module.exports = router;
+```
+
+Save and exit (Ctrl+X, then Y, then Enter)
+
+### Then continue with Steps 3-6 above.
+
+---
+
+## Verification
+
+After setup, check:
+
+1. **API is running:**
+   ```bash
+   pm2 status
+   ```
+
+2. **No errors in logs:**
+   ```bash
+   pm2 logs traffic-api --lines 20
+   ```
+
+3. **Test endpoint:**
+   ```bash
+   curl -X POST https://api.organitrafficboost.com/api/seo/free-scan \
+     -H "Content-Type: application/json" \
+     -d '{"url":"https://example.com","email":"your-email@example.com"}'
+   ```
+
+4. **Check your email** for the scan report!
+
+---
+
+## Troubleshooting
+
+**If email doesn't send:**
+- Check RESEND_API_KEY is set correctly
+- Check pm2 logs for errors
+- Verify your Resend account is active
+- Check email isn't in spam folder
+
+**If scan fails:**
+- Check DataForSEO API credits
+- Check pm2 logs for specific errors
+- Verify dataforseo-onpage-service.js exists
