@@ -208,6 +208,7 @@ export default function PricingPlans() {
           <div className="flex justify-center mb-8">
             <div className="inline-flex bg-white rounded-xl shadow-lg p-2 border border-gray-200">
               <button
+                data-service="traffic"
                 onClick={() => setServiceType('traffic')}
                 className={`px-8 py-3 rounded-lg font-semibold transition-all duration-200 ${
                   serviceType === 'traffic'
@@ -221,6 +222,7 @@ export default function PricingPlans() {
                 </div>
               </button>
               <button
+                data-service="seo"
                 onClick={() => setServiceType('seo')}
                 className={`px-8 py-3 rounded-lg font-semibold transition-all duration-200 ${
                   serviceType === 'seo'
