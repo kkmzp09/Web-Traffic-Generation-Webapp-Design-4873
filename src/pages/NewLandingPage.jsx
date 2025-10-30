@@ -24,23 +24,21 @@ export default function NewLandingPage() {
     try {
       const apiBase = import.meta.env.VITE_API_BASE || 'https://api.organitrafficboost.com';
       
-      // Use existing scan API
-      const response = await fetch(`${apiBase}/api/dataforseo/onpage/scan`, {
+      // Use SEO Automation scan for immediate results
+      const response = await fetch(`${apiBase}/api/seo/scan-page`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           url: scanUrl,
-          maxPages: 10,
-          userId: 'free-scan-user',
-          enableJavaScript: true
+          userId: 'free-scan-user'
         })
       });
       
       const data = await response.json();
       
-      if (data.success) {
+      if (data.success && data.scanId) {
         // Store scan ID for email
-        localStorage.setItem('freeScanId', data.taskId);
+        localStorage.setItem('freeScanId', data.scanId);
         setScanning(false);
         setShowEmailCapture(true);
       } else {
