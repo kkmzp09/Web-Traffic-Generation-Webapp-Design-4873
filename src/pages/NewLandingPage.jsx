@@ -61,6 +61,8 @@ export default function NewLandingPage() {
       const apiBase = import.meta.env.VITE_API_BASE || 'https://api.organitrafficboost.com';
       const scanId = localStorage.getItem('freeScanId');
       
+      console.log('Sending email with:', { email: scanEmail, scanId, url: scanUrl });
+      
       // Send email with scan results
       const response = await fetch(`${apiBase}/api/seo/send-scan-email`, {
         method: 'POST',
@@ -72,7 +74,10 @@ export default function NewLandingPage() {
         })
       });
       
-      if (response.ok) {
+      const data = await response.json();
+      console.log('Email API response:', data);
+      
+      if (data.success) {
         setScanComplete(true);
         localStorage.removeItem('freeScanId');
         // Reset after 5 seconds
@@ -83,7 +88,8 @@ export default function NewLandingPage() {
           setShowEmailCapture(false);
         }, 5000);
       } else {
-        alert('Failed to send email. Please try again.');
+        console.error('Email send failed:', data.error);
+        alert('Failed to send email: ' + (data.error || 'Unknown error'));
       }
     } catch (error) {
       console.error('Email send error:', error);
