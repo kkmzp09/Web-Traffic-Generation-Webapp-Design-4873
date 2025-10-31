@@ -34,6 +34,10 @@ import GSCAnalytics from './components/GSCAnalytics';
 import WidgetInstallation from './components/WidgetInstallation';
 import PricingPlans from './components/PricingPlans';
 import Checkout from './components/Checkout';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
+import RefundPolicy from './pages/RefundPolicy';
+import ContactUs from './pages/ContactUs';
 
 // --- Auth gate that matches your current context (user + loading) ---
 function RequireAuth({ children }) {
@@ -88,6 +92,12 @@ function AppShell() {
         <Route path="/login" element={<LoginPage onAuthClick={handleAuthClick} />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
+        
+        {/* Policy Pages */}
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+        <Route path="/terms-of-service" element={<TermsOfService />} />
+        <Route path="/refund-policy" element={<RefundPolicy />} />
+        <Route path="/contact" element={<ContactUs />} />
 
         <Route element={<MainLayout onAuthClick={handleAuthClick} />}>
           <Route path="/quick-start" element={<QuickStart />} />
