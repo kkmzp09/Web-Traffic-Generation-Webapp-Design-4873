@@ -555,24 +555,24 @@ export default function NewLandingPage() {
                   </button>
                 </li>
                 <li>
-                  <a href="#" className="text-gray-400 hover:text-white transition">
-                    About Us
-                  </a>
+                  <button onClick={() => navigate('/contact')} className="text-gray-400 hover:text-white transition">
+                    Contact Us
+                  </button>
                 </li>
                 <li>
-                  <a href="#" className="text-gray-400 hover:text-white transition">
-                    Blog
-                  </a>
+                  <button onClick={() => navigate('/privacy-policy')} className="text-gray-400 hover:text-white transition">
+                    Privacy Policy
+                  </button>
                 </li>
                 <li>
-                  <a href="#" className="text-gray-400 hover:text-white transition">
-                    Careers
-                  </a>
+                  <button onClick={() => navigate('/terms-of-service')} className="text-gray-400 hover:text-white transition">
+                    Terms of Service
+                  </button>
                 </li>
                 <li>
-                  <a href="#" className="text-gray-400 hover:text-white transition">
-                    Contact
-                  </a>
+                  <button onClick={() => navigate('/refund-policy')} className="text-gray-400 hover:text-white transition">
+                    Refund Policy
+                  </button>
                 </li>
               </ul>
             </div>
