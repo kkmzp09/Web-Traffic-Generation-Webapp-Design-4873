@@ -612,7 +612,7 @@ export default function SEODashboard() {
             
             // Load scan results inline instead of navigating
             try {
-              const response = await fetch(`https://api.organitrafficboost.com/api/seo/scan/${currentScanId}`);
+              const response = await fetch(`https://api.organitrafficboost.com/api/seo/scan/${currentScanId}?userId=${user.id}`);
               const data = await response.json();
               if (data.success) {
                 setCurrentScanResults(data.scan);

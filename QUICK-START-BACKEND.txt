@@ -1,0 +1,98 @@
+================================================================================
+  QUICK START: Backend Setup for Free Scan Feature
+================================================================================
+
+OPTION 1: Use PuTTY (Recommended)
+----------------------------------
+
+1. Open PuTTY
+   - Host: 165.232.177.47
+   - Port: 22
+   - Click "Open"
+   - Login as: root
+   - Enter your password
+
+2. Once logged in, run these commands:
+
+   cd /root/traffic-app/server-files/
+   
+   nano free-scan-api.js
+   
+   (Copy the entire content from your local file:
+    server-files/free-scan-api.js
+    and paste it into nano)
+   
+   Press: Ctrl+X, then Y, then Enter to save
+
+3. Update server.js:
+
+   cd /root/traffic-app
+   nano server.js
+   
+   Find the line with "keyword-tracker-api" and add these 2 lines after it:
+   
+   const freeScanAPI = require('./server-files/free-scan-api');
+   app.use('/api/seo', freeScanAPI);
+   
+   Press: Ctrl+X, then Y, then Enter to save
+
+4. Restart the server:
+
+   pm2 restart traffic-api
+   pm2 logs traffic-api
+
+5. Test it:
+
+   Visit: https://organitrafficboost.com
+   Enter a URL in the free scan box
+   Enter your email
+   Check your email for the report!
+
+================================================================================
+
+OPTION 2: Use WinSCP (If you prefer GUI)
+-----------------------------------------
+
+1. Download WinSCP: https://winscp.net/
+
+2. Connect:
+   - File Protocol: SFTP
+   - Host: 165.232.177.47
+   - Port: 22
+   - Username: root
+   - Password: [your password]
+   - Click "Login"
+
+3. Navigate to: /root/traffic-app/server-files/
+
+4. Drag and drop: server-files/free-scan-api.js from your local folder
+
+5. Then follow steps 3-5 from Option 1 above using PuTTY
+
+================================================================================
+
+WHAT'S ALREADY DONE:
+--------------------
+✓ Frontend deployed (https://organitrafficboost.com)
+✓ New homepage with free scan widget
+✓ Dual pricing page (Traffic + SEO)
+✓ Email template designed
+✓ API code ready (just needs to be uploaded)
+
+WHAT YOU NEED TO DO:
+--------------------
+1. Upload free-scan-api.js to VPS (5 minutes)
+2. Update server.js with 2 lines (2 minutes)
+3. Restart PM2 (1 minute)
+4. Test the free scan (1 minute)
+
+TOTAL TIME: ~10 minutes
+
+================================================================================
+
+NEED HELP?
+----------
+If you get stuck, the file MANUAL-BACKEND-SETUP.md has the complete
+free-scan-api.js code that you can copy-paste directly into nano.
+
+================================================================================

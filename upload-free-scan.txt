@@ -1,0 +1,4 @@
+open sftp://root@165.232.177.47 -hostkey=*
+cd /root/traffic-app/server-files/
+put server-files/free-scan-api.js
+exit
