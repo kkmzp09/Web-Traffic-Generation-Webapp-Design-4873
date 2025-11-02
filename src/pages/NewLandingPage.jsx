@@ -574,6 +574,11 @@ export default function NewLandingPage() {
                     Refund Policy
                   </button>
                 </li>
+                <li>
+                  <button onClick={() => navigate('/faq')} className="text-gray-400 hover:text-white transition">
+                    FAQ
+                  </button>
+                </li>
               </ul>
             </div>
 

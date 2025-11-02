@@ -38,6 +38,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import RefundPolicy from './pages/RefundPolicy';
 import ContactUs from './pages/ContactUs';
+import FAQ from './pages/FAQ';
 
 // --- Auth gate that matches your current context (user + loading) ---
 function RequireAuth({ children }) {
@@ -98,6 +99,7 @@ function AppShell() {
         <Route path="/terms-of-service" element={<TermsOfService />} />
         <Route path="/refund-policy" element={<RefundPolicy />} />
         <Route path="/contact" element={<ContactUs />} />
+        <Route path="/faq" element={<FAQ />} />
 
         <Route element={<MainLayout onAuthClick={handleAuthClick} />}>
           <Route path="/quick-start" element={<QuickStart />} />
