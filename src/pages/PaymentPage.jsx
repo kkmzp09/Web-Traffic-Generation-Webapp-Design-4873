@@ -158,6 +158,16 @@ export default function PaymentPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12 px-4">
         <div className="max-w-6xl mx-auto">
+          {/* Back to Home Button */}
+          <div className="mb-8">
+            <button
+              onClick={() => navigate('/')}
+              className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-semibold transition-all"
+            >
+              <span>←</span> Back to Home
+            </button>
+          </div>
+
           <div className="text-center mb-12">
             <h1 className="text-4xl font-bold text-gray-900 mb-2">Choose Your Plan</h1>
             <p className="text-gray-600">Select the perfect plan for your traffic generation needs</p>
@@ -276,6 +286,16 @@ export default function PaymentPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12 px-4">
       <div className="max-w-4xl mx-auto">
+        {/* Back to Home Button */}
+        <div className="mb-8">
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-semibold transition-all"
+          >
+            <span>←</span> Back to Home
+          </button>
+        </div>
+
         {/* Header */}
         <div className="text-center mb-8">
           <button
