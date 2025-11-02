@@ -18,12 +18,32 @@ export default function ContactUs() {
     setStatus('sending');
 
     try {
-      // TODO: Implement contact form submission to backend
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
-      setStatus('success');
-      setFormData({ name: '', email: '', subject: '', message: '' });
+      const apiBase = import.meta.env.VITE_API_BASE || 'https://api.organitrafficboost.com';
+      
+      const response = await fetch(`${apiBase}/api/contact/submit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setStatus('success');
+        setFormData({ name: '', email: '', subject: '', message: '' });
+        
+        // Reset success message after 5 seconds
+        setTimeout(() => setStatus(''), 5000);
+      } else {
+        setStatus('error');
+        setTimeout(() => setStatus(''), 5000);
+      }
     } catch (error) {
+      console.error('Contact form error:', error);
       setStatus('error');
+      setTimeout(() => setStatus(''), 5000);
     }
   };
 
