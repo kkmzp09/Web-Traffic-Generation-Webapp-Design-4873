@@ -273,13 +273,13 @@ export default function SEODashboard() {
                         pagesScanned: subscriptionUsage.pagesScanned,
                         pageLimit: subscriptionUsage.pageLimit,
                         upgradeOptions: [
-                          { plan: 'Professional', limit: 500, price: 79, features: 'Priority support, API access, Scheduled scans' },
-                          { plan: 'Business', limit: 2500, price: 199, features: 'Dedicated support, White-label, Team collaboration' }
+                          { plan: 'Professional', limit: 500, price: 6557, features: 'Priority support, API access, Scheduled scans' },
+                          { plan: 'Business', limit: 2500, price: 16517, features: 'Dedicated support, White-label, Team collaboration' }
                         ],
                         addOnOptions: [
-                          { name: 'Extra 100 pages', pages: 100, price: 10 },
-                          { name: 'Extra 250 pages', pages: 250, price: 20 },
-                          { name: 'Extra 500 pages', pages: 500, price: 35 }
+                          { name: 'Extra 100 pages', pages: 100, price: 830 },
+                          { name: 'Extra 250 pages', pages: 250, price: 1660 },
+                          { name: 'Extra 500 pages', pages: 500, price: 2905 }
                         ]
                       });
                       setShowUpgradeModal(true);
@@ -299,7 +299,7 @@ export default function SEODashboard() {
                             plan: {
                               name: 'Professional',
                               type: 'seo_professional',
-                              price: 79,
+                              price: 6557,
                               pages: 500,
                               features: ['Priority support', 'API access', 'Scheduled scans', 'Advanced analytics']
                             },
@@ -365,13 +365,13 @@ export default function SEODashboard() {
                       pagesScanned: subscriptionUsage.pagesScanned,
                       pageLimit: subscriptionUsage.pageLimit,
                       upgradeOptions: [
-                        { plan: 'Professional', limit: 500, price: 79, features: 'Priority support, API access, Scheduled scans' },
-                        { plan: 'Business', limit: 2500, price: 199, features: 'Dedicated support, White-label, Team collaboration' }
+                        { plan: 'Professional', limit: 500, price: 6557, features: 'Priority support, API access, Scheduled scans' },
+                        { plan: 'Business', limit: 2500, price: 16517, features: 'Dedicated support, White-label, Team collaboration' }
                       ],
                       addOnOptions: [
-                        { name: 'Extra 100 pages', pages: 100, price: 10 },
-                        { name: 'Extra 250 pages', pages: 250, price: 20 },
-                        { name: 'Extra 500 pages', pages: 500, price: 35 }
+                        { name: 'Extra 100 pages', pages: 100, price: 830 },
+                        { name: 'Extra 250 pages', pages: 250, price: 1660 },
+                        { name: 'Extra 500 pages', pages: 500, price: 2905 }
                       ]
                     });
                     setShowUpgradeModal(true);

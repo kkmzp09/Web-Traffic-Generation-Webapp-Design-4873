@@ -17,7 +17,7 @@ export default function CryptoPaymentPage() {
   const plans = {
     starter: {
       name: 'Starter Plan',
-      priceINR: 1250,
+      priceINR: 1245,
       priceUSDT: 15,
       visits: '500',
       features: [
@@ -30,7 +30,7 @@ export default function CryptoPaymentPage() {
     },
     growth: {
       name: 'Growth Plan',
-      priceINR: 2900,
+      priceINR: 2905,
       priceUSDT: 35,
       visits: '2,000',
       features: [
@@ -43,7 +43,7 @@ export default function CryptoPaymentPage() {
     },
     professional: {
       name: 'Professional Plan',
-      priceINR: 4900,
+      priceINR: 4897,
       priceUSDT: 59,
       visits: '5,000',
       features: [
@@ -56,7 +56,7 @@ export default function CryptoPaymentPage() {
     },
     business: {
       name: 'Business Plan',
-      priceINR: 8200,
+      priceINR: 8217,
       priceUSDT: 99,
       visits: '15,000',
       features: [

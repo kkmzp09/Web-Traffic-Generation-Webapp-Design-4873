@@ -180,9 +180,9 @@ export default function ContactUs() {
                   </div>
                   <div className="ml-4">
                     <h3 className="text-lg font-semibold text-gray-900 mb-1">Address</h3>
-                    <p className="text-gray-600">OrganiTraffic Inc.</p>
-                    <p className="text-gray-600">Remote-First Company</p>
-                    <p className="text-sm text-gray-500 mt-1">Serving clients worldwide</p>
+                    <p className="text-gray-600">#35 Gangeshvarnath Jooj, Gangeshvarnath Road</p>
+                    <p className="text-gray-600">Chunar, Mirzapur, Uttar Pradesh 231304</p>
+                    <p className="text-sm text-gray-500 mt-1">India</p>
                   </div>
                 </div>
               </div>

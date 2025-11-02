@@ -147,7 +147,7 @@ const UpgradeModal = ({ limitData, onClose }) => {
                     {option.plan}
                   </h4>
                   <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#667eea', marginBottom: '8px' }}>
-                    ${option.price}<span style={{ fontSize: '16px', color: '#6b7280' }}>/mo</span>
+                    ₹{option.price}<span style={{ fontSize: '16px', color: '#6b7280' }}>/mo</span>
                   </div>
                   <div style={{ fontSize: '14px', color: '#6b7280', marginBottom: '16px' }}>
                     {option.limit.toLocaleString()} pages/month
@@ -193,7 +193,7 @@ const UpgradeModal = ({ limitData, onClose }) => {
                     <Zap size={16} style={{ color: '#10b981' }} />
                   </div>
                   <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#10b981' }}>
-                    ${addon.price}
+                    ₹{addon.price}
                   </div>
                   <div style={{ fontSize: '12px', color: '#6b7280' }}>
                     One-time purchase

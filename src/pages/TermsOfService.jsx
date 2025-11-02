@@ -134,6 +134,7 @@ export default function TermsOfService() {
             <h2 className="text-2xl font-semibold text-gray-900 mb-3">15. Contact Information</h2>
             <p className="mb-3">For questions about these Terms of Service, contact us:</p>
             <ul className="list-none space-y-2">
+              <li><strong>TRADE NAME:</strong> krishnakant tripathi</li>
               <li>Email: support@organitrafficboost.com</li>
               <li>Website: <Link to="/" className="text-blue-600 hover:underline">https://organitrafficboost.com</Link></li>
             </ul>

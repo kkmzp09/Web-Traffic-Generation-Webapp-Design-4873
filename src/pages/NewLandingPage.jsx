@@ -587,11 +587,11 @@ export default function NewLandingPage() {
                 </li>
                 <li className="flex items-start gap-3">
                   <FaPhone className="text-blue-400 mt-1 flex-shrink-0" />
-                  <span className="text-gray-400">+1 (555) 123-4567</span>
+                  <span className="text-gray-400">6394370783</span>
                 </li>
                 <li className="flex items-start gap-3">
                   <FaMapMarkerAlt className="text-blue-400 mt-1 flex-shrink-0" />
-                  <span className="text-gray-400">123 Business St, Suite 100<br />San Francisco, CA 94105</span>
+                  <span className="text-gray-400">#35 Gangeshvarnath Jooj, Gangeshvarnath Road<br />Chunar, Mirzapur, Uttar Pradesh 231304</span>
                 </li>
               </ul>
             </div>

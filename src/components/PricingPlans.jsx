@@ -12,8 +12,8 @@ export default function PricingPlans() {
     {
       name: 'Starter',
       price: {
-        monthly: 15,
-        yearly: 150
+        monthly: 1245,
+        yearly: 12450
       },
       visits: '500 Visits',
       description: 'Perfect for testing and small campaigns',
@@ -29,8 +29,8 @@ export default function PricingPlans() {
     {
       name: 'Growth',
       price: {
-        monthly: 35,
-        yearly: 350
+        monthly: 2905,
+        yearly: 29050
       },
       visits: '2,000 Visits',
       description: 'For growing businesses',
@@ -47,8 +47,8 @@ export default function PricingPlans() {
     {
       name: 'Professional',
       price: {
-        monthly: 59,
-        yearly: 590
+        monthly: 4897,
+        yearly: 48970
       },
       visits: '5,000 Visits',
       description: 'For established businesses',
@@ -65,8 +65,8 @@ export default function PricingPlans() {
     {
       name: 'Business',
       price: {
-        monthly: 99,
-        yearly: 990
+        monthly: 8217,
+        yearly: 82170
       },
       visits: '15,000 Visits',
       description: 'For large scale operations',
@@ -87,8 +87,8 @@ export default function PricingPlans() {
     {
       name: 'Starter',
       price: {
-        monthly: 29,
-        yearly: 290 // ~17% discount
+        monthly: 2407,
+        yearly: 24070 // ~17% discount
       },
       description: 'Perfect for small businesses and startups',
       features: [
@@ -113,8 +113,8 @@ export default function PricingPlans() {
     {
       name: 'Professional',
       price: {
-        monthly: 79,
-        yearly: 790 // ~17% discount
+        monthly: 6557,
+        yearly: 65570 // ~17% discount
       },
       description: 'For growing businesses with multiple sites',
       features: [
@@ -141,8 +141,8 @@ export default function PricingPlans() {
     {
       name: 'Business',
       price: {
-        monthly: 199,
-        yearly: 1990 // ~17% discount
+        monthly: 16517,
+        yearly: 165170 // ~17% discount
       },
       description: 'For agencies and large enterprises',
       features: [
@@ -172,9 +172,9 @@ export default function PricingPlans() {
   ];
 
   const addOns = [
-    { name: 'Extra 100 scans', price: 10 },
-    { name: 'Extra 500 scans', price: 40 },
-    { name: 'Extra 1,000 scans', price: 70 }
+    { name: 'Extra 100 scans', price: 830 },
+    { name: 'Extra 500 scans', price: 3320 },
+    { name: 'Extra 1,000 scans', price: 5810 }
   ];
 
   // Get current plans based on service type
@@ -316,7 +316,7 @@ export default function PricingPlans() {
                 <div className="mb-6">
                   <div className="flex items-baseline">
                     <span className="text-5xl font-bold text-gray-900">
-                      ${plan.price[billingCycle]}
+                      ₹{plan.price[billingCycle].toLocaleString('en-IN')}
                     </span>
                     <span className="text-gray-600 ml-2">
                       /{billingCycle === 'monthly' ? 'month' : 'year'}
@@ -324,7 +324,7 @@ export default function PricingPlans() {
                   </div>
                   {billingCycle === 'yearly' && (
                     <p className="text-sm text-green-600 mt-1">
-                      ${Math.round(plan.price.yearly / 12)}/month billed annually
+                      ₹{Math.round(plan.price.yearly / 12).toLocaleString('en-IN')}/month billed annually
                     </p>
                   )}
                 </div>
@@ -372,7 +372,7 @@ export default function PricingPlans() {
                   <Zap className="w-5 h-5 text-indigo-600" />
                 </div>
                 <div className="text-3xl font-bold text-indigo-600 mb-2">
-                  ${addon.price}
+                  ₹{addon.price.toLocaleString('en-IN')}
                 </div>
                 <p className="text-sm text-gray-600">One-time purchase</p>
               </div>

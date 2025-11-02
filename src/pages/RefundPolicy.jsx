@@ -66,7 +66,7 @@ export default function RefundPolicy() {
             <p className="mb-3">If your refund request is approved:</p>
             <ul className="list-disc pl-6 space-y-2">
               <li>Refunds will be issued in the same cryptocurrency used for payment</li>
-              <li>Processing may take 7-14 business days</li>
+              <li>Refund credit may take 7-14 business days</li>
               <li>You are responsible for providing a valid wallet address</li>
               <li>Network fees may be deducted from the refund amount</li>
               <li>Exchange rate fluctuations are not our responsibility</li>
