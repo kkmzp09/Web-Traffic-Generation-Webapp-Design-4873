@@ -66,13 +66,16 @@ const SeoTraffic = () => {
     setRankedKeywords([]);
 
     try {
-      const response = await fetch('https://api.organitrafficboost.com/api/seo/keywords', {
+      const apiBase = import.meta.env.VITE_API_BASE || 'https://api.organitrafficboost.com';
+      const response = await fetch(`${apiBase}/api/seo/ranked-keywords`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          domain: campaignData.url
+          domain: campaignData.url,
+          limit: 50,
+          location: 'United States'
         })
       });
 
