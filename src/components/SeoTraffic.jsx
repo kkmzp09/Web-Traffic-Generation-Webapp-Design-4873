@@ -267,45 +267,106 @@ const SeoTraffic = () => {
 
                 {/* Ranked Keywords Results */}
                 {rankedKeywords.length > 0 && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-sm font-semibold text-gray-900">Ranked Keywords Found</h3>
-                      <span className="text-xs text-blue-600">{rankedKeywords.length} keywords</span>
-                    </div>
-                    <div className="space-y-2 max-h-64 overflow-y-auto">
-                      {rankedKeywords.map((kw, index) => (
-                        <div
-                          key={index}
-                          onClick={() => toggleKeywordSelection(kw.keyword)}
-                          className={`p-3 rounded-lg cursor-pointer transition-all ${
-                            selectedKeywords.includes(kw.keyword)
-                              ? 'bg-green-100 border-2 border-green-500'
-                              : 'bg-white border border-gray-200 hover:border-blue-400'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex-1">
-                              <p className="text-sm font-medium text-gray-900">{kw.keyword}</p>
-                              <div className="flex items-center space-x-3 mt-1 text-xs text-gray-600">
-                                <span>Rank: #{kw.position}</span>
-                                <span>Vol: {kw.volume}/mo</span>
-                                <span>Diff: {kw.difficulty}%</span>
-                              </div>
-                            </div>
-                            {selectedKeywords.includes(kw.keyword) && (
-                              <SafeIcon icon={FiCheckCircle} className="w-5 h-5 text-green-600" />
-                            )}
-                          </div>
+                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                    <div className="bg-gradient-to-r from-green-50 to-blue-50 px-4 py-3 border-b border-gray-200">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <SafeIcon icon={FiCheckCircle} className="w-5 h-5 text-green-600" />
+                          <h3 className="text-sm font-semibold text-gray-900">
+                            {rankedKeywords.length} Ranked Keywords Found
+                          </h3>
                         </div>
-                      ))}
+                        <span className="text-xs text-gray-600">Click to select keywords</span>
+                      </div>
                     </div>
+                    
+                    <div className="max-h-96 overflow-y-auto">
+                      <table className="w-full">
+                        <thead className="bg-gray-50 sticky top-0">
+                          <tr>
+                            <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                              Keyword
+                            </th>
+                            <th className="px-4 py-2 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                              Volume
+                            </th>
+                            <th className="px-4 py-2 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                              Position
+                            </th>
+                            <th className="px-4 py-2 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                              Traffic
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {rankedKeywords.map((kw, index) => (
+                            <tr
+                              key={index}
+                              onClick={() => toggleKeywordSelection(kw.keyword)}
+                              className={`cursor-pointer transition-colors ${
+                                selectedKeywords.includes(kw.keyword)
+                                  ? 'bg-green-50 hover:bg-green-100'
+                                  : 'hover:bg-gray-50'
+                              }`}
+                            >
+                              <td className="px-4 py-3">
+                                <div className="flex items-center space-x-2">
+                                  <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
+                                    selectedKeywords.includes(kw.keyword)
+                                      ? 'bg-green-600 border-green-600'
+                                      : 'border-gray-300'
+                                  }`}>
+                                    {selectedKeywords.includes(kw.keyword) && (
+                                      <SafeIcon icon={FiCheckCircle} className="w-3 h-3 text-white" />
+                                    )}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-gray-900 truncate">
+                                      {kw.keyword}
+                                    </p>
+                                    {kw.url && (
+                                      <p className="text-xs text-blue-600 truncate mt-0.5">
+                                        {kw.url.replace(/^https?:\/\/(www\.)?/, '')}
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                <span className="text-sm font-medium text-gray-900">
+                                  {kw.searchVolume ? kw.searchVolume.toLocaleString() : '0'}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                  kw.position <= 3 ? 'bg-green-100 text-green-800' :
+                                  kw.position <= 10 ? 'bg-blue-100 text-blue-800' :
+                                  'bg-yellow-100 text-yellow-800'
+                                }`}>
+                                  #{kw.position}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                <span className="text-sm text-gray-600">
+                                  {kw.trafficEstimate ? `~${kw.trafficEstimate}` : '-'}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    
                     {selectedKeywords.length > 0 && (
-                      <button
-                        onClick={applySelectedKeywords}
-                        className="mt-3 w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                      >
-                        Apply {selectedKeywords.length} Selected Keyword{selectedKeywords.length !== 1 ? 's' : ''}
-                      </button>
+                      <div className="bg-gray-50 px-4 py-3 border-t border-gray-200">
+                        <button
+                          onClick={applySelectedKeywords}
+                          className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-4 py-2.5 rounded-lg font-medium transition-all shadow-sm hover:shadow-md flex items-center justify-center space-x-2"
+                        >
+                          <SafeIcon icon={FiCheckCircle} className="w-4 h-4" />
+                          <span>Apply {selectedKeywords.length} Selected Keyword{selectedKeywords.length !== 1 ? 's' : ''}</span>
+                        </button>
+                      </div>
                     )}
                   </div>
                 )}
