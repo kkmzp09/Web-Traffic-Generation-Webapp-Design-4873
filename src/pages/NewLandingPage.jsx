@@ -6,6 +6,7 @@ import {
   FaEnvelope, FaPhone, FaMapMarkerAlt, FaTwitter, FaLinkedin,
   FaFacebook, FaGithub, FaStar, FaArrowUp
 } from 'react-icons/fa';
+import Logo from '../components/Logo';
 
 export default function NewLandingPage() {
   const navigate = useNavigate();
@@ -120,13 +121,8 @@ export default function NewLandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <div className="flex items-center space-x-3 cursor-pointer" onClick={() => navigate('/')}>
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <FaChartLine className="text-white text-xl" />
-              </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                OrganiTraffic
-              </span>
+            <div className="cursor-pointer" onClick={() => navigate('/')}>
+              <Logo className="w-10 h-10" textClassName="text-2xl" />
             </div>
 
             {/* Navigation Links */}
@@ -504,13 +500,8 @@ export default function NewLandingPage() {
           <div className="grid md:grid-cols-4 gap-8 mb-12">
             {/* Company Info */}
             <div>
-              <div className="flex items-center space-x-3 mb-4">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                  <FaChartLine className="text-white text-xl" />
-                </div>
-                <span className="text-xl font-bold text-white">
-                  OrganiTraffic
-                </span>
+              <div className="mb-4">
+                <Logo className="w-10 h-10" textClassName="text-xl text-white" />
               </div>
               <p className="text-gray-400 mb-4">
                 Professional traffic generation and SEO tools to grow your online presence.
