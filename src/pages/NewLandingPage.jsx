@@ -560,16 +560,6 @@ export default function NewLandingPage() {
                   </button>
                 </li>
                 <li>
-                  <button onClick={() => navigate('/privacy-policy')} className="text-gray-400 hover:text-white transition">
-                    Privacy Policy
-                  </button>
-                </li>
-                <li>
-                  <button onClick={() => navigate('/terms-of-service')} className="text-gray-400 hover:text-white transition">
-                    Terms of Service
-                  </button>
-                </li>
-                <li>
                   <button onClick={() => navigate('/refund-policy')} className="text-gray-400 hover:text-white transition">
                     Refund Policy
                   </button>
@@ -608,17 +598,6 @@ export default function NewLandingPage() {
               <p className="text-gray-400 text-sm mb-4 md:mb-0">
                 © 2025 OrganiTraffic. All rights reserved.
               </p>
-              <div className="flex space-x-6">
-                <a href="#" className="text-gray-400 hover:text-white text-sm transition">
-                  Privacy Policy
-                </a>
-                <a href="#" className="text-gray-400 hover:text-white text-sm transition">
-                  Terms of Service
-                </a>
-                <a href="#" className="text-gray-400 hover:text-white text-sm transition">
-                  Cookie Policy
-                </a>
-              </div>
             </div>
           </div>
         </div>

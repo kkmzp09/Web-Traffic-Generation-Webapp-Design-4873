@@ -20,7 +20,6 @@ import LoginPage from './pages/LoginPage.jsx';
 import LandingPage from './pages/LandingPage.jsx';
 import NewLandingPage from './pages/NewLandingPage.jsx';
 import PaymentPage from './pages/PaymentPage.jsx';
-import CryptoPaymentPage from './pages/CryptoPaymentPage.jsx';
 import ForgotPasswordPage from './pages/ForgotPasswordPage.jsx';
 import ResetPasswordPage from './pages/ResetPasswordPage.jsx';
 import Invoice from './components/Invoice';
@@ -88,7 +87,6 @@ function AppShell() {
         <Route path="/old-landing" element={<LandingPage />} />
         <Route path="/pricing" element={<PricingPlans />} />
         <Route path="/payment" element={<PaymentPage />} />
-        <Route path="/crypto-payment" element={<CryptoPaymentPage />} />
         
         <Route path="/login" element={<LoginPage onAuthClick={handleAuthClick} />} />
         <Route path="/forgot-password" element={<ForgotPasswordPage />} />

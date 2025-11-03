@@ -140,7 +140,7 @@ export default function Checkout() {
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Complete Your Purchase</h1>
-          <p className="text-gray-600">Secure checkout powered by cryptocurrency</p>
+          <p className="text-gray-600">Secure checkout</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -239,7 +239,7 @@ export default function Checkout() {
               <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg p-4 mb-4">
                 <p className="text-sm text-gray-700 mb-2">
                   <FiShield className="inline w-4 h-4 mr-1 text-green-600" />
-                  Secure cryptocurrency payment
+                  Secure payment
                 </p>
                 <p className="text-xs text-gray-600">
                   Your subscription will be activated immediately after payment confirmation.
@@ -277,7 +277,7 @@ export default function Checkout() {
                   <FiCheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="font-medium text-gray-900">Secure Payment</p>
-                    <p>Cryptocurrency payments are encrypted and secure</p>
+                    <p>All payments are encrypted and secure</p>
                   </div>
                 </div>
                 
