@@ -24,6 +24,8 @@ const SeoTraffic = () => {
   const [selectedKeywords, setSelectedKeywords] = useState([]);
   const [keywordSearchError, setKeywordSearchError] = useState(null);
   const [campaigns, setCampaigns] = useState([]);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   // Load campaigns from localStorage
   useEffect(() => {
@@ -190,7 +192,21 @@ const SeoTraffic = () => {
           console.log(`✅ Subscription updated: ${campaignData.trafficAmount} visits allocated, total used: ${newUsedVisits}`);
         }
         
-        alert(`SEO Campaign started! Job ID: ${result.jobId}\n\nThe campaign will:\n1. Search for your keywords on ${campaignData.searchEngine}\n2. Find your website in results\n3. Click and visit your site\n4. Browse naturally for ${campaignData.duration} seconds\n5. Navigate to internal pages`);
+        // Show success toast
+        setSuccessMessage(`Campaign started successfully! Generating ${campaignData.trafficAmount} visits from ${campaignData.searchEngine}.`);
+        setShowSuccessToast(true);
+        setTimeout(() => setShowSuccessToast(false), 5000);
+        
+        // Reset form
+        setCampaignData({
+          url: '',
+          keywords: '',
+          trafficAmount: 50,
+          duration: 120,
+          searchEngine: 'google'
+        });
+        setRankedKeywords([]);
+        setSelectedKeywords([]);
       } else {
         throw new Error(result.error || 'Failed to start campaign');
       }
@@ -520,6 +536,34 @@ const SeoTraffic = () => {
             </div>
           </div>
         </div>
+
+        {/* Success Toast Notification */}
+        {showSuccessToast && (
+          <div className="fixed bottom-6 right-6 z-50 animate-slide-up">
+            <div className="bg-white rounded-lg shadow-2xl border-l-4 border-green-500 p-4 max-w-md">
+              <div className="flex items-start space-x-3">
+                <div className="flex-shrink-0">
+                  <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                    <SafeIcon icon={FiCheckCircle} className="w-6 h-6 text-green-600" />
+                  </div>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-1">Campaign Started!</h3>
+                  <p className="text-sm text-gray-600">{successMessage}</p>
+                  <p className="text-xs text-gray-500 mt-2">Check the campaign history on the right to monitor progress.</p>
+                </div>
+                <button
+                  onClick={() => setShowSuccessToast(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
