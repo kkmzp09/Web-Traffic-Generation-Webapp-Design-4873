@@ -494,16 +494,16 @@ const SeoTraffic = () => {
                     
                     <div className="grid grid-cols-3 gap-4 text-sm">
                       <div>
-                        <p className="text-gray-500">Traffic</p>
-                        <p className="font-medium text-gray-900">{campaign.traffic}</p>
+                        <p className="text-gray-500">Visitors</p>
+                        <p className="font-medium text-gray-900">{campaign.visitors || 0}</p>
                       </div>
                       <div>
-                        <p className="text-gray-500">Success Rate</p>
-                        <p className="font-medium text-gray-900">{campaign.success.toFixed(1)}%</p>
+                        <p className="text-gray-500">Duration</p>
+                        <p className="font-medium text-gray-900">{campaign.duration}s</p>
                       </div>
                       <div>
-                        <p className="text-gray-500">Created</p>
-                        <p className="font-medium text-gray-900">{campaign.created}</p>
+                        <p className="text-gray-500">Engine</p>
+                        <p className="font-medium text-gray-900 capitalize">{campaign.searchEngine}</p>
                       </div>
                     </div>
                   </div>
