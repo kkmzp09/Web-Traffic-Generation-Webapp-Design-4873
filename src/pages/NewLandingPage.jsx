@@ -560,6 +560,16 @@ export default function NewLandingPage() {
                   </button>
                 </li>
                 <li>
+                  <button onClick={() => navigate('/privacy-policy')} className="text-gray-400 hover:text-white transition">
+                    Privacy Policy
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => navigate('/terms-of-service')} className="text-gray-400 hover:text-white transition">
+                    Terms of Service
+                  </button>
+                </li>
+                <li>
                   <button onClick={() => navigate('/refund-policy')} className="text-gray-400 hover:text-white transition">
                     Refund Policy
                   </button>
