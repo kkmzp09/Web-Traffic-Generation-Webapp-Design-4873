@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   FaChartLine, FaRocket, FaCheckCircle, FaArrowRight, FaRobot, 
   FaBolt, FaSearch, FaKeyboard, FaTachometerAlt, FaShieldAlt,
   FaEnvelope, FaPhone, FaMapMarkerAlt, FaTwitter, FaLinkedin,
-  FaFacebook, FaGithub, FaStar
+  FaFacebook, FaGithub, FaStar, FaArrowUp
 } from 'react-icons/fa';
 
 export default function NewLandingPage() {
@@ -14,6 +14,24 @@ export default function NewLandingPage() {
   const [scanning, setScanning] = useState(false);
   const [scanComplete, setScanComplete] = useState(false);
   const [showEmailCapture, setShowEmailCapture] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  // Show/hide scroll to top button based on scroll position
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 400);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
 
   const handleFreeScan = async () => {
     if (!scanUrl.trim()) return;
@@ -612,6 +630,17 @@ export default function NewLandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* Scroll to Top Button */}
+      {showScrollTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-8 right-8 bg-gradient-to-r from-blue-600 to-purple-600 text-white p-4 rounded-full shadow-2xl hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-110 z-50 animate-bounce"
+          aria-label="Scroll to top"
+        >
+          <FaArrowUp className="w-5 h-5" />
+        </button>
+      )}
 
       {/* CSS for animations */}
       <style jsx>{`
