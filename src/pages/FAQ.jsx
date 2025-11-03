@@ -36,7 +36,7 @@ export default function FAQ() {
       questions: [
         {
           question: 'What payment methods do you accept?',
-          answer: 'We accept cryptocurrency payments (USDT via Binance Smart Chain BEP-20). This ensures secure, fast, and private transactions for our global customers.'
+          answer: 'We accept payments through secure payment gateways including UPI, debit/credit cards, and net banking. All transactions are processed through RBI-compliant payment gateways ensuring secure and fast transactions.'
         },
         {
           question: 'Can I upgrade or downgrade my plan?',
@@ -52,7 +52,7 @@ export default function FAQ() {
         },
         {
           question: 'Are there any hidden fees?',
-          answer: 'No! All our pricing is transparent. The price you see is what you pay. Network fees for cryptocurrency transactions may apply based on blockchain conditions, but these are minimal and not controlled by us.'
+          answer: 'No! All our pricing is transparent. The price you see is what you pay. Standard payment gateway charges may apply as per your bank or payment provider.'
         }
       ]
     },
@@ -140,7 +140,7 @@ export default function FAQ() {
       questions: [
         {
           question: 'How do I get started?',
-          answer: 'Simply: (1) Create a free account, (2) Choose your plan (SEO Tools, Traffic Generation, or both), (3) Complete payment via cryptocurrency, (4) Start using our services immediately. For SEO tools, enter your website URL to begin scanning. For traffic, configure your campaign settings.'
+          answer: 'Simply: (1) Create a free account, (2) Choose your plan (SEO Tools, Traffic Generation, or both), (3) Complete payment via secure payment gateway, (4) Start using our services immediately. For SEO tools, enter your website URL to begin scanning. For traffic, configure your campaign settings.'
         },
         {
           question: 'Do I need technical knowledge to use your service?',

@@ -14,7 +14,7 @@ export default function PrivacyPolicy() {
             <p className="mb-3">We collect information you provide directly to us, including:</p>
             <ul className="list-disc pl-6 space-y-2">
               <li><strong>Account Information:</strong> Name, email address, and password when you create an account</li>
-              <li><strong>Payment Information:</strong> Cryptocurrency wallet addresses and transaction details for processing payments</li>
+              <li><strong>Payment Information:</strong> Payment details for processing transactions</li>
               <li><strong>Website Data:</strong> URLs and domains you submit for SEO analysis</li>
               <li><strong>Usage Data:</strong> Information about how you use our service, including scan history and analytics</li>
             </ul>
@@ -25,7 +25,7 @@ export default function PrivacyPolicy() {
             <p className="mb-3">We use the information we collect to:</p>
             <ul className="list-disc pl-6 space-y-2">
               <li>Provide, maintain, and improve our SEO analysis services</li>
-              <li>Process your cryptocurrency payments and manage subscriptions</li>
+              <li>Process your payments and manage subscriptions</li>
               <li>Send you technical notices, updates, and support messages</li>
               <li>Respond to your comments and questions</li>
               <li>Monitor and analyze trends, usage, and activities</li>
@@ -49,13 +49,13 @@ export default function PrivacyPolicy() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-3">5. Cryptocurrency Payments</h2>
-            <p className="mb-3">We process payments using cryptocurrency. Please note:</p>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-3">5. Payment Security</h2>
+            <p className="mb-3">We process payments securely through authorized payment gateways. Please note:</p>
             <ul className="list-disc pl-6 space-y-2">
-              <li>We do not store your private keys or seed phrases</li>
-              <li>All cryptocurrency transactions are recorded on public blockchains</li>
-              <li>Cryptocurrency payments are generally non-refundable</li>
-              <li>You are responsible for the security of your cryptocurrency wallet</li>
+              <li>We do not store your payment card details</li>
+              <li>All payment transactions are encrypted and secure</li>
+              <li>Payments are processed through RBI-compliant payment gateways</li>
+              <li>You are responsible for the security of your payment credentials</li>
             </ul>
           </section>
 

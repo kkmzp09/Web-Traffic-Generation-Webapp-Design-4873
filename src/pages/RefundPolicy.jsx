@@ -11,17 +11,17 @@ export default function RefundPolicy() {
         <div className="space-y-6 text-gray-700">
           <section>
             <h2 className="text-2xl font-semibold text-gray-900 mb-3">1. General Policy</h2>
-            <p>Due to the nature of digital services and cryptocurrency payments, all purchases made on OrganiTraffic are generally <strong>non-refundable</strong>. By purchasing a subscription or service, you acknowledge and agree to this policy.</p>
+            <p>Due to the nature of digital services, all purchases made on OrganiTraffic are generally <strong>non-refundable</strong>. By purchasing a subscription or service, you acknowledge and agree to this policy.</p>
           </section>
 
           <section>
-            <h2 className="text-2xl font-semibold text-gray-900 mb-3">2. Cryptocurrency Payments</h2>
-            <p className="mb-3">All payments are processed using cryptocurrency. Please note:</p>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-3">2. Payment Processing</h2>
+            <p className="mb-3">All payments are processed through secure payment gateways. Please note:</p>
             <ul className="list-disc pl-6 space-y-2">
-              <li>Cryptocurrency transactions are irreversible by nature</li>
-              <li>Once a payment is confirmed on the blockchain, it cannot be reversed</li>
-              <li>We do not have the ability to reverse cryptocurrency transactions</li>
+              <li>Payments are processed through RBI-compliant payment gateways</li>
+              <li>Once a payment is confirmed, it is processed immediately</li>
               <li>You are responsible for ensuring payment accuracy before confirming</li>
+              <li>All transactions are secure and encrypted</li>
             </ul>
           </section>
 
@@ -54,7 +54,7 @@ export default function RefundPolicy() {
             <p className="mb-3">If you believe you qualify for a refund under our exception policy:</p>
             <ol className="list-decimal pl-6 space-y-2">
               <li>Contact our support team at <strong>support@organitrafficboost.com</strong></li>
-              <li>Include your transaction ID and cryptocurrency wallet address</li>
+              <li>Include your transaction ID and payment details</li>
               <li>Provide a detailed explanation of why you're requesting a refund</li>
               <li>Include any relevant screenshots or documentation</li>
             </ol>
@@ -65,17 +65,17 @@ export default function RefundPolicy() {
             <h2 className="text-2xl font-semibold text-gray-900 mb-3">6. Refund Processing</h2>
             <p className="mb-3">If your refund request is approved:</p>
             <ul className="list-disc pl-6 space-y-2">
-              <li>Refunds will be issued in the same cryptocurrency used for payment</li>
-              <li>Refund credit may take 7-14 business days</li>
-              <li>You are responsible for providing a valid wallet address</li>
-              <li>Network fees may be deducted from the refund amount</li>
-              <li>Exchange rate fluctuations are not our responsibility</li>
+              <li>Refunds will be processed to your original payment method</li>
+              <li>Refund processing may take 7-14 business days</li>
+              <li>You are responsible for providing valid bank account details</li>
+              <li>Processing fees may be deducted from the refund amount</li>
+              <li>Refunds are subject to bank processing times</li>
             </ul>
           </section>
 
           <section>
             <h2 className="text-2xl font-semibold text-gray-900 mb-3">7. Chargebacks</h2>
-            <p>Due to the nature of cryptocurrency payments, traditional chargebacks are not possible. Any disputes must be resolved directly with OrganiTraffic through our support channels.</p>
+            <p>Any payment disputes must be resolved directly with OrganiTraffic through our support channels before initiating chargebacks with your bank or payment provider.</p>
           </section>
 
           <section>

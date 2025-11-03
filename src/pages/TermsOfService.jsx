@@ -50,17 +50,17 @@ export default function TermsOfService() {
             
             <p className="mb-3"><strong>4.2 Payment Terms:</strong></p>
             <ul className="list-disc pl-6 space-y-2">
-              <li>All payments are processed in cryptocurrency</li>
+              <li>All payments are processed through secure payment gateways</li>
               <li>Subscriptions are billed monthly or annually as selected</li>
               <li>Prices are subject to change with 30 days notice</li>
               <li>You are responsible for all applicable taxes</li>
-              <li>Cryptocurrency transactions are generally non-refundable</li>
+              <li>All transactions are processed as per RBI guidelines</li>
             </ul>
           </section>
 
           <section>
             <h2 className="text-2xl font-semibold text-gray-900 mb-3">5. Refund Policy</h2>
-            <p className="mb-3">Due to the nature of cryptocurrency payments and digital services:</p>
+            <p className="mb-3">Due to the nature of digital services:</p>
             <ul className="list-disc pl-6 space-y-2">
               <li>All sales are final and non-refundable</li>
               <li>You may cancel your subscription at any time</li>
