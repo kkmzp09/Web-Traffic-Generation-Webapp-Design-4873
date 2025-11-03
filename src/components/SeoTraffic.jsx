@@ -66,6 +66,12 @@ const SeoTraffic = () => {
     setRankedKeywords([]);
 
     try {
+      // Clean the URL - remove protocol and www
+      let cleanDomain = campaignData.url.trim();
+      cleanDomain = cleanDomain.replace(/^https?:\/\//i, ''); // Remove http:// or https://
+      cleanDomain = cleanDomain.replace(/^www\./i, ''); // Remove www.
+      cleanDomain = cleanDomain.replace(/\/.*$/, ''); // Remove any path after domain
+      
       const apiBase = import.meta.env.VITE_API_BASE || 'https://api.organitrafficboost.com';
       const response = await fetch(`${apiBase}/api/seo/ranked-keywords`, {
         method: 'POST',
@@ -73,7 +79,7 @@ const SeoTraffic = () => {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          domain: campaignData.url,
+          domain: cleanDomain,
           limit: 50,
           location: 'United States'
         })
