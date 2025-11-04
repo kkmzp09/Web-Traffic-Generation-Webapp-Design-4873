@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Check, Zap, TrendingUp, Star } from 'lucide-react';
+import PhonePeCheckout from './PhonePeCheckout';
 
 export default function PricingPlans() {
   const navigate = useNavigate();
   const [billingCycle, setBillingCycle] = useState('monthly'); // monthly or yearly
   const [serviceType, setServiceType] = useState('traffic'); // 'traffic' or 'seo'
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [selectedPlanForCheckout, setSelectedPlanForCheckout] = useState(null);
 
   // Traffic Generation Plans
   const trafficPlans = [
@@ -181,15 +184,14 @@ export default function PricingPlans() {
   const plans = serviceType === 'traffic' ? trafficPlans : seoPlans;
 
   const handleSelectPlan = (plan) => {
-    // Navigate to checkout or subscription page
-    navigate('/checkout', { 
-      state: { 
-        plan: plan.name, 
-        price: plan.price[billingCycle],
-        billingCycle,
-        serviceType
-      } 
+    // Show PhonePe checkout modal
+    setSelectedPlanForCheckout({
+      name: plan.name,
+      price: plan.price[billingCycle],
+      billingCycle,
+      serviceType
     });
+    setShowCheckout(true);
   };
 
   return (
@@ -449,6 +451,25 @@ export default function PricingPlans() {
           </button>
         </div>
       </div>
+
+      {/* PhonePe Checkout Modal */}
+      {showCheckout && selectedPlanForCheckout && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <PhonePeCheckout
+              planType={selectedPlanForCheckout.name.toLowerCase()}
+              onSuccess={() => {
+                setShowCheckout(false);
+                navigate('/payment-success');
+              }}
+              onCancel={() => {
+                setShowCheckout(false);
+                setSelectedPlanForCheckout(null);
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
