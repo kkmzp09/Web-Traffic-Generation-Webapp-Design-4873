@@ -31,9 +31,22 @@ export default function PhonePeCheckout({ planType, onSuccess, onCancel }) {
       return;
     }
 
+    // Check if user is logged in
+    if (!user || !user.id) {
+      setError('Please login to continue with payment');
+      return;
+    }
+
     try {
       setLoading(true);
       setError('');
+
+      console.log('Initiating payment:', {
+        userId: user.id,
+        planType,
+        amount,
+        phone
+      });
 
       // Initiate payment
       const response = await fetch('https://api.organitrafficboost.com/api/payment/phonepe/initiate', {
@@ -45,13 +58,22 @@ export default function PhonePeCheckout({ planType, onSuccess, onCancel }) {
           userId: user.id,
           planType,
           amount,
-          email: user.email,
-          name: user.name,
+          email: user.email || 'guest@organitrafficboost.com',
+          name: user.name || 'Guest User',
           phone
         })
       });
 
+      console.log('Response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error:', errorText);
+        throw new Error(`Payment initiation failed: ${response.status} - ${errorText}`);
+      }
+
       const data = await response.json();
+      console.log('Payment response:', data);
 
       if (data.success) {
         // Redirect to PhonePe payment page
@@ -62,7 +84,7 @@ export default function PhonePeCheckout({ planType, onSuccess, onCancel }) {
 
     } catch (error) {
       console.error('Payment error:', error);
-      setError(error.message);
+      setError(error.message || 'Failed to initiate payment. Please try again.');
       setLoading(false);
     }
   };
