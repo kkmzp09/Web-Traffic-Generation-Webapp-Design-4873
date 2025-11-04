@@ -57,12 +57,17 @@ router.post('/initiate', async (req, res) => {
     const transactionId = `TXN${Date.now()}${Math.random().toString(36).substr(2, 9)}`;
     const merchantTransactionId = `MT${transactionId}`;
 
+    // Check if user is a guest user (starts with 'guest_')
+    const isGuest = userId.startsWith('guest_');
+    
+    // For guest users, store userId as text instead of UUID
     // Create payment record in database
     await pool.query(
       `INSERT INTO payments 
-       (user_id, transaction_id, merchant_transaction_id, plan_type, amount, status, payment_method, created_at)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
-      [userId, transactionId, merchantTransactionId, planType, amount, 'pending', 'phonepe']
+       (user_id, transaction_id, merchant_transaction_id, plan_type, amount, status, payment_method, guest_email, guest_name, created_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+       ON CONFLICT DO NOTHING`,
+      [isGuest ? null : userId, transactionId, merchantTransactionId, planType, amount, 'pending', 'phonepe', email, name]
     );
 
     // PhonePe payment request payload

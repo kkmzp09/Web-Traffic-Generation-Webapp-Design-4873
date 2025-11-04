@@ -31,21 +31,22 @@ export default function PhonePeCheckout({ planType, onSuccess, onCancel }) {
       return;
     }
 
-    // Check if user is logged in
-    if (!user || !user.id) {
-      setError('Please login to continue with payment');
-      return;
-    }
-
     try {
       setLoading(true);
       setError('');
 
+      // Generate guest user ID if not logged in
+      const guestUserId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const userId = user?.id || guestUserId;
+      const userEmail = user?.email || `${phone}@guest.organitrafficboost.com`;
+      const userName = user?.name || 'Guest User';
+
       console.log('Initiating payment:', {
-        userId: user.id,
+        userId,
         planType,
         amount,
-        phone
+        phone,
+        isGuest: !user?.id
       });
 
       // Initiate payment
@@ -55,11 +56,11 @@ export default function PhonePeCheckout({ planType, onSuccess, onCancel }) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          userId: user.id,
+          userId,
           planType,
           amount,
-          email: user.email || 'guest@organitrafficboost.com',
-          name: user.name || 'Guest User',
+          email: userEmail,
+          name: userName,
           phone
         })
       });
