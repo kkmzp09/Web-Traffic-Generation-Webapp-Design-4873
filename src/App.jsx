@@ -38,6 +38,7 @@ import TermsOfService from './pages/TermsOfService';
 import RefundPolicy from './pages/RefundPolicy';
 import ContactUs from './pages/ContactUs';
 import FAQ from './pages/FAQ';
+import PaymentSuccess from './pages/PaymentSuccess';
 
 // --- Auth gate that matches your current context (user + loading) ---
 function RequireAuth({ children }) {

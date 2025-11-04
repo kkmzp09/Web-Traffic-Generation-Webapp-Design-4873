@@ -8,6 +8,9 @@ const { Resend } = require('resend');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Import PhonePe payment routes
+const phonepePaymentRouter = require('./phonepe-payment-api');
+
 // Initialize Resend
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -41,6 +44,9 @@ const emailLimiter = rateLimit({
 const FROM_EMAIL = process.env.FROM_EMAIL || 'onboarding@resend.dev';
 const COMPANY_NAME = process.env.COMPANY_NAME || 'OrganiTrafficBoost';
 const SUPPORT_EMAIL = process.env.SUPPORT_EMAIL || 'support@organitrafficboost.com';
+
+// Register PhonePe payment routes
+app.use('/api/payment/phonepe', phonepePaymentRouter);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
