@@ -172,12 +172,12 @@ export default function NewLandingPage() {
         </div>
       </header>
 
-      {/* Hero Section with Free Scan */}
-      <section className="relative bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-20 overflow-hidden">
+      {/* Hero Section - Brilliant Directories Style */}
+      <section className="relative bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 py-24 overflow-hidden">
         {/* Background decoration */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
+          <div className="absolute -top-40 -right-40 w-96 h-96 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
+          <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-orange-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -189,17 +189,40 @@ export default function NewLandingPage() {
             </div>
             */}
             
-            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
+            <h1 className="text-5xl md:text-7xl font-extrabold text-white mb-6 leading-tight">
               Boost Your Website's
-              <span className="block bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+              <span className="block text-orange-400">
                 Traffic & SEO Rankings
               </span>
             </h1>
             
-            <p className="text-xl text-gray-600 mb-12 max-w-3xl mx-auto">
-              Get real traffic, professional SEO tools, and AI-powered optimization. 
-              {/* Temporarily disabled: Start with a <strong>free 10-page SEO scan</strong> and see instant results! */}
+            <p className="text-xl md:text-2xl text-blue-100 mb-12 max-w-3xl mx-auto leading-relaxed">
+              Get real traffic, professional SEO tools, and AI-powered optimization to grow your online presence.
             </p>
+
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+              <button
+                onClick={() => navigate('/pricing')}
+                className="bg-orange-500 hover:bg-orange-600 text-white px-10 py-5 rounded-lg font-bold text-lg shadow-xl hover:shadow-2xl transition-all transform hover:scale-105 flex items-center justify-center gap-2"
+              >
+                <FaRocket />
+                Get Started Now
+              </button>
+              <button
+                onClick={() => navigate('/pricing')}
+                className="bg-white hover:bg-gray-100 text-blue-900 px-10 py-5 rounded-lg font-bold text-lg shadow-xl hover:shadow-2xl transition-all flex items-center justify-center gap-2"
+              >
+                <FaChartLine />
+                View Pricing
+              </button>
+            </div>
+
+            {/* Trust Badge */}
+            <div className="flex items-center justify-center gap-2 text-blue-200">
+              <FaCheckCircle className="text-green-400" />
+              <span className="text-lg">Trusted by 1000+ websites worldwide</span>
+            </div>
 
             {/* Free Scan Widget - TEMPORARILY DISABLED */}
             {false && (
@@ -303,12 +326,12 @@ export default function NewLandingPage() {
       </section>
 
       {/* Services Section */}
-      <section id="services" className="py-20 bg-white">
+      <section id="services" className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Our Services</h2>
+            <h2 className="text-5xl font-extrabold text-blue-900 mb-4">Powerful Features</h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Two powerful services to grow your online presence
+              Everything you need to boost your website's traffic and SEO rankings
             </p>
           </div>
 
@@ -498,129 +521,119 @@ export default function NewLandingPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer id="contact" className="bg-gray-900 text-gray-300 py-16">
+      {/* Footer - Brilliant Directories Style */}
+      <footer className="bg-blue-900 text-white py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
             {/* Company Info */}
             <div>
-              <div className="mb-4">
-                <Logo className="w-10 h-10" textClassName="text-xl text-white" />
+              <div className="mb-6">
+                <Logo className="h-10" />
               </div>
-              <p className="text-gray-400 mb-4">
+              <p className="text-blue-200 mb-6 leading-relaxed">
                 Professional traffic generation and SEO tools to grow your online presence.
               </p>
-              <div className="flex space-x-4">
-                <a href="#" className="text-gray-400 hover:text-white transition">
-                  <FaTwitter className="text-xl" />
+              <div className="flex gap-4">
+                <a href="#" className="text-blue-300 hover:text-orange-400 transition transform hover:scale-110">
+                  <FaTwitter size={24} />
                 </a>
-                <a href="#" className="text-gray-400 hover:text-white transition">
-                  <FaLinkedin className="text-xl" />
+                <a href="#" className="text-blue-300 hover:text-orange-400 transition transform hover:scale-110">
+                  <FaLinkedin size={24} />
                 </a>
-                <a href="#" className="text-gray-400 hover:text-white transition">
-                  <FaFacebook className="text-xl" />
+                <a href="#" className="text-blue-300 hover:text-orange-400 transition transform hover:scale-110">
+                  <FaFacebook size={24} />
                 </a>
-                <a href="#" className="text-gray-400 hover:text-white transition">
-                  <FaGithub className="text-xl" />
+                <a href="#" className="text-blue-300 hover:text-orange-400 transition transform hover:scale-110">
+                  <FaGithub size={24} />
                 </a>
               </div>
             </div>
 
-            {/* Services */}
+            {/* Features */}
             <div>
-              <h3 className="text-white font-bold mb-4">Services</h3>
-              <ul className="space-y-2">
+              <h3 className="text-xl font-bold mb-6 text-orange-400">Features</h3>
+              <ul className="space-y-3">
                 <li>
-                  <button onClick={() => navigate('/pricing')} className="text-gray-400 hover:text-white transition">
+                  <a href="#services" className="text-blue-200 hover:text-white transition hover:translate-x-1 inline-block">
                     Traffic Generation
-                  </button>
+                  </a>
                 </li>
                 <li>
-                  <button onClick={() => navigate('/pricing')} className="text-gray-400 hover:text-white transition">
+                  <a href="#services" className="text-blue-200 hover:text-white transition hover:translate-x-1 inline-block">
                     SEO Tools Suite
-                  </button>
+                  </a>
                 </li>
                 <li>
-                  <button onClick={() => navigate('/keyword-tracker')} className="text-gray-400 hover:text-white transition">
-                    Keyword Tracker
-                  </button>
+                  <a href="#services" className="text-blue-200 hover:text-white transition hover:translate-x-1 inline-block">
+                    AI-Powered Optimization
+                  </a>
                 </li>
                 <li>
-                  <button onClick={() => navigate('/keyword-research')} className="text-gray-400 hover:text-white transition">
-                    Keyword Research
-                  </button>
-                </li>
-                <li>
-                  <button onClick={() => navigate('/onpage-seo')} className="text-gray-400 hover:text-white transition">
-                    On-Page SEO
-                  </button>
+                  <a href="#pricing" className="text-blue-200 hover:text-white transition hover:translate-x-1 inline-block">
+                    Pricing Plans
+                  </a>
                 </li>
               </ul>
             </div>
 
             {/* Company */}
             <div>
-              <h3 className="text-white font-bold mb-4">Company</h3>
-              <ul className="space-y-2">
+              <h3 className="text-xl font-bold mb-6 text-orange-400">Company</h3>
+              <ul className="space-y-3">
                 <li>
-                  <button onClick={() => navigate('/pricing')} className="text-gray-400 hover:text-white transition">
-                    Pricing
-                  </button>
+                  <a href="#about" className="text-blue-200 hover:text-white transition hover:translate-x-1 inline-block">
+                    About Us
+                  </a>
                 </li>
                 <li>
-                  <button onClick={() => navigate('/contact')} className="text-gray-400 hover:text-white transition">
+                  <a href="#contact" className="text-blue-200 hover:text-white transition hover:translate-x-1 inline-block">
                     Contact Us
-                  </button>
+                  </a>
                 </li>
                 <li>
-                  <button onClick={() => navigate('/privacy-policy')} className="text-gray-400 hover:text-white transition">
-                    Privacy Policy
-                  </button>
+                  <a href="#" className="text-blue-200 hover:text-white transition hover:translate-x-1 inline-block">
+                    Success Stories
+                  </a>
                 </li>
                 <li>
-                  <button onClick={() => navigate('/terms-of-service')} className="text-gray-400 hover:text-white transition">
-                    Terms of Service
-                  </button>
-                </li>
-                <li>
-                  <button onClick={() => navigate('/refund-policy')} className="text-gray-400 hover:text-white transition">
-                    Refund Policy
-                  </button>
-                </li>
-                <li>
-                  <button onClick={() => navigate('/faq')} className="text-gray-400 hover:text-white transition">
-                    FAQ
-                  </button>
+                  <a href="#" className="text-blue-200 hover:text-white transition hover:translate-x-1 inline-block">
+                    Blog & Resources
+                  </a>
                 </li>
               </ul>
             </div>
 
-            {/* Contact */}
+            {/* Support */}
             <div>
-              <h3 className="text-white font-bold mb-4">Contact Us</h3>
+              <h3 className="text-xl font-bold mb-6 text-orange-400">Support</h3>
               <ul className="space-y-3">
-                <li className="flex items-start gap-3">
-                  <FaEnvelope className="text-blue-400 mt-1 flex-shrink-0" />
-                  <span className="text-gray-400">support@organitraffic.com</span>
+                <li className="flex items-center gap-3 text-blue-200 hover:text-white transition">
+                  <FaEnvelope className="text-orange-400" />
+                  <a href="mailto:support@organitrafficboost.com">support@organitrafficboost.com</a>
                 </li>
-                <li className="flex items-start gap-3">
-                  <FaPhone className="text-blue-400 mt-1 flex-shrink-0" />
-                  <span className="text-gray-400">6394370783</span>
+                <li className="flex items-center gap-3 text-blue-200 hover:text-white transition">
+                  <FaPhone className="text-orange-400" />
+                  <a href="tel:+18001234567">+1 (800) 123-4567</a>
                 </li>
-                <li className="flex items-start gap-3">
-                  <FaMapMarkerAlt className="text-blue-400 mt-1 flex-shrink-0" />
-                  <span className="text-gray-400">#35 Gangeshvarnath Jooj, Gangeshvarnath Road<br />Chunar, Mirzapur, Uttar Pradesh 231304</span>
+                <li className="flex items-center gap-3 text-blue-200">
+                  <FaMapMarkerAlt className="text-orange-400" />
+                  <span>San Francisco, CA</span>
                 </li>
               </ul>
             </div>
           </div>
 
           {/* Bottom Bar */}
-          <div className="border-t border-gray-800 pt-8">
-            <div className="flex flex-col md:flex-row justify-between items-center">
-              <p className="text-gray-400 text-sm mb-4 md:mb-0">
-                © 2025 OrganiTraffic. All rights reserved.
+          <div className="border-t border-blue-800 pt-8">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+              <p className="text-blue-200">
+                &copy; {new Date().getFullYear()} OrganiTraffic. All rights reserved.
               </p>
+              <div className="flex gap-6 text-sm">
+                <a href="#" className="text-blue-200 hover:text-white transition">Privacy Policy</a>
+                <a href="#" className="text-blue-200 hover:text-white transition">Terms of Service</a>
+                <a href="#" className="text-blue-200 hover:text-white transition">Cookie Policy</a>
+              </div>
             </div>
           </div>
         </div>
