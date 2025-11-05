@@ -4,26 +4,16 @@ import * as FiIcons from 'react-icons/fi';
 
 const { FiCreditCard, FiCheck, FiX, FiLoader } = FiIcons;
 
-const PLAN_PRICES = {
-  starter: 499,
-  professional: 1499,
-  business: 4999
-};
-
-const PLAN_NAMES = {
-  starter: 'Starter Plan',
-  professional: 'Professional Plan',
-  business: 'Business Plan'
-};
-
-export default function PhonePeCheckout({ planType, onSuccess, onCancel }) {
+export default function PhonePeCheckout({ plan, onSuccess, onCancel }) {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [phone, setPhone] = useState('');
 
-  const amount = PLAN_PRICES[planType] || 0;
-  const planName = PLAN_NAMES[planType] || planType;
+  // Use plan data passed from PricingPlans
+  const amount = plan?.price || 0;
+  const planName = plan?.name ? `${plan.name} Plan` : 'Plan';
+  const planType = plan?.name?.toLowerCase() || 'starter';
 
   const handlePayment = async () => {
     if (!phone || phone.length !== 10) {

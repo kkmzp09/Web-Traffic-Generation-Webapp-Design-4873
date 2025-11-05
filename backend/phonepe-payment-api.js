@@ -17,12 +17,18 @@ const PHONEPE_CONFIG = {
   merchantId: process.env.PHONEPE_MERCHANT_ID,
   saltKey: process.env.PHONEPE_SALT_KEY,
   saltIndex: process.env.PHONEPE_SALT_INDEX || '1',
-  apiUrl: process.env.PHONEPE_ENV === 'production' 
-    ? 'https://api.phonepe.com/apis/hermes'
-    : 'https://api-preprod.phonepe.com/apis/pg-sandbox',
+  // Use production API for production merchant IDs
+  apiUrl: 'https://api.phonepe.com/apis/hermes',
   redirectUrl: process.env.PHONEPE_REDIRECT_URL || 'https://organitrafficboost.com/payment-success',
   callbackUrl: process.env.PHONEPE_CALLBACK_URL || 'https://api.organitrafficboost.com/api/payment/phonepe/callback'
 };
+
+console.log('🔐 PhonePe Config:', {
+  merchantId: PHONEPE_CONFIG.merchantId,
+  apiUrl: PHONEPE_CONFIG.apiUrl,
+  saltIndex: PHONEPE_CONFIG.saltIndex,
+  env: process.env.PHONEPE_ENV
+});
 
 // Generate PhonePe checksum
 function generateChecksum(payload, endpoint) {
@@ -91,6 +97,13 @@ router.post('/initiate', async (req, res) => {
     // Generate checksum
     const checksum = generateChecksum(base64Payload, '/pg/v1/pay');
 
+    console.log('📤 PhonePe Request:', {
+      url: `${PHONEPE_CONFIG.apiUrl}/pg/v1/pay`,
+      merchantId: PHONEPE_CONFIG.merchantId,
+      transactionId: merchantTransactionId,
+      amount: paymentPayload.amount
+    });
+
     // Make request to PhonePe
     const response = await axios.post(
       `${PHONEPE_CONFIG.apiUrl}/pg/v1/pay`,
@@ -104,6 +117,8 @@ router.post('/initiate', async (req, res) => {
         }
       }
     );
+
+    console.log('📥 PhonePe Response:', response.data);
 
     if (response.data.success) {
       // Update payment record with PhonePe response
