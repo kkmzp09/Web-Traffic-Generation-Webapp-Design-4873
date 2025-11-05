@@ -182,10 +182,12 @@ export default function NewLandingPage() {
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
+            {/* Temporarily disabled free scan badge
             <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-full text-sm font-semibold mb-6">
               <FaStar className="text-yellow-500" />
               <span>Free SEO Scan - No Credit Card Required</span>
             </div>
+            */}
             
             <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
               Boost Your Website's
@@ -196,10 +198,11 @@ export default function NewLandingPage() {
             
             <p className="text-xl text-gray-600 mb-12 max-w-3xl mx-auto">
               Get real traffic, professional SEO tools, and AI-powered optimization. 
-              Start with a <strong>free 10-page SEO scan</strong> and see instant results!
+              {/* Temporarily disabled: Start with a <strong>free 10-page SEO scan</strong> and see instant results! */}
             </p>
 
-            {/* Free Scan Widget */}
+            {/* Free Scan Widget - TEMPORARILY DISABLED */}
+            {false && (
             <div className="max-w-2xl mx-auto">
               <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-200">
                 <div className="flex items-center gap-3 mb-6">
@@ -294,6 +297,7 @@ export default function NewLandingPage() {
                 )}
               </div>
             </div>
+            )}
           </div>
         </div>
       </section>
