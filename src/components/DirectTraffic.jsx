@@ -203,7 +203,7 @@ function DirectTraffic() {
               onChange={(e) => setVisitors(e.target.value)}
               className="w-full bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-green-500"
               min="1"
-              max="100"
+              max="10000"
               required
               disabled={isLoading || isRunning}
             />
