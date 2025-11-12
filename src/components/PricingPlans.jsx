@@ -6,7 +6,6 @@ import PhonePeCheckout from './PhonePeCheckout';
 export default function PricingPlans() {
   const navigate = useNavigate();
   const [billingCycle, setBillingCycle] = useState('monthly'); // monthly or yearly
-  const [serviceType, setServiceType] = useState('traffic'); // 'traffic' or 'seo'
   const [showCheckout, setShowCheckout] = useState(false);
   const [selectedPlanForCheckout, setSelectedPlanForCheckout] = useState(null);
 
@@ -85,111 +84,13 @@ export default function PricingPlans() {
     }
   ];
 
-  // SEO Tools Plans
-  const seoPlans = [
-    {
-      name: 'Starter',
-      price: {
-        monthly: 2407,
-        yearly: 24070 // ~17% discount
-      },
-      description: 'Perfect for small businesses and startups',
-      features: [
-        '100 page scans per month',
-        'AI-powered SEO fixes (GPT-4)',
-        'Auto-apply widget',
-        '18 SEO categories',
-        '10 tracked keywords',
-        '50 keyword research queries/month',
-        'Basic support',
-        'Email reports',
-        'Manual fix option'
-      ],
-      limits: {
-        pageScans: 100,
-        trackedKeywords: 10,
-        keywordResearch: 50
-      },
-      popular: false,
-      color: 'indigo'
-    },
-    {
-      name: 'Professional',
-      price: {
-        monthly: 6557,
-        yearly: 65570 // ~17% discount
-      },
-      description: 'For growing businesses with multiple sites',
-      features: [
-        '500 page scans per month',
-        'AI-powered SEO fixes (GPT-4)',
-        'Auto-apply widget',
-        '18 SEO categories',
-        '50 tracked keywords',
-        '200 keyword research queries/month',
-        'Priority support',
-        'Advanced analytics',
-        'Scheduled scans',
-        'API access',
-        'White-label reports'
-      ],
-      limits: {
-        pageScans: 500,
-        trackedKeywords: 50,
-        keywordResearch: 200
-      },
-      popular: true,
-      color: 'purple'
-    },
-    {
-      name: 'Business',
-      price: {
-        monthly: 16517,
-        yearly: 165170 // ~17% discount
-      },
-      description: 'For agencies and large enterprises',
-      features: [
-        '2,500 page scans per month',
-        'AI-powered SEO fixes (GPT-4)',
-        'Auto-apply widget',
-        '18 SEO categories',
-        '200 tracked keywords',
-        'Unlimited keyword research',
-        'Dedicated support',
-        'Advanced analytics',
-        'Scheduled scans',
-        'Full API access',
-        'White-label solution',
-        'Custom integrations',
-        'Team collaboration',
-        'Priority processing'
-      ],
-      limits: {
-        pageScans: 2500,
-        trackedKeywords: 200,
-        keywordResearch: -1 // -1 = unlimited
-      },
-      popular: false,
-      color: 'green'
-    }
-  ];
-
-  const addOns = [
-    { name: 'Extra 100 scans', price: 830 },
-    { name: 'Extra 500 scans', price: 3320 },
-    { name: 'Extra 1,000 scans', price: 5810 }
-  ];
-
-  // Get current plans based on service type
-  const plans = serviceType === 'traffic' ? trafficPlans : seoPlans;
-
   const handleSelectPlan = (plan) => {
     // Show PhonePe checkout modal
     setSelectedPlanForCheckout({
       name: plan.name,
       price: plan.price[billingCycle],
       billingCycle,
-      serviceType
+      serviceType: 'traffic'
     });
     setShowCheckout(true);
   };
@@ -210,64 +111,11 @@ export default function PricingPlans() {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold text-gray-900 mb-4">
-            Simple, Transparent Pricing
+            Website Traffic Plans
           </h1>
           <p className="text-xl text-gray-600 mb-8">
-            Choose the plan that fits your needs. No hidden fees, cancel anytime.
+            Get real, high-quality visitors to boost your rankings. No hidden fees, cancel anytime.
           </p>
-
-          {/* Service Type Selector */}
-          <div className="flex justify-center mb-8">
-            <div className="inline-flex bg-white rounded-xl shadow-lg p-2 border border-gray-200">
-              <button
-                data-service="traffic"
-                onClick={() => setServiceType('traffic')}
-                className={`px-8 py-3 rounded-lg font-semibold transition-all duration-200 ${
-                  serviceType === 'traffic'
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <Zap className="w-5 h-5" />
-                  <span>Traffic Generation</span>
-                </div>
-              </button>
-              <button
-                data-service="seo"
-                onClick={() => setServiceType('seo')}
-                className={`px-8 py-3 rounded-lg font-semibold transition-all duration-200 ${
-                  serviceType === 'seo'
-                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md'
-                    : 'text-gray-600 hover:text-gray-900'
-                }`}
-              >
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5" />
-                  <span>SEO Tools Suite</span>
-                </div>
-              </button>
-            </div>
-          </div>
-
-          {/* Service Description */}
-          <div className="max-w-3xl mx-auto mb-8">
-            {serviceType === 'traffic' ? (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-blue-900 font-medium">
-                  🚀 <strong>Traffic Generation Service:</strong> Get real, high-quality visitors to your website. 
-                  Perfect for boosting rankings, testing campaigns, and increasing visibility.
-                </p>
-              </div>
-            ) : (
-              <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                <p className="text-purple-900 font-medium">
-                  🔍 <strong>SEO Tools Suite:</strong> Professional SEO tools including keyword tracking, 
-                  on-page SEO analysis, keyword research, and automated fixes powered by AI.
-                </p>
-              </div>
-            )}
-          </div>
 
           {/* Billing Toggle */}
           <div className="inline-flex items-center bg-white rounded-full p-1 shadow-md">
@@ -298,8 +146,8 @@ export default function PricingPlans() {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
-          {plans.map((plan) => (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-16">
+          {trafficPlans.map((plan) => (
             <div
               key={plan.name}
               className={`relative bg-white rounded-2xl shadow-xl border-2 transition-all hover:scale-105 ${
@@ -367,32 +215,6 @@ export default function PricingPlans() {
           ))}
         </div>
 
-        {/* Add-ons - Only for SEO Plans */}
-        {serviceType === 'seo' && (
-          <div className="bg-white rounded-2xl shadow-lg p-8 mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-6 text-center">
-              Need More Scans? Add Extra Credits
-            </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {addOns.map((addon) => (
-              <div
-                key={addon.name}
-                className="border-2 border-gray-200 rounded-xl p-6 hover:border-indigo-500 transition-all"
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-gray-900">{addon.name}</h3>
-                  <Zap className="w-5 h-5 text-indigo-600" />
-                </div>
-                <div className="text-3xl font-bold text-indigo-600 mb-2">
-                  ₹{addon.price.toLocaleString('en-IN')}
-                </div>
-                <p className="text-sm text-gray-600">One-time purchase</p>
-              </div>
-            ))}
-          </div>
-        </div>
-        )}
-
         {/* Features Comparison */}
         <div className="bg-white rounded-2xl shadow-lg p-8">
           <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
@@ -404,10 +226,10 @@ export default function PricingPlans() {
                 <Zap className="w-8 h-8 text-indigo-600" />
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">
-                AI-Powered Fixes
+                100% Real Traffic
               </h3>
               <p className="text-gray-600">
-                OpenAI GPT-4 generates optimized content for all SEO issues
+                All visitors are real people, not bots. Fully compliant with search engine guidelines.
               </p>
             </div>
             <div className="text-center">
@@ -415,10 +237,10 @@ export default function PricingPlans() {
                 <TrendingUp className="w-8 h-8 text-purple-600" />
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">
-                Auto-Apply Widget
+                Real-Time Analytics
               </h3>
               <p className="text-gray-600">
-                Automatically apply fixes to your website with our JavaScript widget
+                Monitor your traffic with live dashboards showing visitor behavior and engagement.
               </p>
             </div>
             <div className="text-center">
@@ -426,10 +248,10 @@ export default function PricingPlans() {
                 <Check className="w-8 h-8 text-green-600" />
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">
-                18 SEO Categories
+                Geo-Targeting
               </h3>
               <p className="text-gray-600">
-                Comprehensive coverage from titles to performance optimization
+                Target visitors from specific countries and regions to match your audience.
               </p>
             </div>
           </div>

@@ -301,6 +301,192 @@ export default function NewLandingPage() {
         </div>
       </section>
 
+      {/* Pricing Section */}
+      <section id="pricing" className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Simple, Transparent Pricing</h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Choose the perfect plan for your needs. All plans include geo-targeting and real-time analytics.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-4 gap-6">
+            {/* Starter Plan */}
+            <div className="bg-white rounded-2xl shadow-lg border-2 border-gray-200 p-8 hover:shadow-2xl transition-all hover:scale-105">
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Starter</h3>
+              <p className="text-gray-600 mb-6">Perfect for testing</p>
+              <div className="mb-6">
+                <div className="flex items-baseline">
+                  <span className="text-4xl font-bold text-gray-900">₹1,245</span>
+                  <span className="text-gray-600 ml-2">/month</span>
+                </div>
+              </div>
+              <div className="mb-6">
+                <div className="text-3xl font-bold text-blue-600 mb-2">500</div>
+                <div className="text-gray-600">Quality Visits</div>
+              </div>
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-center gap-2">
+                  <FaCheckCircle className="text-green-500" />
+                  <span className="text-gray-700">Basic geo-targeting</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <FaCheckCircle className="text-green-500" />
+                  <span className="text-gray-700">Real-time analytics</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <FaCheckCircle className="text-green-500" />
+                  <span className="text-gray-700">Email support</span>
+                </li>
+              </ul>
+              <button
+                onClick={() => navigate('/pricing')}
+                className="w-full bg-gray-900 text-white py-3 rounded-lg hover:bg-gray-800 transition font-semibold"
+              >
+                Get Started
+              </button>
+            </div>
+
+            {/* Growth Plan - Popular */}
+            <div className="bg-white rounded-2xl shadow-2xl border-2 border-purple-500 p-8 relative hover:scale-105 transition-all">
+              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                <span className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
+                  <FaStar className="w-4 h-4" />
+                  Most Popular
+                </span>
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Growth</h3>
+              <p className="text-gray-600 mb-6">For growing businesses</p>
+              <div className="mb-6">
+                <div className="flex items-baseline">
+                  <span className="text-4xl font-bold text-gray-900">₹2,905</span>
+                  <span className="text-gray-600 ml-2">/month</span>
+                </div>
+              </div>
+              <div className="mb-6">
+                <div className="text-3xl font-bold text-purple-600 mb-2">2,000</div>
+                <div className="text-gray-600">Quality Visits</div>
+              </div>
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-center gap-2">
+                  <FaCheckCircle className="text-green-500" />
+                  <span className="text-gray-700">Advanced geo-targeting</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <FaCheckCircle className="text-green-500" />
+                  <span className="text-gray-700">Priority support</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <FaCheckCircle className="text-green-500" />
+                  <span className="text-gray-700">Multiple campaigns</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <FaCheckCircle className="text-green-500" />
+                  <span className="text-gray-700">Traffic scheduling</span>
+                </li>
+              </ul>
+              <button
+                onClick={() => navigate('/pricing')}
+                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-3 rounded-lg hover:shadow-lg transition font-semibold"
+              >
+                Get Started
+              </button>
+            </div>
+
+            {/* Professional Plan */}
+            <div className="bg-white rounded-2xl shadow-lg border-2 border-gray-200 p-8 hover:shadow-2xl transition-all hover:scale-105">
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Professional</h3>
+              <p className="text-gray-600 mb-6">For established sites</p>
+              <div className="mb-6">
+                <div className="flex items-baseline">
+                  <span className="text-4xl font-bold text-gray-900">₹4,897</span>
+                  <span className="text-gray-600 ml-2">/month</span>
+                </div>
+              </div>
+              <div className="mb-6">
+                <div className="text-3xl font-bold text-indigo-600 mb-2">5,000</div>
+                <div className="text-gray-600">Quality Visits</div>
+              </div>
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-center gap-2">
+                  <FaCheckCircle className="text-green-500" />
+                  <span className="text-gray-700">Priority delivery</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <FaCheckCircle className="text-green-500" />
+                  <span className="text-gray-700">Advanced analytics</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <FaCheckCircle className="text-green-500" />
+                  <span className="text-gray-700">24/7 support</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <FaCheckCircle className="text-green-500" />
+                  <span className="text-gray-700">Custom sources</span>
+                </li>
+              </ul>
+              <button
+                onClick={() => navigate('/pricing')}
+                className="w-full bg-gray-900 text-white py-3 rounded-lg hover:bg-gray-800 transition font-semibold"
+              >
+                Get Started
+              </button>
+            </div>
+
+            {/* Business Plan */}
+            <div className="bg-white rounded-2xl shadow-lg border-2 border-gray-200 p-8 hover:shadow-2xl transition-all hover:scale-105">
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Business</h3>
+              <p className="text-gray-600 mb-6">For large operations</p>
+              <div className="mb-6">
+                <div className="flex items-baseline">
+                  <span className="text-4xl font-bold text-gray-900">₹8,217</span>
+                  <span className="text-gray-600 ml-2">/month</span>
+                </div>
+              </div>
+              <div className="mb-6">
+                <div className="text-3xl font-bold text-green-600 mb-2">15,000</div>
+                <div className="text-gray-600">Quality Visits</div>
+              </div>
+              <ul className="space-y-3 mb-8">
+                <li className="flex items-center gap-2">
+                  <FaCheckCircle className="text-green-500" />
+                  <span className="text-gray-700">Fastest delivery</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <FaCheckCircle className="text-green-500" />
+                  <span className="text-gray-700">Dedicated manager</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <FaCheckCircle className="text-green-500" />
+                  <span className="text-gray-700">Unlimited campaigns</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <FaCheckCircle className="text-green-500" />
+                  <span className="text-gray-700">API access</span>
+                </li>
+              </ul>
+              <button
+                onClick={() => navigate('/pricing')}
+                className="w-full bg-gray-900 text-white py-3 rounded-lg hover:bg-gray-800 transition font-semibold"
+              >
+                Get Started
+              </button>
+            </div>
+          </div>
+
+          {/* View All Plans Link */}
+          <div className="text-center mt-12">
+            <button
+              onClick={() => navigate('/pricing')}
+              className="text-blue-600 hover:text-blue-700 font-semibold text-lg flex items-center gap-2 mx-auto"
+            >
+              View All Plans & Details <FaArrowRight />
+            </button>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
