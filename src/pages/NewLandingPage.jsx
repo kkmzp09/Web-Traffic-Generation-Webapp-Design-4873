@@ -10,11 +10,6 @@ import Logo from '../components/Logo';
 
 export default function NewLandingPage() {
   const navigate = useNavigate();
-  const [scanUrl, setScanUrl] = useState('');
-  const [scanEmail, setScanEmail] = useState('');
-  const [scanning, setScanning] = useState(false);
-  const [scanComplete, setScanComplete] = useState(false);
-  const [showEmailCapture, setShowEmailCapture] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
 
   // Show/hide scroll to top button based on scroll position
@@ -32,86 +27,6 @@ export default function NewLandingPage() {
       top: 0,
       behavior: 'smooth'
     });
-  };
-
-  const handleFreeScan = async () => {
-    if (!scanUrl.trim()) return;
-    
-    setScanning(true);
-    setShowEmailCapture(false);
-    
-    try {
-      const apiBase = import.meta.env.VITE_API_BASE || 'https://api.organitrafficboost.com';
-      
-      // Use SEO Automation scan for immediate results
-      const response = await fetch(`${apiBase}/api/seo/scan-page`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          url: scanUrl,
-          userId: 'free-scan-user'
-        })
-      });
-      
-      const data = await response.json();
-      
-      if (data.success && data.scanId) {
-        // Store scan ID for email
-        localStorage.setItem('freeScanId', data.scanId);
-        setScanning(false);
-        setShowEmailCapture(true);
-      } else {
-        alert('Scan failed: ' + (data.error || 'Unknown error'));
-        setScanning(false);
-      }
-    } catch (error) {
-      console.error('Free scan error:', error);
-      alert('Failed to start scan. Please try again.');
-      setScanning(false);
-    }
-  };
-
-  const handleEmailSubmit = async () => {
-    if (!scanEmail.trim()) return;
-    
-    try {
-      const apiBase = import.meta.env.VITE_API_BASE || 'https://api.organitrafficboost.com';
-      const scanId = localStorage.getItem('freeScanId');
-      
-      console.log('Sending email with:', { email: scanEmail, scanId, url: scanUrl });
-      
-      // Send email with scan results
-      const response = await fetch(`${apiBase}/api/seo/send-scan-email`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: scanEmail,
-          scanId: scanId,
-          url: scanUrl
-        })
-      });
-      
-      const data = await response.json();
-      console.log('Email API response:', data);
-      
-      if (data.success) {
-        setScanComplete(true);
-        localStorage.removeItem('freeScanId');
-        // Reset after 5 seconds
-        setTimeout(() => {
-          setScanUrl('');
-          setScanEmail('');
-          setScanComplete(false);
-          setShowEmailCapture(false);
-        }, 5000);
-      } else {
-        console.error('Email send failed:', data.error);
-        alert('Failed to send email: ' + (data.error || 'Unknown error'));
-      }
-    } catch (error) {
-      console.error('Email send error:', error);
-      alert('Failed to send email. Please try again.');
-    }
   };
 
   return (
@@ -172,227 +87,141 @@ export default function NewLandingPage() {
         </div>
       </header>
 
-      {/* Hero Section with Free Scan */}
-      <section className="relative bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-20 overflow-hidden">
+      {/* Hero Section - Traffic Generation Focus */}
+      <section className="relative bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 py-24 overflow-hidden">
         {/* Background decoration */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-blue-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob"></div>
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-indigo-300 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000"></div>
         </div>
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            {/* Temporarily disabled free scan badge
+          <div className="text-center">
             <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-full text-sm font-semibold mb-6">
-              <FaStar className="text-yellow-500" />
-              <span>Free SEO Scan - No Credit Card Required</span>
+              <FaBolt className="text-yellow-500" />
+              <span>Real Traffic • Real Results • Real Growth</span>
             </div>
-            */}
             
-            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
-              Boost Your Website's
-              <span className="block bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Traffic & SEO Rankings
+            <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6">
+              Drive Quality Traffic
+              <span className="block bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                To Your Website
               </span>
             </h1>
             
-            <p className="text-xl text-gray-600 mb-12 max-w-3xl mx-auto">
-              Get real traffic, professional SEO tools, and AI-powered optimization. 
-              {/* Temporarily disabled: Start with a <strong>free 10-page SEO scan</strong> and see instant results! */}
+            <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-4xl mx-auto">
+              Get <strong>real, high-quality visitors</strong> to boost your rankings, test campaigns, and increase visibility. 
+              Start from just <strong>₹1,245/month</strong> for 500 visits.
             </p>
 
-            {/* Free Scan Widget - TEMPORARILY DISABLED */}
-            {false && (
-            <div className="max-w-2xl mx-auto">
-              <div className="bg-white rounded-2xl shadow-2xl p-8 border border-gray-200">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center">
-                    <FaSearch className="text-white text-xl" />
-                  </div>
-                  <div className="text-left">
-                    <h3 className="text-2xl font-bold text-gray-900">Free SEO Scan</h3>
-                    <p className="text-gray-600">Analyze 10 pages instantly - No signup required</p>
-                  </div>
-                </div>
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row justify-center gap-4 mb-16">
+              <button
+                onClick={() => navigate('/pricing')}
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-10 py-5 rounded-xl hover:shadow-2xl transition font-bold text-lg flex items-center justify-center gap-3"
+              >
+                <FaRocket className="text-xl" />
+                View Pricing Plans
+              </button>
+              <button
+                onClick={() => navigate('/login')}
+                className="bg-white text-blue-600 border-2 border-blue-600 px-10 py-5 rounded-xl hover:bg-blue-50 transition font-bold text-lg flex items-center justify-center gap-3"
+              >
+                <FaChartLine className="text-xl" />
+                Start Free Trial
+              </button>
+            </div>
 
-                {!showEmailCapture && !scanComplete && (
-                  <div className="space-y-4">
-                    <div className="relative">
-                      <input
-                        type="url"
-                        placeholder="Enter your website URL (e.g., https://example.com)"
-                        value={scanUrl}
-                        onChange={(e) => setScanUrl(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleFreeScan()}
-                        className="w-full px-6 py-4 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none text-lg"
-                        disabled={scanning}
-                      />
-                    </div>
-                    <button
-                      onClick={handleFreeScan}
-                      disabled={scanning || !scanUrl.trim()}
-                      className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-lg hover:shadow-lg transition font-semibold text-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {scanning ? (
-                        <>
-                          <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                          Scanning Your Website...
-                        </>
-                      ) : (
-                        <>
-                          <FaRocket />
-                          Scan My Website for Free
-                        </>
-                      )}
-                    </button>
-                    <p className="text-sm text-gray-500">
-                      ✓ Instant results • ✓ 18 SEO categories • ✓ AI-powered recommendations
-                    </p>
-                  </div>
-                )}
-
-                {showEmailCapture && !scanComplete && (
-                  <div className="space-y-4">
-                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-                      <p className="text-green-800 font-medium">✓ Scan Complete! Enter your email to get the full report.</p>
-                    </div>
-                    <div className="relative">
-                      <input
-                        type="email"
-                        placeholder="Enter your email address"
-                        value={scanEmail}
-                        onChange={(e) => setScanEmail(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleEmailSubmit()}
-                        className="w-full px-6 py-4 border-2 border-gray-300 rounded-lg focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none text-lg"
-                      />
-                    </div>
-                    <button
-                      onClick={handleEmailSubmit}
-                      disabled={!scanEmail.trim()}
-                      className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white px-8 py-4 rounded-lg hover:shadow-lg transition font-semibold text-lg flex items-center justify-center gap-2 disabled:opacity-50"
-                    >
-                      <FaEnvelope />
-                      Send Me the Report
-                    </button>
-                    <p className="text-sm text-gray-500">
-                      We'll email you a detailed SEO report with actionable recommendations
-                    </p>
-                  </div>
-                )}
-
-                {scanComplete && (
-                  <div className="text-center py-8">
-                    <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <FaCheckCircle className="text-green-600 text-3xl" />
-                    </div>
-                    <h3 className="text-2xl font-bold text-gray-900 mb-2">Report Sent!</h3>
-                    <p className="text-gray-600 mb-6">Check your email for the detailed SEO analysis.</p>
-                    <button
-                      onClick={() => navigate('/pricing')}
-                      className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-lg hover:shadow-lg transition font-semibold"
-                    >
-                      View Pricing Plans
-                    </button>
-                  </div>
-                )}
+            {/* Stats Section */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+              <div className="bg-white rounded-xl p-6 shadow-lg">
+                <div className="text-4xl font-bold text-blue-600 mb-2">500-15K</div>
+                <div className="text-gray-600 font-medium">Visits Per Month</div>
+              </div>
+              <div className="bg-white rounded-xl p-6 shadow-lg">
+                <div className="text-4xl font-bold text-indigo-600 mb-2">100%</div>
+                <div className="text-gray-600 font-medium">Real Visitors</div>
+              </div>
+              <div className="bg-white rounded-xl p-6 shadow-lg">
+                <div className="text-4xl font-bold text-purple-600 mb-2">24/7</div>
+                <div className="text-gray-600 font-medium">Support Available</div>
               </div>
             </div>
-            )}
           </div>
         </div>
       </section>
 
-      {/* Services Section */}
+      {/* How It Works Section */}
       <section id="services" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Our Services</h2>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">How It Works</h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Two powerful services to grow your online presence
+              Get started with quality traffic in just 3 simple steps
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* Traffic Generation Service */}
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 border-2 border-blue-200 hover:shadow-xl transition">
-              <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center mb-6">
-                <FaBolt className="text-white text-2xl" />
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Step 1 */}
+            <div className="text-center">
+              <div className="w-20 h-20 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6 text-white text-3xl font-bold">
+                1
               </div>
-              <h3 className="text-3xl font-bold text-gray-900 mb-4">Traffic Generation</h3>
-              <p className="text-gray-700 mb-6 text-lg">
-                Get real, high-quality visitors to your website. Boost rankings, test campaigns, and increase visibility.
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Choose Your Plan</h3>
+              <p className="text-gray-600 text-lg">
+                Select from 500 to 15,000 visits per month based on your needs. All plans include geo-targeting and real-time analytics.
               </p>
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-center gap-3">
-                  <FaCheckCircle className="text-blue-600 flex-shrink-0" />
-                  <span className="text-gray-700">500 to 15,000 quality visits per month</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <FaCheckCircle className="text-blue-600 flex-shrink-0" />
-                  <span className="text-gray-700">Advanced geo-targeting</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <FaCheckCircle className="text-blue-600 flex-shrink-0" />
-                  <span className="text-gray-700">Real-time analytics</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <FaCheckCircle className="text-blue-600 flex-shrink-0" />
-                  <span className="text-gray-700">Multiple campaigns</span>
-                </li>
-              </ul>
-              <button
-                onClick={() => {
-                  navigate('/pricing');
-                  setTimeout(() => {
-                    const element = document.querySelector('[data-service="traffic"]');
-                    element?.click();
-                  }, 100);
-                }}
-                className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition font-semibold flex items-center justify-center gap-2"
-              >
-                View Traffic Plans <FaArrowRight />
-              </button>
             </div>
 
-            {/* SEO Tools Service */}
-            <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-8 border-2 border-purple-200 hover:shadow-xl transition">
-              <div className="w-16 h-16 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl flex items-center justify-center mb-6">
-                <FaRobot className="text-white text-2xl" />
+            {/* Step 2 */}
+            <div className="text-center">
+              <div className="w-20 h-20 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6 text-white text-3xl font-bold">
+                2
               </div>
-              <h3 className="text-3xl font-bold text-gray-900 mb-4">SEO Tools Suite</h3>
-              <p className="text-gray-700 mb-6 text-lg">
-                Professional SEO tools with AI-powered optimization. Track keywords, analyze pages, and fix issues automatically.
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Set Up Campaign</h3>
+              <p className="text-gray-600 text-lg">
+                Enter your website URL, choose your target locations, and configure your traffic preferences in minutes.
               </p>
-              <ul className="space-y-3 mb-8">
-                <li className="flex items-center gap-3">
-                  <FaCheckCircle className="text-purple-600 flex-shrink-0" />
-                  <span className="text-gray-700">On-page SEO analysis & auto-fix</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <FaCheckCircle className="text-purple-600 flex-shrink-0" />
-                  <span className="text-gray-700">Keyword tracking & rankings</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <FaCheckCircle className="text-purple-600 flex-shrink-0" />
-                  <span className="text-gray-700">Keyword research & SERP analysis</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <FaCheckCircle className="text-purple-600 flex-shrink-0" />
-                  <span className="text-gray-700">AI-powered recommendations (GPT-4)</span>
-                </li>
-              </ul>
-              <button
-                onClick={() => {
-                  navigate('/pricing');
-                  setTimeout(() => {
-                    const element = document.querySelector('[data-service="seo"]');
-                    element?.click();
-                  }, 100);
-                }}
-                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-lg hover:shadow-lg transition font-semibold flex items-center justify-center gap-2"
-              >
-                View SEO Plans <FaArrowRight />
-              </button>
+            </div>
+
+            {/* Step 3 */}
+            <div className="text-center">
+              <div className="w-20 h-20 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-6 text-white text-3xl font-bold">
+                3
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Watch Traffic Grow</h3>
+              <p className="text-gray-600 text-lg">
+                Monitor your traffic in real-time with our analytics dashboard. See immediate results and track your growth.
+              </p>
+            </div>
+          </div>
+
+          {/* Additional Info */}
+          <div className="mt-16 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 border-2 border-blue-200">
+            <div className="text-center">
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Why Choose OrganiTraffic?</h3>
+              <div className="grid md:grid-cols-4 gap-6 mt-8">
+                <div>
+                  <FaCheckCircle className="text-blue-600 text-3xl mx-auto mb-3" />
+                  <p className="font-semibold text-gray-900">100% Real Traffic</p>
+                  <p className="text-gray-600 text-sm">No bots or fake visitors</p>
+                </div>
+                <div>
+                  <FaCheckCircle className="text-indigo-600 text-3xl mx-auto mb-3" />
+                  <p className="font-semibold text-gray-900">Geo-Targeting</p>
+                  <p className="text-gray-600 text-sm">Target specific countries</p>
+                </div>
+                <div>
+                  <FaCheckCircle className="text-purple-600 text-3xl mx-auto mb-3" />
+                  <p className="font-semibold text-gray-900">Fast Delivery</p>
+                  <p className="text-gray-600 text-sm">Traffic starts within 24h</p>
+                </div>
+                <div>
+                  <FaCheckCircle className="text-pink-600 text-3xl mx-auto mb-3" />
+                  <p className="font-semibold text-gray-900">24/7 Support</p>
+                  <p className="text-gray-600 text-sm">Always here to help</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -402,9 +231,9 @@ export default function NewLandingPage() {
       <section id="features" className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Powerful Features</h2>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Traffic Generation Features</h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Everything you need to dominate search rankings and drive quality traffic
+              Everything you need to drive quality traffic and grow your online presence
             </p>
           </div>
 
@@ -415,17 +244,17 @@ export default function NewLandingPage() {
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">Real-Time Analytics</h3>
               <p className="text-gray-600">
-                Monitor your traffic and SEO performance with live dashboards and detailed reports.
+                Monitor your traffic performance with live dashboards and detailed reports showing visitor behavior.
               </p>
             </div>
 
             <div className="bg-white rounded-xl p-6 shadow-md hover:shadow-xl transition">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
-                <FaRobot className="text-purple-600 text-xl" />
+              <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4">
+                <FaChartLine className="text-indigo-600 text-xl" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">AI-Powered Optimization</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Geo-Targeting</h3>
               <p className="text-gray-600">
-                GPT-4 generates optimized content and fixes SEO issues automatically.
+                Target visitors from specific countries and regions to match your audience demographics.
               </p>
             </div>
 
@@ -435,37 +264,37 @@ export default function NewLandingPage() {
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">100% Safe & Compliant</h3>
               <p className="text-gray-600">
-                All traffic is real and compliant with search engine guidelines.
+                All traffic is real and compliant with search engine guidelines. No bots or fake visitors.
+              </p>
+            </div>
+
+            <div className="bg-white rounded-xl p-6 shadow-md hover:shadow-xl transition">
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+                <FaBolt className="text-purple-600 text-xl" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Fast Delivery</h3>
+              <p className="text-gray-600">
+                Traffic starts flowing to your website within 24 hours of campaign activation.
               </p>
             </div>
 
             <div className="bg-white rounded-xl p-6 shadow-md hover:shadow-xl transition">
               <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mb-4">
-                <FaSearch className="text-yellow-600 text-xl" />
+                <FaRocket className="text-yellow-600 text-xl" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Keyword Tracking</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Multiple Campaigns</h3>
               <p className="text-gray-600">
-                Track unlimited keywords and monitor your rankings across all major search engines.
+                Run multiple traffic campaigns simultaneously for different pages or websites.
               </p>
             </div>
 
             <div className="bg-white rounded-xl p-6 shadow-md hover:shadow-xl transition">
               <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mb-4">
-                <FaKeyboard className="text-red-600 text-xl" />
+                <FaCheckCircle className="text-red-600 text-xl" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">SERP Analysis</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Quality Assurance</h3>
               <p className="text-gray-600">
-                Discover which sites rank for any keyword and analyze competitor strategies.
-              </p>
-            </div>
-
-            <div className="bg-white rounded-xl p-6 shadow-md hover:shadow-xl transition">
-              <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4">
-                <FaBolt className="text-indigo-600 text-xl" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Auto-Apply Fixes</h3>
-              <p className="text-gray-600">
-                Automatically apply SEO fixes to your website with our JavaScript widget.
+                Every visitor is verified for quality to ensure genuine engagement and traffic value.
               </p>
             </div>
           </div>
@@ -489,10 +318,10 @@ export default function NewLandingPage() {
               View Pricing
             </button>
             <button
-              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              onClick={() => navigate('/login')}
               className="bg-transparent border-2 border-white text-white px-8 py-4 rounded-lg hover:bg-white hover:text-blue-600 transition font-semibold text-lg"
             >
-              Try Free Scan
+              Get Started
             </button>
           </div>
         </div>
@@ -508,7 +337,7 @@ export default function NewLandingPage() {
                 <Logo className="w-10 h-10" textClassName="text-xl text-white" />
               </div>
               <p className="text-gray-400 mb-4">
-                Professional traffic generation and SEO tools to grow your online presence.
+                Professional traffic generation service to boost your website visibility and rankings.
               </p>
               <div className="flex space-x-4">
                 <a href="#" className="text-gray-400 hover:text-white transition">
@@ -537,22 +366,17 @@ export default function NewLandingPage() {
                 </li>
                 <li>
                   <button onClick={() => navigate('/pricing')} className="text-gray-400 hover:text-white transition">
-                    SEO Tools Suite
+                    Pricing Plans
                   </button>
                 </li>
                 <li>
-                  <button onClick={() => navigate('/keyword-tracker')} className="text-gray-400 hover:text-white transition">
-                    Keyword Tracker
+                  <button onClick={() => document.getElementById('features').scrollIntoView({ behavior: 'smooth' })} className="text-gray-400 hover:text-white transition">
+                    Features
                   </button>
                 </li>
                 <li>
-                  <button onClick={() => navigate('/keyword-research')} className="text-gray-400 hover:text-white transition">
-                    Keyword Research
-                  </button>
-                </li>
-                <li>
-                  <button onClick={() => navigate('/onpage-seo')} className="text-gray-400 hover:text-white transition">
-                    On-Page SEO
+                  <button onClick={() => document.getElementById('services').scrollIntoView({ behavior: 'smooth' })} className="text-gray-400 hover:text-white transition">
+                    How It Works
                   </button>
                 </li>
               </ul>
