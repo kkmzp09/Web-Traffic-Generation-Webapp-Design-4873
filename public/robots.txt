@@ -1,0 +1,23 @@
+# robots.txt for OrganiTraffic
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /invoice
+Disallow: /checkout
+Disallow: /direct-traffic
+Disallow: /seo-traffic
+Disallow: /analytics
+Disallow: /domain-analytics
+Disallow: /keyword-tracker
+Disallow: /keyword-research
+Disallow: /onpage-seo
+Disallow: /seo-dashboard
+Disallow: /widget-installation
+Disallow: /gsc-analytics
+
+# Sitemap
+Sitemap: https://www.organitrafficboost.com/sitemap.xml
+
+# Crawl-delay (optional)
+Crawl-delay: 1
