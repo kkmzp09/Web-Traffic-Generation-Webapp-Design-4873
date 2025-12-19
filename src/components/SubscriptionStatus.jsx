@@ -1,38 +1,70 @@
 // src/components/SubscriptionStatus.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
 import { useSubscription } from '../lib/subscriptionContext';
+import PhonePeCheckout from './PhonePeCheckout';
 
 const { FiZap, FiCalendar, FiTrendingUp, FiAlertCircle, FiCheckCircle } = FiIcons;
 
 export default function SubscriptionStatus() {
   const navigate = useNavigate();
   const { subscription, hasActiveSubscription } = useSubscription();
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState(null);
 
   if (!hasActiveSubscription()) {
     return (
-      <div className="bg-gradient-to-r from-orange-500 to-red-500 rounded-xl shadow-lg p-6 text-white">
-        <div className="flex items-start justify-between">
-          <div>
-            <div className="flex items-center space-x-2 mb-2">
-              <SafeIcon icon={FiAlertCircle} className="w-5 h-5" />
-              <h3 className="text-lg font-semibold">No Active Subscription</h3>
+      <>
+        <div className="bg-gradient-to-r from-orange-500 to-red-500 rounded-xl shadow-lg p-6 text-white">
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="flex items-center space-x-2 mb-2">
+                <SafeIcon icon={FiAlertCircle} className="w-5 h-5" />
+                <h3 className="text-lg font-semibold">No Active Subscription</h3>
+              </div>
+              <p className="text-white/90 text-sm mb-4">
+                Subscribe now to start generating traffic for your websites
+              </p>
+              <button
+                onClick={() => {
+                  setSelectedPlan({
+                    name: 'Starter',
+                    price: 1245,
+                    billingCycle: 'monthly',
+                    serviceType: 'traffic'
+                  });
+                  setShowCheckout(true);
+                }}
+                className="bg-white text-orange-600 px-4 py-2 rounded-lg font-medium hover:bg-gray-100 transition-colors"
+              >
+                Subscribe Now
+              </button>
             </div>
-            <p className="text-white/90 text-sm mb-4">
-              Subscribe now to start generating traffic for your websites
-            </p>
-            <button
-              onClick={() => navigate('/payment')}
-              className="bg-white text-orange-600 px-4 py-2 rounded-lg font-medium hover:bg-gray-100 transition-colors"
-            >
-              View Plans
-            </button>
+            <SafeIcon icon={FiZap} className="w-12 h-12 opacity-20" />
           </div>
-          <SafeIcon icon={FiZap} className="w-12 h-12 opacity-20" />
         </div>
-      </div>
+
+        {/* PhonePe Checkout Modal */}
+        {showCheckout && selectedPlan && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              <PhonePeCheckout
+                plan={selectedPlan}
+                onSuccess={() => {
+                  setShowCheckout(false);
+                  navigate('/payment-success');
+                }}
+                onCancel={() => {
+                  setShowCheckout(false);
+                  setSelectedPlan(null);
+                }}
+              />
+            </div>
+          </div>
+        )}
+      </>
     );
   }
 
@@ -41,6 +73,7 @@ export default function SubscriptionStatus() {
   const daysRemaining = Math.ceil((new Date(subscription.endDate) - new Date()) / (1000 * 60 * 60 * 24));
 
   return (
+    <>
     <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl shadow-lg p-6 text-white">
       <div className="flex items-start justify-between mb-4">
         <div>
@@ -90,7 +123,23 @@ export default function SubscriptionStatus() {
           </span>
         </div>
         <button
-          onClick={() => navigate('/payment')}
+          onClick={() => {
+            // Determine next tier based on current plan
+            const upgradePlans = {
+              'Starter Plan': { name: 'Growth', price: 2905 },
+              'Growth Plan': { name: 'Professional', price: 4897 },
+              'Professional Plan': { name: 'Business', price: 8217 },
+              'Business Plan': { name: 'Business', price: 8217 } // Already max
+            };
+            const nextPlan = upgradePlans[subscription.plan] || { name: 'Professional', price: 4897 };
+            setSelectedPlan({
+              name: nextPlan.name,
+              price: nextPlan.price,
+              billingCycle: 'monthly',
+              serviceType: 'traffic'
+            });
+            setShowCheckout(true);
+          }}
           className="text-sm bg-white/20 hover:bg-white/30 px-3 py-1 rounded-lg transition-colors"
         >
           Upgrade
@@ -109,5 +158,25 @@ export default function SubscriptionStatus() {
         </div>
       )}
     </div>
+
+    {/* PhonePe Checkout Modal */}
+    {showCheckout && selectedPlan && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+        <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <PhonePeCheckout
+            plan={selectedPlan}
+            onSuccess={() => {
+              setShowCheckout(false);
+              navigate('/payment-success');
+            }}
+            onCancel={() => {
+              setShowCheckout(false);
+              setSelectedPlan(null);
+            }}
+          />
+        </div>
+      </div>
+    )}
+    </>
   );
 }

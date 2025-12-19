@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, Zap, TrendingUp, Star, X } from 'lucide-react';
+import PhonePeCheckout from './PhonePeCheckout';
 
 const UpgradeModal = ({ limitData, onClose }) => {
   const navigate = useNavigate();
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [selectedPlanForCheckout, setSelectedPlanForCheckout] = useState(null);
 
   if (!limitData) return null;
 
@@ -122,7 +125,15 @@ const UpgradeModal = ({ limitData, onClose }) => {
                     e.currentTarget.style.borderColor = '#e5e7eb';
                     e.currentTarget.style.boxShadow = 'none';
                   }}
-                  onClick={() => navigate('/pricing')}
+                  onClick={() => {
+                    setSelectedPlanForCheckout({
+                      name: option.plan,
+                      price: option.price,
+                      billingCycle: 'monthly',
+                      serviceType: 'seo'
+                    });
+                    setShowCheckout(true);
+                  }}
                 >
                   {option.plan === 'Professional' && (
                     <div style={{
@@ -184,7 +195,15 @@ const UpgradeModal = ({ limitData, onClose }) => {
                     e.currentTarget.style.borderColor = '#e5e7eb';
                     e.currentTarget.style.backgroundColor = 'white';
                   }}
-                  onClick={() => navigate('/pricing')}
+                  onClick={() => {
+                    setSelectedPlanForCheckout({
+                      name: addon.name,
+                      price: addon.price,
+                      billingCycle: 'one-time',
+                      serviceType: 'seo-credits'
+                    });
+                    setShowCheckout(true);
+                  }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
                     <span style={{ fontSize: '14px', fontWeight: '600', color: '#1f2937' }}>
@@ -217,6 +236,45 @@ const UpgradeModal = ({ limitData, onClose }) => {
           </div>
         </div>
       </div>
+
+      {/* PhonePe Checkout Modal */}
+      {showCheckout && selectedPlanForCheckout && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.75)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 10000,
+          padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '16px',
+            maxWidth: '600px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'auto'
+          }}>
+            <PhonePeCheckout
+              plan={selectedPlanForCheckout}
+              onSuccess={() => {
+                setShowCheckout(false);
+                onClose();
+                navigate('/payment-success');
+              }}
+              onCancel={() => {
+                setShowCheckout(false);
+                setSelectedPlanForCheckout(null);
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
