@@ -17,8 +17,8 @@ export default function Sidebar() {
 
   const navigationItems = [
     { name: 'Dashboard', href: '/dashboard', icon: FiHome, description: 'Overview & analytics' },
-    { name: 'Direct Traffic', href: '/direct-traffic', icon: FiZap, description: '⚠️ Deprecated', deprecated: true },
-    { name: 'SEO Traffic', href: '/seo-traffic', icon: FiSearch, description: '⚠️ Deprecated', deprecated: true },
+    { name: 'Direct Traffic', href: '/direct-traffic', icon: FiZap, description: '⚠️ Deprecated', deprecated: true, hidden: true },
+    { name: 'SEO Traffic', href: '/seo-traffic', icon: FiSearch, description: '⚠️ Deprecated', deprecated: true, hidden: true },
     { name: 'SEO Optimization', href: '/seo-dashboard', icon: FiCheckCircle, description: 'Audits & recommendations' },
     { name: 'Domain Analytics', href: '/domain-analytics', icon: FiBarChart2, description: 'SEO insights & data' },
     { name: 'Keyword Tracker', href: '/keyword-tracker', icon: FiTarget, description: 'Track keyword rankings' },
@@ -78,7 +78,7 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 px-4 py-4 space-y-2">
-        {navigationItems.map((item) => (
+        {navigationItems.filter(item => !item.hidden).map((item) => (
           <Link key={item.name} to={item.href} className={getNavItemClass(item)}>
             <SafeIcon icon={item.icon} className="mr-3 h-5 w-5 flex-shrink-0" />
             <div className="flex-1 min-w-0">

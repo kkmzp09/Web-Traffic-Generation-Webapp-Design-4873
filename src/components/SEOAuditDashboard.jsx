@@ -441,7 +441,7 @@ const SEOAuditDashboard = () => {
                 </span>
               </div>
               <p className="text-gray-600 max-w-3xl">
-                Comprehensive SEO analysis identifying technical issues, optimization opportunities, and actionable improvements to boost your search rankings.
+                Comprehensive SEO analysis identifying technical issues, optimization opportunities, and actionable improvements for your website.
               </p>
             </div>
 

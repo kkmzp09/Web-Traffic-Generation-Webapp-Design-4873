@@ -525,7 +525,7 @@ export default function NewLandingPage() {
                 <Logo className="w-10 h-10" textClassName="text-xl text-white" />
               </div>
               <p className="text-gray-400 mb-4">
-                Professional traffic generation service to boost your website visibility and rankings.
+                Professional SEO optimization platform for technical analysis and recommendations.
               </p>
               <div className="flex space-x-4">
                 <a href="#" className="text-gray-400 hover:text-white transition">
