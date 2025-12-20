@@ -1,18 +1,24 @@
 // server-files/comprehensive-seo-audit.js
-// Comprehensive SEO audit with real page scanning
+// Comprehensive SEO audit with REAL DataForSEO On-Page scanning
 
 const express = require('express');
 const router = express.Router();
-const axios = require('axios');
-const cheerio = require('cheerio');
+const { Pool } = require('pg');
+const dataforSEOOnPage = require('./dataforseo-onpage-service');
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
 
 /**
  * POST /api/seo/comprehensive-audit
- * Comprehensive SEO audit with real page analysis
+ * Comprehensive SEO audit with REAL DataForSEO On-Page API
+ * Now triggers actual DataForSEO crawl instead of instant Cheerio scan
  */
 router.post('/comprehensive-audit', async (req, res) => {
   try {
-    const { url, userId } = req.body;
+    const { url, userId, force_fresh = true } = req.body;
 
     if (!url) {
       return res.status(400).json({
@@ -33,284 +39,72 @@ router.post('/comprehensive-audit', async (req, res) => {
     }
 
     const hostname = parsedUrl.hostname;
-    const protocol = parsedUrl.protocol;
 
-    console.log(`🔍 Starting comprehensive audit for: ${url}`);
+    console.log(`🔍 Starting REAL DataForSEO audit for: ${url} (force_fresh: ${force_fresh})`);
 
-    // Fetch the page HTML
-    let html = '';
-    let pageLoadTime = 0;
-    try {
-      const startTime = Date.now();
-      const response = await axios.get(url, {
-        timeout: 10000,
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        }
-      });
-      pageLoadTime = Date.now() - startTime;
-      html = response.data;
-    } catch (error) {
-      console.error('Error fetching page:', error.message);
-      return res.status(500).json({
-        success: false,
-        error: 'Failed to fetch page content'
-      });
-    }
-
-    // Parse HTML with cheerio
-    const $ = cheerio.load(html);
-
-    // Initialize issues array
-    const issues = [];
-
-    // 1. META TAGS CHECK
-    const title = $('title').text();
-    const metaDescription = $('meta[name="description"]').attr('content');
-    const metaKeywords = $('meta[name="keywords"]').attr('content');
-
-    if (!title || title.length === 0) {
-      issues.push({
-        category: 'meta',
-        severity: 'critical',
-        title: 'Missing Page Title',
-        description: 'Your page doesn\'t have a title tag. This is critical for SEO.',
-        impact: 'CRITICAL',
-        autoFixAvailable: true
-      });
-    } else if (title.length < 30) {
-      issues.push({
-        category: 'meta',
-        severity: 'high',
-        title: 'Title Too Short',
-        description: `Your title is only ${title.length} characters. Recommended: 50-60 characters.`,
-        impact: 'HIGH',
-        autoFixAvailable: true
-      });
-    } else if (title.length > 60) {
-      issues.push({
-        category: 'meta',
-        severity: 'medium',
-        title: 'Title Too Long',
-        description: `Your title is ${title.length} characters. It may be truncated in search results.`,
-        impact: 'MEDIUM',
-        autoFixAvailable: true
-      });
-    }
-
-    if (!metaDescription) {
-      issues.push({
-        category: 'meta',
-        severity: 'critical',
-        title: 'Missing Meta Description',
-        description: 'No meta description found. This affects click-through rates from search results.',
-        impact: 'CRITICAL',
-        autoFixAvailable: true
-      });
-    } else if (metaDescription.length < 120) {
-      issues.push({
-        category: 'meta',
-        severity: 'medium',
-        title: 'Meta Description Too Short',
-        description: `Meta description is ${metaDescription.length} characters. Recommended: 150-160.`,
-        impact: 'MEDIUM',
-        autoFixAvailable: true
-      });
-    }
-
-    // 2. HEADINGS CHECK
-    const h1Tags = $('h1');
-    const h2Tags = $('h2');
-
-    if (h1Tags.length === 0) {
-      issues.push({
-        category: 'headings',
-        severity: 'critical',
-        title: 'Missing H1 Tag',
-        description: 'No H1 heading found. Every page should have exactly one H1.',
-        impact: 'CRITICAL',
-        autoFixAvailable: false
-      });
-    } else if (h1Tags.length > 1) {
-      issues.push({
-        category: 'headings',
-        severity: 'high',
-        title: 'Multiple H1 Tags',
-        description: `Found ${h1Tags.length} H1 tags. Use only one H1 per page.`,
-        impact: 'HIGH',
-        autoFixAvailable: false
-      });
-    }
-
-    if (h2Tags.length === 0) {
-      issues.push({
-        category: 'headings',
-        severity: 'medium',
-        title: 'No H2 Headings',
-        description: 'No H2 headings found. Use H2-H6 to structure your content.',
-        impact: 'MEDIUM',
-        autoFixAvailable: false
-      });
-    }
-
-    // 3. IMAGES CHECK
-    const images = $('img');
-    let imagesWithoutAlt = 0;
-    let imagesWithEmptyAlt = 0;
-
-    images.each((i, img) => {
-      const alt = $(img).attr('alt');
-      if (!alt) {
-        imagesWithoutAlt++;
-      } else if (alt.trim() === '') {
-        imagesWithEmptyAlt++;
-      }
+    // Start DataForSEO On-Page crawl task
+    const taskResult = await dataforSEOOnPage.postOnPageTask({
+      target: url,
+      max_crawl_pages: 10, // Default, can be adjusted based on plan
+      enable_javascript: true,
+      enable_browser_rendering: false,
+      load_resources: true,
+      calculate_keyword_density: false
     });
 
-    if (imagesWithoutAlt > 0) {
-      issues.push({
-        category: 'images',
-        severity: 'high',
-        title: `${imagesWithoutAlt} Images Missing Alt Text`,
-        description: 'Images without alt text hurt accessibility and SEO.',
-        impact: 'HIGH',
-        autoFixAvailable: true,
-        count: imagesWithoutAlt
+    if (!taskResult.success) {
+      console.error('❌ DataForSEO task failed:', taskResult.error);
+      return res.status(500).json({
+        success: false,
+        error: taskResult.error || 'Failed to start DataForSEO scan'
       });
     }
 
-    if (imagesWithEmptyAlt > 0) {
-      issues.push({
-        category: 'images',
-        severity: 'medium',
-        title: `${imagesWithEmptyAlt} Images with Empty Alt Text`,
-        description: 'Alt text should describe the image content.',
-        impact: 'MEDIUM',
-        autoFixAvailable: true,
-        count: imagesWithEmptyAlt
-      });
-    }
+    const taskId = taskResult.taskId;
+    console.log(`✅ DataForSEO task started: ${taskId}`);
 
-    // 4. SCHEMA MARKUP CHECK
-    const jsonLdScripts = $('script[type="application/ld+json"]');
-    
-    if (jsonLdScripts.length === 0) {
-      issues.push({
-        category: 'schema',
-        severity: 'high',
-        title: 'No Schema Markup Found',
-        description: 'Add structured data to help search engines understand your content.',
-        impact: 'HIGH',
-        autoFixAvailable: true
-      });
-    }
+    // Save scan to seo_scans table (using existing schema)
+    const scanResult = await pool.query(
+      `INSERT INTO seo_scans 
+       (url, status, dataforseo_task_id, user_id, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, NOW(), NOW())
+       RETURNING id`,
+      [url, 'crawling', taskId, userId]
+    );
 
-    // 5. SSL CHECK
-    if (protocol !== 'https:') {
-      issues.push({
-        category: 'technical',
-        severity: 'critical',
-        title: 'Not Using HTTPS',
-        description: 'Your site should use HTTPS for security and SEO.',
-        impact: 'CRITICAL',
-        autoFixAvailable: false
-      });
-    }
+    const scanId = scanResult.rows[0].id;
+    console.log(`📝 Scan record created: ${scanId}`);
 
-    // 6. MOBILE VIEWPORT CHECK
-    const viewport = $('meta[name="viewport"]').attr('content');
-    if (!viewport) {
-      issues.push({
-        category: 'mobile',
-        severity: 'high',
-        title: 'Missing Viewport Meta Tag',
-        description: 'Add viewport meta tag for mobile responsiveness.',
-        impact: 'HIGH',
-        autoFixAvailable: true
-      });
-    }
-
-    // 7. CANONICAL URL CHECK
-    const canonical = $('link[rel="canonical"]').attr('href');
-    if (!canonical) {
-      issues.push({
-        category: 'technical',
-        severity: 'medium',
-        title: 'Missing Canonical URL',
-        description: 'Add canonical URL to avoid duplicate content issues.',
-        impact: 'MEDIUM',
-        autoFixAvailable: true
-      });
-    }
-
-    // 8. INTERNAL LINKS CHECK
-    const internalLinks = $('a[href^="/"], a[href^="' + url + '"]');
-    if (internalLinks.length < 3) {
-      issues.push({
-        category: 'content',
-        severity: 'medium',
-        title: 'Few Internal Links',
-        description: 'Add more internal links to improve site structure and SEO.',
-        impact: 'MEDIUM',
-        autoFixAvailable: false
-      });
-    }
-
-    // 9. PAGE SPEED CHECK (basic)
-    if (pageLoadTime > 3000) {
-      issues.push({
-        category: 'performance',
-        severity: 'high',
-        title: 'Slow Page Load Time',
-        description: `Page loaded in ${(pageLoadTime / 1000).toFixed(2)}s. Aim for under 3 seconds.`,
-        impact: 'HIGH',
-        autoFixAvailable: false
-      });
-    }
-
-    // Calculate overall score
-    const criticalIssues = issues.filter(i => i.severity === 'critical').length;
-    const highIssues = issues.filter(i => i.severity === 'high').length;
-    const mediumIssues = issues.filter(i => i.severity === 'medium').length;
-
-    let score = 100;
-    score -= (criticalIssues * 15);
-    score -= (highIssues * 10);
-    score -= (mediumIssues * 5);
-    score = Math.max(0, score);
-
-    // Prepare response
-    const auditResults = {
+    // Return immediately - scan is running asynchronously
+    // Frontend should poll or wait for completion
+    res.json({
       success: true,
+      scanId: scanId,
+      taskId: taskId,
       url: url,
       hostname: hostname,
       scannedAt: new Date().toISOString(),
+      status: 'crawling',
+      message: 'DataForSEO scan started. This will take 30-60 seconds to complete.',
       analysis: {
-        score: score,
-        issues: issues,
+        score: 0,
+        issues: [],
         summary: {
-          total: issues.length,
-          critical: criticalIssues,
-          high: highIssues,
-          medium: mediumIssues
+          total: 0,
+          critical: 0,
+          high: 0,
+          medium: 0
         },
         pageData: {
-          title: title || 'No title',
-          description: metaDescription || 'No description',
-          h1Count: h1Tags.length,
-          h2Count: h2Tags.length,
-          imageCount: images.length,
-          imagesWithoutAlt: imagesWithoutAlt,
-          hasSchema: jsonLdScripts.length > 0,
-          hasSSL: protocol === 'https:',
-          pageLoadTime: pageLoadTime
+          title: 'Scanning...',
+          description: 'Scan in progress'
         }
       }
-    };
+    });
 
-    console.log(`✅ Audit complete: ${score}/100 score, ${issues.length} issues found`);
-
-    res.json(auditResults);
+    // Note: The actual scan results will be available via:
+    // GET /api/dataforseo/onpage/status/:scanId
+    // Frontend can poll this endpoint to get final results
 
   } catch (error) {
     console.error('Comprehensive audit error:', error);
