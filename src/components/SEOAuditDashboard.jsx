@@ -144,6 +144,60 @@ const SEOAuditDashboard = () => {
     }
   };
 
+  // Poll scan status until completion
+  const pollScanStatus = async (scanId) => {
+    try {
+      console.log('🔄 Polling scan status for scanId:', scanId);
+      
+      const response = await fetch(`${API_BASE}/api/dataforseo/onpage/status/${scanId}`);
+      const data = await response.json();
+      
+      console.log('📊 Polling response:', data);
+      
+      if (data.success) {
+        if (data.status === 'ready' || data.status === 'Ok.' || data.completed) {
+          // Scan completed - fetch full results
+          console.log('✅ Scan completed! Fetching full results...');
+          
+          const resultsResponse = await fetch(`${API_BASE}/api/dataforseo/onpage/results/${scanId}`);
+          const resultsData = await resultsResponse.json();
+          
+          console.log('📥 Full results:', resultsData);
+          
+          if (resultsData.success) {
+            // Update UI with completed scan
+            setAuditData({
+              success: true,
+              url: resultsData.url || websiteUrl,
+              hostname: resultsData.hostname || new URL(websiteUrl).hostname,
+              scannedAt: new Date().toISOString(),
+              analysis: resultsData.analysis || {
+                score: resultsData.score || 0,
+                issues: resultsData.issues || [],
+                summary: resultsData.summary || {},
+                pageData: resultsData.pageData || {}
+              }
+            });
+            
+            setScanning(false);
+            loadScanHistory();
+          }
+        } else {
+          // Still crawling - poll again in 5 seconds
+          console.log('⏳ Still crawling... checking again in 5s');
+          setTimeout(() => pollScanStatus(scanId), 5000);
+        }
+      } else {
+        console.error('❌ Polling failed:', data.error);
+        setScanning(false);
+      }
+    } catch (error) {
+      console.error('❌ Polling error:', error);
+      // Retry after 5 seconds
+      setTimeout(() => pollScanStatus(scanId), 5000);
+    }
+  };
+
   // Run comprehensive audit
   const runAudit = async (url = websiteUrl) => {
     if (!url) return;
@@ -160,26 +214,43 @@ const SEOAuditDashboard = () => {
 
       const data = await response.json();
       
+      console.log('📥 Backend response:', data);
+      
       if (data.success) {
-        setAuditData(data);
-        console.log('✅ Audit complete:', data);
-        
-        // Save to localStorage for persistence
-        localStorage.setItem('lastScanResult', JSON.stringify({
-          auditData: data,
-          websiteUrl: url,
-          timestamp: new Date().toISOString()
-        }));
-        
-        // Save scan results
-        await saveScanResults(data);
+        // Check if scan is async (crawling status)
+        if (data.status === 'crawling') {
+          console.log('⏳ Scan is crawling, scanId:', data.scanId, 'taskId:', data.taskId);
+          
+          // Show initial crawling state
+          setAuditData(data);
+          
+          // Start polling for completion
+          if (data.scanId) {
+            pollScanStatus(data.scanId);
+          }
+        } else {
+          // Synchronous scan completed immediately
+          setAuditData(data);
+          console.log('✅ Audit complete:', data);
+          
+          // Save to localStorage for persistence
+          localStorage.setItem('lastScanResult', JSON.stringify({
+            auditData: data,
+            websiteUrl: url,
+            timestamp: new Date().toISOString()
+          }));
+          
+          // Save scan results
+          await saveScanResults(data);
+          setScanning(false);
+        }
       } else {
         alert('Failed to audit website. Please try again.');
+        setScanning(false);
       }
     } catch (error) {
       console.error('Audit error:', error);
       alert('An error occurred during the audit.');
-    } finally {
       setScanning(false);
     }
   };
