@@ -406,18 +406,20 @@ const SEOAuditDashboard = () => {
             <button
               onClick={refreshScan}
               className="px-4 py-2 bg-slate-700 text-white rounded-lg font-medium hover:bg-slate-600 transition-colors flex items-center gap-2"
+              title="Reload previous scan data from history"
             >
               <RefreshCw className="w-4 h-4" />
-              Refresh
+              Refresh Previous Scan
             </button>
           )}
           <button
             onClick={() => runAudit()}
             disabled={scanning}
             className="px-4 py-2 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition-colors flex items-center gap-2 disabled:opacity-50"
+            title="Run new comprehensive SEO audit (may use cached data if recently scanned)"
           >
             <Search className="w-4 h-4" />
-            {scanning ? 'Scanning...' : 'Rescan Website'}
+            {scanning ? 'Running Audit...' : 'Run New Audit'}
           </button>
         </div>
       </div>
@@ -441,9 +443,15 @@ const SEOAuditDashboard = () => {
                   Status: Completed
                 </span>
               </div>
-              <p className="text-gray-600 max-w-3xl">
+              <p className="text-gray-600 max-w-3xl mb-3">
                 Comprehensive SEO analysis identifying technical issues, optimization opportunities, and actionable improvements for your website.
               </p>
+              <div className="flex items-start gap-2 text-xs text-gray-500 bg-gray-50 px-3 py-2 rounded-lg max-w-3xl">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <span>
+                  <strong>Note:</strong> Scans may use cached data if the same URL was recently analyzed. Full DataForSEO scans are rate-limited to prevent excessive API costs.
+                </span>
+              </div>
             </div>
 
             {/* Health Score Gauge */}
