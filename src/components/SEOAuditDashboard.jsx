@@ -77,10 +77,10 @@ const SEOAuditDashboard = () => {
         console.log(`✅ Found ${data.scans?.length || 0} scans in history`);
         setScanHistory(data.scans || []);
         
-        // If no current scan loaded, load the most recent one
-        if (!auditData && data.scans && data.scans.length > 0) {
+        // Only auto-load if user has exactly one site
+        if (!auditData && data.scans && data.scans.length === 1) {
           const latestScan = data.scans[0];
-          console.log('📌 Loading latest scan:', latestScan.url);
+          console.log('📌 Auto-loading single site:', latestScan.url);
           setAuditData({
             success: true,
             url: latestScan.url,
@@ -94,6 +94,7 @@ const SEOAuditDashboard = () => {
           });
           setWebsiteUrl(latestScan.url);
         }
+        // If multiple sites, show neutral state (no auto-load)
       } else {
         console.log('❌ Scan history fetch failed:', data.error);
       }
