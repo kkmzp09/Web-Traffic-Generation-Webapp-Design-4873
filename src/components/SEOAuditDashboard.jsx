@@ -484,13 +484,14 @@ const SEOAuditDashboard = () => {
     );
   }
 
-  if (scanning) {
+  // NEVER block UI if we have any audit data - show results immediately
+  if (scanning && !auditData) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <RefreshCw className="w-16 h-16 text-purple-600 animate-spin mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Analyzing Your Website...</h2>
-          <p className="text-gray-600">This may take a few seconds</p>
+          <p className="text-gray-600">This may take 30-90 seconds</p>
         </div>
       </div>
     );
@@ -603,9 +604,9 @@ const SEOAuditDashboard = () => {
             <div className="ml-8">
               <div className="text-center">
                 <div className="text-sm font-medium text-gray-600 mb-2">Website Health</div>
-                <div className={`relative inline-flex items-center justify-center w-32 h-32 rounded-full ${getScoreBgColor(auditData.analysis.score)}`}>
-                  <div className={`text-4xl font-bold ${getScoreColor(auditData.analysis.score)}`}>
-                    {auditData.analysis.score}%
+                <div className={`relative inline-flex items-center justify-center w-32 h-32 rounded-full ${getScoreBgColor(auditData?.analysis?.score || 0)}`}>
+                  <div className={`text-4xl font-bold ${getScoreColor(auditData?.analysis?.score || 0)}`}>
+                    {auditData?.analysis?.score || 0}%
                   </div>
                 </div>
               </div>
@@ -652,25 +653,39 @@ const SEOAuditDashboard = () => {
                       <span className="text-sm font-medium text-gray-600">Total Issues</span>
                       <AlertCircle className="w-5 h-5 text-gray-400" />
                     </div>
-                    <div className="text-3xl font-bold text-gray-900">{auditData.analysis.summary.total}</div>
+                    <div className="text-3xl font-bold text-gray-900">{auditData?.analysis?.summary?.total || 0}</div>
                   </div>
                   <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-medium text-gray-600">Critical</span>
                       <XCircle className="w-5 h-5 text-red-500" />
                     </div>
-                    <div className="text-3xl font-bold text-red-600">{auditData.analysis.summary.critical}</div>
+                    <div className="text-3xl font-bold text-red-600">{auditData?.analysis?.summary?.critical || 0}</div>
                   </div>
                   <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-medium text-gray-600">Health Score</span>
                       <TrendingUp className="w-5 h-5 text-green-500" />
                     </div>
-                    <div className={`text-3xl font-bold ${getScoreColor(auditData.analysis.score)}`}>
-                      {auditData.analysis.score}%
+                    <div className={`text-3xl font-bold ${getScoreColor(auditData?.analysis?.score || 0)}`}>
+                      {auditData?.analysis?.score || 0}%
                     </div>
                   </div>
                 </div>
+
+                {/* Empty State Message */}
+                {(!auditData?.analysis?.issues || auditData.analysis.issues.length === 0) && (
+                  <div className="bg-green-50 border border-green-200 rounded-xl p-8 mb-8 text-center">
+                    <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+                    <h3 className="text-xl font-bold text-green-900 mb-2">Great News!</h3>
+                    <p className="text-green-700 text-lg">
+                      No critical SEO issues detected in the scanned pages.
+                    </p>
+                    <p className="text-green-600 text-sm mt-2">
+                      Your website appears to be following SEO best practices.
+                    </p>
+                  </div>
+                )}
 
                 {/* Credit Savings & Skipped Pages Info */}
                 {auditData.pagesSkipped > 0 && (
