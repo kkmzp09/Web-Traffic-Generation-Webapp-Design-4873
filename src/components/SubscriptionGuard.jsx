@@ -1,15 +1,18 @@
 // src/components/SubscriptionGuard.jsx
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
 import { useSubscription } from '../lib/subscriptionContext';
+import PhonePeCheckout from './PhonePeCheckout';
 
 const { FiLock, FiZap, FiAlertCircle, FiArrowRight } = FiIcons;
 
 export default function SubscriptionGuard({ children, requiredVisits = 1 }) {
   const navigate = useNavigate();
   const { subscription, hasActiveSubscription, hasAvailableVisits, loading } = useSubscription();
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState(null);
 
   if (loading) {
     return (
@@ -53,7 +56,15 @@ export default function SubscriptionGuard({ children, requiredVisits = 1 }) {
             </div>
 
             <button
-              onClick={() => navigate('/payment')}
+              onClick={() => {
+                setSelectedPlan({
+                  name: 'Starter',
+                  price: 1245,
+                  billingCycle: 'monthly',
+                  serviceType: 'traffic'
+                });
+                setShowCheckout(true);
+              }}
               className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-6 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 transition-all flex items-center justify-center space-x-2"
             >
               <SafeIcon icon={FiZap} className="w-5 h-5" />
@@ -105,7 +116,23 @@ export default function SubscriptionGuard({ children, requiredVisits = 1 }) {
 
             <div className="space-y-3">
               <button
-                onClick={() => navigate('/payment')}
+                onClick={() => {
+                  // Determine next tier based on current plan
+                  const upgradePlans = {
+                    'Starter Plan': { name: 'Growth', price: 2905 },
+                    'Growth Plan': { name: 'Professional', price: 4897 },
+                    'Professional Plan': { name: 'Business', price: 8217 },
+                    'Business Plan': { name: 'Business', price: 8217 }
+                  };
+                  const nextPlan = upgradePlans[subscription.plan] || { name: 'Professional', price: 4897 };
+                  setSelectedPlan({
+                    name: nextPlan.name,
+                    price: nextPlan.price,
+                    billingCycle: 'monthly',
+                    serviceType: 'traffic'
+                  });
+                  setShowCheckout(true);
+                }}
                 className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-6 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 transition-all flex items-center justify-center space-x-2"
               >
                 <SafeIcon icon={FiZap} className="w-5 h-5" />
@@ -130,5 +157,28 @@ export default function SubscriptionGuard({ children, requiredVisits = 1 }) {
   }
 
   // All checks passed - render children
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      
+      {/* PhonePe Checkout Modal */}
+      {showCheckout && selectedPlan && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <PhonePeCheckout
+              plan={selectedPlan}
+              onSuccess={() => {
+                setShowCheckout(false);
+                navigate('/payment-success');
+              }}
+              onCancel={() => {
+                setShowCheckout(false);
+                setSelectedPlan(null);
+              }}
+            />
+          </div>
+        </div>
+      )}
+    </>
+  );
 }
