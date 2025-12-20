@@ -147,16 +147,36 @@ const SEOAuditDashboard = () => {
   // Poll scan status until completion with SAFETY TIMEOUT
   const pollScanStatus = async (scanId, startTime = Date.now(), pollCount = 0) => {
     try {
-      const elapsedMinutes = (Date.now() - startTime) / 1000 / 60;
-      const MAX_POLL_TIME = 10; // 10 minutes hard timeout
+      const elapsedSeconds = (Date.now() - startTime) / 1000;
+      const MAX_POLL_TIME = 90; // 90 SECONDS hard timeout
       
-      console.log(`🔄 Polling scan status for scanId: ${scanId} (attempt ${pollCount + 1}, ${elapsedMinutes.toFixed(1)}min elapsed)`);
+      console.log(`🔄 Polling scan status for scanId: ${scanId} (attempt ${pollCount + 1}, ${elapsedSeconds.toFixed(0)}s elapsed)`);
       
-      // SAFETY TIMEOUT - Stop after 10 minutes
-      if (elapsedMinutes > MAX_POLL_TIME) {
-        console.error('⏱️ TIMEOUT: Scan exceeded 10 minute limit, stopping poll');
+      // SAFETY TIMEOUT - Stop after 90 seconds and fetch partial results
+      if (elapsedSeconds > MAX_POLL_TIME) {
+        console.warn('⏱️ TIMEOUT: 90 seconds elapsed, fetching partial results');
+        
+        // Fetch whatever results are available
+        try {
+          const resultsResponse = await fetch(`${API_BASE}/api/dataforseo/onpage/results/${scanId}`);
+          const resultsData = await resultsResponse.json();
+          
+          if (resultsData.success && resultsData.analysis) {
+            setAuditData({
+              success: true,
+              url: resultsData.url || websiteUrl,
+              hostname: resultsData.hostname || new URL(websiteUrl).hostname,
+              scannedAt: new Date().toISOString(),
+              partial: true,
+              analysis: resultsData.analysis
+            });
+            alert('Partial results shown. Scan is still processing in background.');
+          }
+        } catch (error) {
+          console.error('Failed to fetch partial results:', error);
+        }
+        
         setScanning(false);
-        alert('Scan timeout: The scan took too long and was stopped. Results may be partial.');
         return;
       }
       
@@ -166,65 +186,71 @@ const SEOAuditDashboard = () => {
       console.log('📊 Polling response:', data);
       
       if (data.success) {
-        // Check if page limit reached
-        if (data.pagesCrawled && data.maxPages && data.pagesCrawled >= data.maxPages) {
-          console.log(`✅ Page limit reached: ${data.pagesCrawled}/${data.maxPages} pages scanned`);
-          // Fetch results even if not fully complete
-          const resultsResponse = await fetch(`${API_BASE}/api/dataforseo/onpage/results/${scanId}`);
-          const resultsData = await resultsResponse.json();
-          
-          if (resultsData.success) {
-            setAuditData({
-              success: true,
-              url: resultsData.url || websiteUrl,
-              hostname: resultsData.hostname || new URL(websiteUrl).hostname,
-              scannedAt: new Date().toISOString(),
-              analysis: resultsData.analysis || {
-                score: resultsData.score || 0,
-                issues: resultsData.issues || [],
-                summary: resultsData.summary || {},
-                pageData: resultsData.pageData || {}
-              }
-            });
-            setScanning(false);
-            loadScanHistory();
-          }
-          return;
-        }
+        // Check if page limit reached OR scan is ready
+        const isLimitReached = data.pagesCrawled && data.maxPages && data.pagesCrawled >= data.maxPages;
+        const isReady = data.status === 'ready' || data.status === 'Ok.' || data.completed;
         
-        if (data.status === 'ready' || data.status === 'Ok.' || data.completed) {
-          // Scan completed - fetch full results
-          console.log('✅ Scan completed! Fetching full results...');
+        if (isLimitReached || isReady) {
+          if (isLimitReached) {
+            console.log(`✅ Page limit reached: ${data.pagesCrawled}/${data.maxPages} pages scanned - STOPPING`);
+          } else {
+            console.log('✅ Scan completed! Fetching full results...');
+          }
           
+          // Fetch results immediately
           const resultsResponse = await fetch(`${API_BASE}/api/dataforseo/onpage/results/${scanId}`);
           const resultsData = await resultsResponse.json();
           
           console.log('📥 Full results:', resultsData);
           
-          if (resultsData.success) {
-            // Update UI with completed scan
+          if (resultsData.success && resultsData.analysis) {
             setAuditData({
               success: true,
               url: resultsData.url || websiteUrl,
               hostname: resultsData.hostname || new URL(websiteUrl).hostname,
               scannedAt: new Date().toISOString(),
-              analysis: resultsData.analysis || {
-                score: resultsData.score || 0,
-                issues: resultsData.issues || [],
-                summary: resultsData.summary || {},
-                pageData: resultsData.pageData || {}
-              }
+              analysis: resultsData.analysis
             });
-            
             setScanning(false);
             loadScanHistory();
+          } else {
+            // No results yet, show partial data from status
+            console.warn('⚠️ No full results available, showing partial data');
+            setScanning(false);
           }
-        } else {
-          // Still crawling - poll again in 5 seconds
-          const pagesInfo = data.pagesCrawled ? ` (${data.pagesCrawled}/${data.maxPages || '?'} pages)` : '';
-          console.log(`⏳ Still crawling${pagesInfo}... checking again in 5s`);
-          setTimeout(() => pollScanStatus(scanId, startTime, pollCount + 1), 5000);
+          return;
         }
+        
+        // Still crawling - check if we should show partial results
+        if (data.pagesCrawled && data.pagesCrawled > 0 && pollCount > 6) {
+          // After 30 seconds (6 polls * 5s), try to fetch partial results
+          console.log(`⏳ ${elapsedSeconds.toFixed(0)}s elapsed, attempting partial results fetch...`);
+          
+          try {
+            const resultsResponse = await fetch(`${API_BASE}/api/dataforseo/onpage/results/${scanId}`);
+            const resultsData = await resultsResponse.json();
+            
+            if (resultsData.success && resultsData.analysis) {
+              console.log('📊 Partial results available, updating UI...');
+              setAuditData({
+                success: true,
+                url: resultsData.url || websiteUrl,
+                hostname: resultsData.hostname || new URL(websiteUrl).hostname,
+                scannedAt: new Date().toISOString(),
+                partial: true,
+                analysis: resultsData.analysis
+              });
+              // Continue polling but show results
+            }
+          } catch (error) {
+            console.log('No partial results yet, continuing to poll...');
+          }
+        }
+        
+        // Still crawling - poll again in 5 seconds
+        const pagesInfo = data.pagesCrawled ? ` (${data.pagesCrawled}/${data.maxPages || '?'} pages)` : '';
+        console.log(`⏳ Still crawling${pagesInfo}... checking again in 5s`);
+        setTimeout(() => pollScanStatus(scanId, startTime, pollCount + 1), 5000);
       } else {
         console.error('❌ Polling failed:', data.error);
         setScanning(false);
