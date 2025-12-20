@@ -73,7 +73,7 @@ const Invoice = () => {
       name: nextPlan.name,
       price: nextPlan.price,
       billingCycle: 'monthly',
-      serviceType: 'traffic'
+      serviceType: 'seo'
     });
     setShowCheckout(true);
   };
@@ -102,7 +102,7 @@ const Invoice = () => {
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
               <div className="flex items-center space-x-2 mb-6">
                 <SafeIcon icon={FiCreditCard} className="w-5 h-5 text-blue-600" />
-                <h2 className="text-lg font-semibold text-gray-900">Current Plan</h2>
+                <h2 className="text-lg font-semibold text-gray-900">SEO Subscription</h2>
               </div>
 
               {billingInfo ? (
@@ -114,7 +114,7 @@ const Invoice = () => {
                         ₹{billingInfo.amount}/month
                       </span>
                     </div>
-                    <p className="text-sm text-blue-700">{billingInfo.visits} visits per month</p>
+                    <p className="text-sm text-blue-700">SEO Optimization Subscription</p>
                   </div>
 
                   <div className="space-y-2">
@@ -139,7 +139,7 @@ const Invoice = () => {
                 className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center justify-center space-x-2 mt-4"
               >
                 <SafeIcon icon={FiRefreshCw} className="w-4 h-4" />
-                <span>Manage Subscription</span>
+                <span>Upgrade Plan</span>
               </button>
             </div>
 

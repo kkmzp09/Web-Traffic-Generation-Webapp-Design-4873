@@ -9,7 +9,7 @@ export default function PricingPlans() {
   const [showCheckout, setShowCheckout] = useState(false);
   const [selectedPlanForCheckout, setSelectedPlanForCheckout] = useState(null);
 
-  // Traffic Generation Plans
+  // SEO Optimization Plans
   const trafficPlans = [
     {
       name: 'Starter',
@@ -17,14 +17,18 @@ export default function PricingPlans() {
         monthly: 1245,
         yearly: 12450
       },
-      visits: '500 Visits',
-      description: 'Perfect for testing and small campaigns',
+      visits: '10 pages/scan • 5 scans/month',
+      description: 'Perfect for small websites and testing',
       features: [
-        '500 quality visits',
-        'Basic geo-targeting',
-        'Real-time analytics',
+        '10 pages per scan',
+        '5 SEO scans per month',
+        '10 keywords tracked',
+        'Basic SEO audits',
+        'Preview mode only',
+        'Monthly SEO reports',
         'Email support'
       ],
+      disclaimer: 'Rankings not guaranteed. SEO analysis and recommendations only.',
       popular: false,
       color: 'indigo'
     },
@@ -34,15 +38,19 @@ export default function PricingPlans() {
         monthly: 2905,
         yearly: 29050
       },
-      visits: '2,000 Visits',
-      description: 'For growing businesses',
+      visits: '50 pages/scan • 20 scans/month',
+      description: 'For growing websites with regular optimization',
       features: [
-        '2,000 quality visits',
-        'Advanced geo-targeting',
-        'Priority email support',
-        'Multiple campaigns',
-        'Traffic scheduling'
+        '50 pages per scan',
+        '20 SEO scans per month',
+        '50 keywords tracked',
+        'Scheduled scans (weekly)',
+        'Server-side deployment with approval',
+        'Safe optimizations (titles, meta, schema)',
+        'Weekly SEO reports',
+        'Priority support'
       ],
+      disclaimer: 'Rankings depend on competition and content quality.',
       popular: true,
       color: 'blue'
     },
@@ -52,33 +60,42 @@ export default function PricingPlans() {
         monthly: 4897,
         yearly: 48970
       },
-      visits: '5,000 Visits',
-      description: 'For established businesses',
+      visits: '200 pages/scan • Unlimited scans',
+      description: 'For established sites with continuous optimization',
       features: [
-        '5,000 quality visits',
-        'Priority delivery',
-        'Advanced analytics',
-        'Priority 24/7 support',
-        'Custom sources'
+        '200 pages per scan',
+        'Unlimited SEO scans',
+        '200 keywords tracked',
+        'Daily monitoring',
+        'Production deployment via server-rendered HTML',
+        'Template-level optimizations',
+        'Advanced reports',
+        '24/7 support'
       ],
+      disclaimer: 'Results vary based on site authority and competitive landscape.',
       popular: false,
       color: 'purple'
     },
     {
-      name: 'Business',
+      name: 'Enterprise',
       price: {
         monthly: 8217,
         yearly: 82170
       },
-      visits: '15,000 Visits',
-      description: 'For large scale operations',
+      visits: 'Custom limits • 30k+ pages',
+      description: 'For large sites requiring approval workflows',
       features: [
-        '15,000 quality visits',
-        'Fastest delivery',
-        'Dedicated manager',
-        'Unlimited campaigns',
-        'API access'
+        'Custom page limits (30k+ pages)',
+        'Batch scanning (incremental)',
+        'Template-level optimization',
+        'Scheduled incremental deployment',
+        'Approval workflows',
+        'Unlimited keywords',
+        'Dedicated account manager',
+        'SLA guarantee',
+        'Onboarding & training'
       ],
+      disclaimer: 'Enterprise-grade SEO optimization. No instant full-site scans. No ranking guarantees.',
       popular: false,
       color: 'green'
     }
@@ -90,7 +107,8 @@ export default function PricingPlans() {
       name: plan.name,
       price: plan.price[billingCycle],
       billingCycle,
-      serviceType: 'traffic'
+      serviceType: 'seo',
+      disclaimer: plan.disclaimer
     });
     setShowCheckout(true);
   };
@@ -111,10 +129,10 @@ export default function PricingPlans() {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold text-gray-900 mb-4">
-            Website Traffic Plans
+            SEO Optimization Plans
           </h1>
           <p className="text-xl text-gray-600 mb-8">
-            Get real, high-quality visitors to boost your rankings. No hidden fees, cancel anytime.
+            Technical SEO audits, AI-powered recommendations, and server-side deployment. No ranking guarantees.
           </p>
 
           {/* Billing Toggle */}
@@ -226,10 +244,10 @@ export default function PricingPlans() {
                 <Zap className="w-8 h-8 text-indigo-600" />
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">
-                100% Real Traffic
+                DataForSEO Analysis
               </h3>
               <p className="text-gray-600">
-                All visitors are real people, not bots. Fully compliant with search engine guidelines.
+                Comprehensive analysis of 200+ ranking factors. Identify critical issues and optimization opportunities.
               </p>
             </div>
             <div className="text-center">
@@ -237,10 +255,10 @@ export default function PricingPlans() {
                 <TrendingUp className="w-8 h-8 text-purple-600" />
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">
-                Real-Time Analytics
+                AI-Powered Recommendations
               </h3>
               <p className="text-gray-600">
-                Monitor your traffic with live dashboards showing visitor behavior and engagement.
+                OpenAI GPT-4 generates optimized titles, meta descriptions, schema markup, and content suggestions.
               </p>
             </div>
             <div className="text-center">
@@ -248,10 +266,10 @@ export default function PricingPlans() {
                 <Check className="w-8 h-8 text-green-600" />
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">
-                Geo-Targeting
+                Server-Side Deployment
               </h3>
               <p className="text-gray-600">
-                Target visitors from specific countries and regions to match your audience.
+                Production changes applied via server-rendered HTML. Crawl-safe and Google-compliant (approval required).
               </p>
             </div>
           </div>

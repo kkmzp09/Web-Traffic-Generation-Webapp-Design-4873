@@ -17,8 +17,9 @@ export default function Sidebar() {
 
   const navigationItems = [
     { name: 'Dashboard', href: '/dashboard', icon: FiHome, description: 'Overview & analytics' },
-    { name: 'Direct Traffic', href: '/direct-traffic', icon: FiZap, description: 'Run direct campaigns' },
-    { name: 'SEO Traffic', href: '/seo-traffic', icon: FiSearch, description: 'Run SEO campaigns' },
+    { name: 'Direct Traffic', href: '/direct-traffic', icon: FiZap, description: '⚠️ Deprecated', deprecated: true },
+    { name: 'SEO Traffic', href: '/seo-traffic', icon: FiSearch, description: '⚠️ Deprecated', deprecated: true },
+    { name: 'SEO Optimization', href: '/seo-dashboard', icon: FiCheckCircle, description: 'Audits & recommendations' },
     { name: 'Domain Analytics', href: '/domain-analytics', icon: FiBarChart2, description: 'SEO insights & data' },
     { name: 'Keyword Tracker', href: '/keyword-tracker', icon: FiTarget, description: 'Track keyword rankings' },
     { name: 'Keyword Research', href: '/keyword-research', icon: FiSearch, description: 'Discover ranking sites' },
@@ -34,6 +35,9 @@ export default function Sidebar() {
 
   const getNavItemClass = (item) => {
     const base = 'group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 relative';
+    if (item.deprecated) {
+      return `${base} text-gray-400 opacity-60 cursor-not-allowed`;
+    }
     return isActive(item.href)
       ? `${base} bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg`
       : `${base} text-gray-700 hover:bg-gray-100 hover:text-gray-900`;

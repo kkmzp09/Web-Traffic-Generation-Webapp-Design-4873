@@ -79,13 +79,13 @@ export default function WidgetInstallation() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Widget Installation</h1>
-          <p className="text-gray-600">Install the Auto-Fix widget on your website to enable automatic SEO fixes</p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">SEO Preview Widget Setup</h1>
+          <p className="text-gray-600">Install the preview widget to see SEO recommendations on your website (preview only)</p>
         </div>
 
         {/* How It Works */}
         <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl shadow-lg p-8 mb-8 text-white">
-          <h2 className="text-2xl font-bold mb-4">🚀 How Auto-Fix Works</h2>
+          <h2 className="text-2xl font-bold mb-4">🚀 How Preview Widget Works</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="flex items-start gap-3">
               <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -110,9 +110,33 @@ export default function WidgetInstallation() {
                 <span className="text-xl font-bold">3</span>
               </div>
               <div>
-                <h3 className="font-semibold mb-1">Auto-Apply</h3>
-                <p className="text-sm text-indigo-100">Fixes are instantly applied to your live site</p>
+                <h3 className="font-semibold mb-1">Preview Changes</h3>
+                <p className="text-sm text-indigo-100">See how recommendations would look (preview only)</p>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Important Warning */}
+        <div className="bg-orange-50 border-l-4 border-orange-400 p-6 mb-8 rounded-lg">
+          <div className="flex items-start">
+            <FiAlertCircle className="w-6 h-6 text-orange-600 flex-shrink-0 mt-0.5" />
+            <div className="ml-4">
+              <h3 className="text-lg font-semibold text-orange-900 mb-2">Preview Mode Only</h3>
+              <p className="text-sm text-orange-800 mb-3">
+                This JavaScript widget shows how SEO optimizations would look to users. 
+                However, search engine crawlers may not execute JavaScript consistently.
+              </p>
+              <div className="bg-orange-100 border border-orange-200 rounded p-3 mb-3">
+                <p className="text-sm text-orange-900 font-semibold mb-2">For Production SEO:</p>
+                <p className="text-sm text-orange-800">
+                  Contact support to deploy server-rendered HTML changes that are identical for users and crawlers. 
+                  Production deployment requires approval and is applied via server-side rendering.
+                </p>
+              </div>
+              <p className="text-xs text-orange-700 italic">
+                Rankings are not guaranteed and depend on competition, content quality, and Google's algorithm.
+              </p>
             </div>
           </div>
         </div>

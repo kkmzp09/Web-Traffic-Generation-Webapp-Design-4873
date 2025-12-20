@@ -98,13 +98,38 @@ export default function PhonePeCheckout({ plan, onSuccess, onCancel }) {
           <span className="font-semibold text-gray-900">{planName}</span>
         </div>
         <div className="flex justify-between items-center mb-2">
-          <span className="text-gray-600">Duration</span>
-          <span className="font-semibold text-gray-900">1 Month</span>
+          <span className="text-gray-600">Service</span>
+          <span className="font-semibold text-gray-900">SEO Optimization</span>
         </div>
+        <div className="flex justify-between items-center mb-2">
+          <span className="text-gray-600">Duration</span>
+          <span className="font-semibold text-gray-900">{plan?.billingCycle === 'yearly' ? '1 Year' : '1 Month'}</span>
+        </div>
+        {plan?.disclaimer && (
+          <div className="text-xs text-gray-600 mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
+            <strong>Note:</strong> {plan.disclaimer}
+          </div>
+        )}
         <div className="border-t border-gray-200 pt-2 mt-2">
           <div className="flex justify-between items-center">
             <span className="text-lg font-bold text-gray-900">Total Amount</span>
             <span className="text-2xl font-bold text-purple-600">₹{amount}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* SEO Disclaimer */}
+      <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
+        <div className="flex">
+          <div className="flex-shrink-0">
+            <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+          </div>
+          <div className="ml-3">
+            <p className="text-sm text-yellow-700">
+              <strong>Important:</strong> This subscription provides SEO analysis, optimization recommendations, and technical monitoring. Rankings are not guaranteed and depend on competition, content quality, and Google's algorithm. Production changes require approval.
+            </p>
           </div>
         </div>
       </div>
@@ -141,15 +166,15 @@ export default function PhonePeCheckout({ plan, onSuccess, onCancel }) {
         <ul className="space-y-2">
           <li className="flex items-start">
             <FiCheck className="w-5 h-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-            <span className="text-sm text-gray-600">Instant activation after payment</span>
+            <span className="text-sm text-gray-600">Instant dashboard access after payment</span>
           </li>
           <li className="flex items-start">
             <FiCheck className="w-5 h-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-            <span className="text-sm text-gray-600">Full access to all plan features</span>
+            <span className="text-sm text-gray-600">SEO audits, keyword tracking, and reports</span>
           </li>
           <li className="flex items-start">
             <FiCheck className="w-5 h-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />
-            <span className="text-sm text-gray-600">Secure payment via PhonePe</span>
+            <span className="text-sm text-gray-600">AI-powered optimization recommendations</span>
           </li>
           <li className="flex items-start">
             <FiCheck className="w-5 h-5 text-green-500 mr-2 flex-shrink-0 mt-0.5" />

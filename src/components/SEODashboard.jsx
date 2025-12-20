@@ -201,7 +201,7 @@ export default function SEODashboard() {
     setFixingIssues(prev => ({ ...prev, [key]: true }));
 
     try {
-      // Call auto-fix API
+      // Call optimization recommendation API
       const response = await fetch('https://api.organitrafficboost.com/api/seo/auto-fix', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -222,8 +222,8 @@ export default function SEODashboard() {
         alert(`❌ Failed to fix issues: ${data.error || 'Unknown error'}`);
       }
     } catch (error) {
-      console.error('Auto-fix error:', error);
-      alert('❌ Failed to apply auto-fix. Please try again.');
+      console.error('Optimization error:', error);
+      alert('❌ Failed to generate recommendations. Please try again.');
     } finally {
       setFixingIssues(prev => ({ ...prev, [key]: false }));
     }
@@ -245,8 +245,39 @@ export default function SEODashboard() {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">SEO Auto Fix</h1>
-          <p className="text-gray-600">Scan, analyze, and auto-fix your pages with AI-powered optimization</p>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">SEO Optimization Dashboard</h1>
+          <p className="text-gray-600">Scan, analyze, and get AI-powered recommendations for your pages</p>
+        </div>
+
+        {/* Important Notice */}
+        <div className="bg-blue-50 border-l-4 border-blue-500 p-6 mb-6 rounded-lg">
+          <div className="flex items-start">
+            <FiAlertCircle className="w-6 h-6 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div className="ml-4">
+              <h3 className="text-lg font-semibold text-blue-900 mb-2">How SEO Optimization Works</h3>
+              <ul className="text-sm text-blue-800 space-y-2">
+                <li className="flex items-start">
+                  <span className="font-semibold mr-2">1. Analysis:</span>
+                  <span>DataForSEO scans 200+ ranking factors and identifies issues</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="font-semibold mr-2">2. Recommendations:</span>
+                  <span>AI generates optimized content suggestions</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="font-semibold mr-2">3. Preview:</span>
+                  <span>JavaScript widget shows how changes would look (preview only)</span>
+                </li>
+                <li className="flex items-start">
+                  <span className="font-semibold mr-2">4. Production:</span>
+                  <span className="font-semibold text-blue-900">Server-side deployment with approval required (contact support)</span>
+                </li>
+              </ul>
+              <p className="text-xs text-blue-700 mt-3 italic">
+                Rankings are not guaranteed and depend on competition, content quality, and Google's algorithm.
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Website Manager - Replaces search bar */}
@@ -569,7 +600,7 @@ export default function SEODashboard() {
                         ) : (
                           <>
                             <FiZap className="w-4 h-4" />
-                            Auto Fix
+                            Get Recommendations
                           </>
                         )}
                       </button>

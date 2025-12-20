@@ -99,19 +99,19 @@ export default function NewLandingPage() {
           <div className="text-center">
             <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-full text-sm font-semibold mb-6">
               <FaBolt className="text-yellow-500" />
-              <span>Real Traffic • Real Results • Real Growth</span>
+              <span>Comprehensive SEO Audits • AI-Powered Optimization • Technical Excellence</span>
             </div>
             
-            <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6">
-              Drive Quality Traffic
-              <span className="block bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
-                To Your Website
+            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
+              Enterprise SEO Optimization
+              <span className="block bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Platform for Technical Excellence
               </span>
             </h1>
             
-            <p className="text-xl md:text-2xl text-gray-600 mb-12 max-w-4xl mx-auto">
-              Get <strong>real, high-quality visitors</strong> to boost your rankings, test campaigns, and increase visibility. 
-              Start from just <strong>₹1,245/month</strong> for 500 visits.
+            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
+              Comprehensive SEO audits, on-page optimization, and technical monitoring powered by DataForSEO and AI. 
+              Improve crawlability, fix technical issues, and optimize for search engines with enterprise-grade tools.
             </p>
 
             {/* CTA Buttons */}
@@ -135,16 +135,16 @@ export default function NewLandingPage() {
             {/* Stats Section */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
               <div className="bg-white rounded-xl p-6 shadow-lg">
-                <div className="text-4xl font-bold text-blue-600 mb-2">500-15K</div>
-                <div className="text-gray-600 font-medium">Visits Per Month</div>
+                <div className="text-4xl font-bold text-blue-600 mb-2">200+</div>
+                <div className="text-gray-600 font-medium">Ranking Factors Analyzed</div>
               </div>
               <div className="bg-white rounded-xl p-6 shadow-lg">
                 <div className="text-4xl font-bold text-indigo-600 mb-2">100%</div>
-                <div className="text-gray-600 font-medium">Real Visitors</div>
+                <div className="text-gray-600 font-medium">Technical SEO Audits</div>
               </div>
               <div className="bg-white rounded-xl p-6 shadow-lg">
                 <div className="text-4xl font-bold text-purple-600 mb-2">24/7</div>
-                <div className="text-gray-600 font-medium">Support Available</div>
+                <div className="text-gray-600 font-medium">Monitoring and Alerts</div>
               </div>
             </div>
           </div>
@@ -155,9 +155,11 @@ export default function NewLandingPage() {
       <section id="services" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">How It Works</h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Get started with quality traffic in just 3 simple steps
+            <h2 className="text-4xl md:text-5xl font-bold mb-4">
+              AI-Powered SEO Recommendations
+            </h2>
+            <p className="text-xl text-indigo-100 max-w-3xl mx-auto">
+              Get intelligent optimization suggestions powered by OpenAI GPT-4. Preview changes, then apply to production with confidence.
             </p>
           </div>
 
@@ -167,9 +169,9 @@ export default function NewLandingPage() {
               <div className="w-20 h-20 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6 text-white text-3xl font-bold">
                 1
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Choose Your Plan</h3>
-              <p className="text-gray-600 text-lg">
-                Select from 500 to 15,000 visits per month based on your needs. All plans include geo-targeting and real-time analytics.
+              <h3 className="text-2xl font-bold mb-3 text-center">Comprehensive SEO Audits</h3>
+              <p className="text-indigo-100 text-center">
+                Scan your website and get AI-generated recommendations for 18 SEO categories. DataForSEO detects issues, AI suggests optimizations.
               </p>
             </div>
 
@@ -178,9 +180,9 @@ export default function NewLandingPage() {
               <div className="w-20 h-20 bg-gradient-to-r from-indigo-600 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6 text-white text-3xl font-bold">
                 2
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Set Up Campaign</h3>
-              <p className="text-gray-600 text-lg">
-                Enter your website URL, choose your target locations, and configure your traffic preferences in minutes.
+              <h3 className="text-2xl font-bold mb-3 text-center">AI-Powered Analysis</h3>
+              <p className="text-indigo-100 text-center">
+                Analyze your website's technical SEO and get actionable recommendations for improvement.
               </p>
             </div>
 
@@ -189,9 +191,9 @@ export default function NewLandingPage() {
               <div className="w-20 h-20 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-6 text-white text-3xl font-bold">
                 3
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Watch Traffic Grow</h3>
-              <p className="text-gray-600 text-lg">
-                Monitor your traffic in real-time with our analytics dashboard. See immediate results and track your growth.
+              <h3 className="text-2xl font-bold mb-3 text-center">Preview and Apply Changes</h3>
+              <p className="text-indigo-100 text-center">
+                Preview changes before applying them to production. Ensure confidence in your SEO optimizations.
               </p>
             </div>
           </div>
@@ -199,27 +201,27 @@ export default function NewLandingPage() {
           {/* Additional Info */}
           <div className="mt-16 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-8 border-2 border-blue-200">
             <div className="text-center">
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Why Choose OrganiTraffic?</h3>
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">Why Choose Our Platform?</h3>
               <div className="grid md:grid-cols-4 gap-6 mt-8">
                 <div>
                   <FaCheckCircle className="text-blue-600 text-3xl mx-auto mb-3" />
-                  <p className="font-semibold text-gray-900">100% Real Traffic</p>
-                  <p className="text-gray-600 text-sm">No bots or fake visitors</p>
+                  <p className="font-semibold text-gray-900">Comprehensive SEO Audits</p>
+                  <p className="text-gray-600 text-sm">Analyze 200+ ranking factors</p>
                 </div>
                 <div>
                   <FaCheckCircle className="text-indigo-600 text-3xl mx-auto mb-3" />
-                  <p className="font-semibold text-gray-900">Geo-Targeting</p>
-                  <p className="text-gray-600 text-sm">Target specific countries</p>
+                  <p className="font-semibold text-gray-900">AI-Powered Optimization</p>
+                  <p className="text-gray-600 text-sm">Get intelligent optimization suggestions</p>
                 </div>
                 <div>
                   <FaCheckCircle className="text-purple-600 text-3xl mx-auto mb-3" />
-                  <p className="font-semibold text-gray-900">Fast Delivery</p>
-                  <p className="text-gray-600 text-sm">Traffic starts within 24h</p>
+                  <p className="font-semibold text-gray-900">Technical SEO Expertise</p>
+                  <p className="text-gray-600 text-sm">Improve crawlability and fix technical issues</p>
                 </div>
                 <div>
                   <FaCheckCircle className="text-pink-600 text-3xl mx-auto mb-3" />
-                  <p className="font-semibold text-gray-900">24/7 Support</p>
-                  <p className="text-gray-600 text-sm">Always here to help</p>
+                  <p className="font-semibold text-gray-900">24/7 Monitoring and Alerts</p>
+                  <p className="text-gray-600 text-sm">Stay on top of your SEO performance</p>
                 </div>
               </div>
             </div>
@@ -231,9 +233,9 @@ export default function NewLandingPage() {
       <section id="features" className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Traffic Generation Features</h2>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">Enterprise SEO Optimization Features</h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Everything you need to drive quality traffic and grow your online presence
+              Everything you need to drive technical SEO excellence and grow your online presence
             </p>
           </div>
 
@@ -242,9 +244,9 @@ export default function NewLandingPage() {
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
                 <FaTachometerAlt className="text-blue-600 text-xl" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Real-Time Analytics</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Comprehensive SEO Audits</h3>
               <p className="text-gray-600">
-                Monitor your traffic performance with live dashboards and detailed reports showing visitor behavior.
+                Analyze 200+ ranking factors and get actionable recommendations for improvement.
               </p>
             </div>
 
@@ -252,9 +254,9 @@ export default function NewLandingPage() {
               <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-4">
                 <FaChartLine className="text-indigo-600 text-xl" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Geo-Targeting</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">AI-Powered Optimization</h3>
               <p className="text-gray-600">
-                Target visitors from specific countries and regions to match your audience demographics.
+                Get intelligent optimization suggestions powered by OpenAI GPT-4.
               </p>
             </div>
 
@@ -262,9 +264,9 @@ export default function NewLandingPage() {
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
                 <FaShieldAlt className="text-green-600 text-xl" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">100% Safe & Compliant</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Technical SEO Expertise</h3>
               <p className="text-gray-600">
-                All traffic is real and compliant with search engine guidelines. No bots or fake visitors.
+                Improve crawlability, fix technical issues, and optimize for search engines with enterprise-grade tools.
               </p>
             </div>
 
@@ -272,9 +274,9 @@ export default function NewLandingPage() {
               <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
                 <FaBolt className="text-purple-600 text-xl" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Fast Delivery</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Continuous Monitoring</h3>
               <p className="text-gray-600">
-                Traffic starts flowing to your website within 24 hours of campaign activation.
+                Scheduled scans, automated alerts, and historical tracking. Monitor SEO health over time with detailed reports.
               </p>
             </div>
 
@@ -282,9 +284,9 @@ export default function NewLandingPage() {
               <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mb-4">
                 <FaRocket className="text-yellow-600 text-xl" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Multiple Campaigns</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">Technical SEO Audits</h3>
               <p className="text-gray-600">
-                Run multiple traffic campaigns simultaneously for different pages or websites.
+                Comprehensive analysis of 200+ ranking factors using DataForSEO. Identify critical issues, warnings, and optimization opportunities.
               </p>
             </div>
 

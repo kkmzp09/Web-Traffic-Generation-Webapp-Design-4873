@@ -87,11 +87,11 @@ export default function SEOScanResults() {
         alert('Fix applied successfully!');
         loadScanResults();
       } else {
-        alert('Failed to apply fix: ' + data.error);
+        alert('Failed to preview recommendation: ' + data.error);
       }
     } catch (error) {
       console.error('Error applying fix:', error);
-      alert('Failed to apply fix');
+      alert('Failed to preview recommendation');
     } finally {
       setApplyingFix(null);
     }
@@ -138,28 +138,28 @@ export default function SEOScanResults() {
       loadScanResults();
     } catch (error) {
       console.error('Error applying all fixes:', error);
-      alert('Failed to apply fixes');
+      alert('Failed to preview recommendations');
     } finally {
       setApplyingAll(false);
     }
   };
 
-  // Determine if an issue can be auto-fixed via widget
+  // Determine if an issue can be previewed via widget
   const isAutoFixable = (issue) => {
     const autoFixableCategories = ['title', 'meta', 'headings', 'images', 'schema', 'technical'];
     return autoFixableCategories.includes(issue.category);
   };
 
-  // Auto-fix all fixable issues at once
+  // Preview all fixable issues at once
   const autoFixAllIssues = async () => {
     const autoFixableIssues = [...criticalIssues, ...warnings].filter(isAutoFixable);
     
     if (autoFixableIssues.length === 0) {
-      alert('No auto-fixable issues found!');
+      alert('No previewable issues found!');
       return;
     }
 
-    if (!confirm(`Apply auto-fix to all ${autoFixableIssues.length} fixable issue(s)?\n\nThis will enable widget-based fixes for:\n${autoFixableIssues.map(i => `• ${i.title}`).join('\n')}`)) {
+    if (!confirm(`Preview recommendations for all ${autoFixableIssues.length} issue(s)?\n\nThis will enable widget-based previews for:\n${autoFixableIssues.map(i => `• ${i.title}`).join('\n')}\n\nNote: Production deployment requires approval.`)) {
       return;
     }
 
@@ -205,7 +205,7 @@ export default function SEOScanResults() {
             optimizedContent = 'Schema markup';
           }
 
-          // Apply fix
+          // Apply preview
           const response = await fetch(
             'https://api.organitrafficboost.com/api/seo/widget/fixes/apply',
             {
@@ -255,9 +255,9 @@ export default function SEOScanResults() {
       const failedResults = results.filter(r => r.status === 'failed');
       
       let resultMessage = `
-🎉 Auto-Fix Complete!
+🎉 Preview Complete!
 
-✅ Successfully Applied: ${successCount}
+✅ Successfully Previewed: ${successCount}
 ${failCount > 0 ? `❌ Failed: ${failCount}` : ''}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -290,14 +290,14 @@ ${failedResults.map(r => `
       alert(resultMessage);
       loadScanResults();
     } catch (error) {
-      console.error('Error auto-fixing all issues:', error);
-      alert('Failed to apply auto-fixes: ' + error.message);
+      console.error('Error previewing all issues:', error);
+      alert('Failed to apply previews: ' + error.message);
     } finally {
       setAutoFixingAll(false);
     }
   };
 
-  // Apply auto-fix via widget
+  // Apply preview via widget
   const applyAutoFix = async (issue) => {
     try {
       setAutoFixing(issue.id);
@@ -359,7 +359,7 @@ ${failedResults.map(r => `
       if (data.success) {
         // Show detailed before/after modal
         const beforeAfterMessage = `
-🎯 Auto-Fix Applied Successfully!
+🎯 Preview Applied Successfully!
 
 📋 Issue: ${issue.title}
 📍 URL: ${issue.page_url || scan.url}
@@ -392,11 +392,11 @@ ${optimizedContent}
         alert(beforeAfterMessage);
         loadScanResults();
       } else {
-        alert('Failed to enable auto-fix: ' + data.error);
+        alert('Failed to enable preview: ' + data.error);
       }
     } catch (error) {
-      console.error('Error enabling auto-fix:', error);
-      alert('Failed to enable auto-fix');
+      console.error('Error enabling preview:', error);
+      alert('Failed to enable preview');
     } finally {
       setAutoFixing(null);
     }
@@ -512,17 +512,17 @@ ${optimizedContent}
           </div>
         </div>
 
-        {/* Auto-Fix All Issues Button */}
+        {/* Preview All Issues Button */}
         {([...criticalIssues, ...warnings].filter(isAutoFixable).length > 0) && (
-          <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl shadow-lg p-8 mb-8 text-white">
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl shadow-lg p-8 mb-8 text-white">
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-2xl font-bold mb-2 flex items-center gap-2">
                   <FiZap className="w-7 h-7" />
-                  Widget Auto-Fix Available
+                  Widget Preview Available
                 </h3>
-                <p className="text-green-100">
-                  Automatically fix {[...criticalIssues, ...warnings].filter(isAutoFixable).length} issue(s) using the widget. 
+                <p className="text-blue-100">
+                  Preview {[...criticalIssues, ...warnings].filter(isAutoFixable).length} recommendation(s) using the widget. Production deployment requires approval. 
                   No file modifications needed - fixes are applied in real-time!
                 </p>
               </div>
@@ -539,7 +539,7 @@ ${optimizedContent}
                 ) : (
                   <>
                     <FiZap className="w-6 h-6" />
-                    Auto-Fix All Issues
+                    Preview All Recommendations
                   </>
                 )}
               </button>
@@ -553,7 +553,7 @@ ${optimizedContent}
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-2xl font-bold mb-2">
-                  {fixes.length === 0 ? 'AI-Powered Auto-Fix Available' : 'Generate More AI Fixes'}
+                  {fixes.length === 0 ? 'AI-Powered Recommendations Available' : 'Generate More AI Recommendations'}
                 </h3>
                 <p className="text-indigo-100">
                   {fixes.length === 0 
@@ -752,7 +752,7 @@ function FixCard({ fix, scan, applyFix, applying }) {
             ) : (
               <>
                 <FiCheckCircle className="w-4 h-4" />
-                {isSuggestion ? 'Mark as Reviewed' : 'Apply Fix'}
+                {isSuggestion ? 'Mark as Reviewed' : 'Preview Recommendation'}
               </>
             )}
           </button>
@@ -792,7 +792,7 @@ function IssueCard({ issue, severity, isAutoFixable, applyAutoFix, autoFixing })
             </div>
             {isAutoFixable && (
               <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
-                ⚡ Auto-fixable via widget
+                ⚡ Previewable via widget
               </span>
             )}
           </div>
@@ -811,11 +811,39 @@ function IssueCard({ issue, severity, isAutoFixable, applyAutoFix, autoFixing })
             ) : (
               <>
                 <FiZap className="w-4 h-4" />
-                Auto-Fix
+                Preview Fix
               </>
             )}
           </button>
         )}
+      </div>
+
+      {/* Production Deployment CTA */}
+      <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl shadow-lg p-8 mt-8 text-white">
+        <div className="text-center">
+          <h3 className="text-2xl font-bold mb-3">Ready for Production Deployment?</h3>
+          <p className="text-purple-100 mb-6 max-w-2xl mx-auto">
+            Deploy these optimizations server-side for crawl-safe, Google-compliant SEO. 
+            Production changes are applied via server-rendered HTML with approval workflow.
+          </p>
+          <div className="flex justify-center gap-4">
+            <button
+              onClick={() => window.open('mailto:support@organitrafficboost.com?subject=Production SEO Deployment Request&body=Scan ID: ' + scanId, '_blank')}
+              className="px-8 py-4 bg-white text-purple-600 rounded-lg font-semibold hover:bg-purple-50 transition-all shadow-lg"
+            >
+              Contact Support for Deployment
+            </button>
+            <button
+              onClick={() => navigate('/widget-installation')}
+              className="px-8 py-4 bg-purple-700 text-white rounded-lg font-semibold hover:bg-purple-800 transition-all"
+            >
+              Setup Preview Widget
+            </button>
+          </div>
+          <p className="text-xs text-purple-200 mt-4">
+            Enterprise plans include dedicated deployment support and approval workflows
+          </p>
+        </div>
       </div>
     </div>
   );
