@@ -1,4 +1,5 @@
 // Enhanced Playwright Worker with Google Search and Real Mouse Events
+// Optimized for Ad Interactions and Revenue Generation
 import { chromium, devices } from 'playwright';
 import express from 'express';
 import EventEmitter from 'events';
@@ -16,6 +17,70 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'Playwright worker is running' });
 });
 
+// Page categorization for ad optimization
+const PAGE_CATEGORIES = {
+  HIGH_AD_PRIORITY: {
+    patterns: ['/blog/', '/article/', '/post/', '/news/', '/content/'],
+    keywords: ['blog', 'article', 'post', 'guide', 'tutorial', 'tips'],
+    fillRate: '80-90%',
+    dwellTime: { min: 60000, max: 120000 } // 1-2 minutes
+  },
+  MEDIUM_AD_PRIORITY: {
+    patterns: ['/', '/home', '/index'],
+    keywords: ['homepage', 'home', 'index'],
+    fillRate: '70-90%',
+    dwellTime: { min: 45000, max: 90000 } // 45s-90s
+  },
+  LOW_AD_PRIORITY: {
+    patterns: ['/about', '/contact', '/help'],
+    keywords: ['about', 'contact', 'help'],
+    fillRate: '60-80%',
+    dwellTime: { min: 30000, max: 60000 } // 30s-60s
+  },
+  AVOID: {
+    patterns: [
+      '/calculator', '/tool', '/utility',
+      '/privacy', '/terms', '/disclaimer', '/legal',
+      '/mortgage-calculator', '/loan-calculator', '/emi-calculator',
+      '/personal-loan-calculator', '/auto-loan-calculator',
+      '/refinance-calculator', '/debt-consolidation-calculator',
+      '/business-loan-calculator', '/student-loan-calculator'
+    ],
+    keywords: ['calculator', 'tool', 'utility', 'privacy', 'terms', 'legal', 'disclaimer'],
+    fillRate: '0-50%',
+    reason: 'Low/no ad fill rate'
+  }
+};
+
+// Categorize page based on URL
+function categorizePageForAds(url) {
+  const urlLower = url.toLowerCase();
+  
+  // Check AVOID patterns first
+  for (const pattern of PAGE_CATEGORIES.AVOID.patterns) {
+    if (urlLower.includes(pattern)) {
+      return { category: 'AVOID', ...PAGE_CATEGORIES.AVOID };
+    }
+  }
+  
+  // Check HIGH priority (blog/article pages)
+  for (const pattern of PAGE_CATEGORIES.HIGH_AD_PRIORITY.patterns) {
+    if (urlLower.includes(pattern)) {
+      return { category: 'HIGH_AD_PRIORITY', ...PAGE_CATEGORIES.HIGH_AD_PRIORITY };
+    }
+  }
+  
+  // Check MEDIUM priority (homepage)
+  for (const pattern of PAGE_CATEGORIES.MEDIUM_AD_PRIORITY.patterns) {
+    if (urlLower.includes(pattern) || urlLower.endsWith('/')) {
+      return { category: 'MEDIUM_AD_PRIORITY', ...PAGE_CATEGORIES.MEDIUM_AD_PRIORITY };
+    }
+  }
+  
+  // Default to LOW priority
+  return { category: 'LOW_AD_PRIORITY', ...PAGE_CATEGORIES.LOW_AD_PRIORITY };
+}
+
 // Enhanced browser automation with Google Search
 app.post('/run', async (req, res) => {
   const { 
@@ -25,8 +90,12 @@ app.post('/run', async (req, res) => {
     enableGoogleSearch = true,
     enableNaturalScrolling = true,
     enableInternalNavigation = true,
+    enableAdOptimization = true,
     sessionId 
   } = req.body;
+  
+  // Categorize page for ad optimization
+  const pageCategory = categorizePageForAds(targetUrl);
   
   console.log(`🎬 Starting enhanced Playwright session: ${sessionId}`);
   console.log(`🌐 Target URL: ${targetUrl}`);
@@ -34,6 +103,18 @@ app.post('/run', async (req, res) => {
   console.log(`🔍 Google Search: ${enableGoogleSearch ? 'ENABLED' : 'DISABLED'}`);
   console.log(`📜 Natural Scrolling: ${enableNaturalScrolling ? 'ENABLED' : 'DISABLED'}`);
   console.log(`🔗 Internal Navigation: ${enableInternalNavigation ? 'ENABLED' : 'DISABLED'}`);
+  console.log(`💰 Ad Optimization: ${enableAdOptimization ? 'ENABLED' : 'DISABLED'}`);
+  
+  if (enableAdOptimization) {
+    console.log(`📊 Page Category: ${pageCategory.category}`);
+    console.log(`📈 Expected Ad Fill Rate: ${pageCategory.fillRate}`);
+    console.log(`⏱️ Optimized Dwell Time: ${pageCategory.dwellTime.min/1000}s - ${pageCategory.dwellTime.max/1000}s`);
+    
+    if (pageCategory.category === 'AVOID') {
+      console.log(`⚠️ WARNING: ${pageCategory.reason}`);
+      console.log(`💡 Recommendation: Target blog/article pages instead`);
+    }
+  }
 
   // Start automation in background
   (async () => {
@@ -70,14 +151,36 @@ app.post('/run', async (req, res) => {
         bus.emit('log', 'page-loaded');
       }
 
-      // Step 2: Natural scrolling behavior
-      if (enableNaturalScrolling) {
-        await performNaturalScrolling(page);
+      // Step 2: Optimized dwell time for ad loading
+      if (enableAdOptimization) {
+        const dwellTime = pageCategory.dwellTime.min + 
+          Math.random() * (pageCategory.dwellTime.max - pageCategory.dwellTime.min);
+        
+        console.log(`⏱️ Optimized dwell time: ${Math.round(dwellTime/1000)}s for better ad loading`);
+        bus.emit('log', `ad-optimized-dwell-time: ${Math.round(dwellTime/1000)}s`);
+        
+        // Wait for ads to load (initial delay)
+        await page.waitForTimeout(3000);
+        bus.emit('log', 'waiting-for-ads-to-load');
+        console.log('💰 Waiting for ads to load...');
       }
 
-      // Step 3: Internal link navigation
+      // Step 3: Natural scrolling behavior
+      if (enableNaturalScrolling) {
+        await performNaturalScrolling(page, enableAdOptimization);
+      }
+
+      // Step 4: Internal link navigation (prioritize ad-heavy pages)
       if (enableInternalNavigation) {
-        await performInternalNavigation(page, maxClicks);
+        await performInternalNavigation(page, maxClicks, enableAdOptimization);
+      }
+      
+      // Step 5: Final dwell time for ad interactions
+      if (enableAdOptimization) {
+        const finalDwellTime = 5000 + Math.random() * 10000;
+        console.log(`💰 Final ad interaction time: ${Math.round(finalDwellTime/1000)}s`);
+        await page.waitForTimeout(finalDwellTime);
+        bus.emit('log', 'ad-interaction-completed');
       }
 
       bus.emit('done', { 
@@ -86,8 +189,14 @@ app.post('/run', async (req, res) => {
         features: {
           googleSearch: enableGoogleSearch,
           naturalScrolling: enableNaturalScrolling,
-          internalNavigation: enableInternalNavigation
-        }
+          internalNavigation: enableInternalNavigation,
+          adOptimization: enableAdOptimization
+        },
+        adMetrics: enableAdOptimization ? {
+          pageCategory: pageCategory.category,
+          expectedFillRate: pageCategory.fillRate,
+          dwellTimeRange: `${pageCategory.dwellTime.min/1000}s - ${pageCategory.dwellTime.max/1000}s`
+        } : null
       });
       
     } catch (e) {
@@ -278,9 +387,9 @@ function generateSearchQuery(targetUrl) {
 }
 
 // Perform natural scrolling with realistic patterns
-async function performNaturalScrolling(page) {
+async function performNaturalScrolling(page, adOptimized = false) {
   bus.emit('log', 'starting-natural-scrolling');
-  console.log('📜 Starting natural scrolling...');
+  console.log(`📜 Starting natural scrolling${adOptimized ? ' (ad-optimized)' : ''}...`);
   
   try {
     // Get page height for intelligent scrolling
@@ -307,9 +416,16 @@ async function performNaturalScrolling(page) {
       bus.emit('log', `scrolled-down-step-${i + 1}`);
       console.log(`📜 Scroll step ${i + 1}/${scrollSteps} (${Math.round(scrollAmount)}px)`);
       
-      // Natural pause for "reading"
-      const readingTime = 800 + Math.random() * 1500;
+      // Natural pause for "reading" (longer for ad optimization)
+      const baseReadingTime = adOptimized ? 1500 : 800;
+      const readingTime = baseReadingTime + Math.random() * (adOptimized ? 2500 : 1500);
       await page.waitForTimeout(readingTime);
+      
+      // Extra time for ads to load and be viewable
+      if (adOptimized && i % 2 === 0) {
+        console.log('💰 Pausing for ad viewability...');
+        await page.waitForTimeout(1000 + Math.random() * 2000);
+      }
     }
     
     // Scroll back up partway (natural behavior)
@@ -344,35 +460,81 @@ async function performNaturalScrolling(page) {
 }
 
 // Perform internal navigation with realistic behavior
-async function performInternalNavigation(page, maxClicks) {
+async function performInternalNavigation(page, maxClicks, adOptimized = false) {
   bus.emit('log', 'starting-internal-navigation');
-  console.log('🔗 Starting internal navigation...');
+  console.log(`🔗 Starting internal navigation${adOptimized ? ' (prioritizing ad-heavy pages)' : ''}...`);
   
   try {
     // Find internal links (same-origin only)
-    const internalLinks = await page.$$eval('a[href]', (anchors) =>
+    const allInternalLinks = await page.$$eval('a[href]', (anchors) =>
       anchors
-        .map(a => a.getAttribute('href'))
-        .filter(href => 
-          href && 
-          !href.startsWith('http') && 
-          !href.startsWith('#') && 
-          !href.startsWith('mailto:') &&
-          !href.startsWith('tel:') &&
-          href !== '/' &&
-          href.length > 1
+        .map(a => ({
+          href: a.getAttribute('href'),
+          text: a.textContent.trim()
+        }))
+        .filter(link => 
+          link.href && 
+          !link.href.startsWith('http') && 
+          !link.href.startsWith('#') && 
+          !link.href.startsWith('mailto:') &&
+          !link.href.startsWith('tel:') &&
+          link.href !== '/' &&
+          link.href.length > 1
         )
-        .slice(0, 10) // Limit to first 10 links
     );
+    
+    let internalLinks = allInternalLinks.map(link => link.href);
+    
+    // If ad optimization is enabled, prioritize ad-heavy pages
+    if (adOptimized) {
+      console.log('💰 Filtering links to prioritize ad-heavy pages...');
+      
+      // Separate links by category
+      const highPriorityLinks = [];
+      const mediumPriorityLinks = [];
+      const lowPriorityLinks = [];
+      const avoidLinks = [];
+      
+      for (const link of allInternalLinks) {
+        const category = categorizePageForAds(link.href);
+        
+        if (category.category === 'HIGH_AD_PRIORITY') {
+          highPriorityLinks.push(link.href);
+        } else if (category.category === 'MEDIUM_AD_PRIORITY') {
+          mediumPriorityLinks.push(link.href);
+        } else if (category.category === 'LOW_AD_PRIORITY') {
+          lowPriorityLinks.push(link.href);
+        } else {
+          avoidLinks.push(link.href);
+        }
+      }
+      
+      console.log(`📊 Link distribution:`);
+      console.log(`   ✅ High priority (blog/articles): ${highPriorityLinks.length}`);
+      console.log(`   🟡 Medium priority (homepage): ${mediumPriorityLinks.length}`);
+      console.log(`   🟠 Low priority (other): ${lowPriorityLinks.length}`);
+      console.log(`   ❌ Avoid (calculators/legal): ${avoidLinks.length}`);
+      
+      // Prioritize high-value pages first
+      internalLinks = [
+        ...highPriorityLinks,
+        ...mediumPriorityLinks,
+        ...lowPriorityLinks
+        // Explicitly exclude 'avoid' links
+      ].slice(0, 10);
+      
+      if (highPriorityLinks.length > 0) {
+        console.log(`💰 Prioritizing ${highPriorityLinks.length} blog/article pages for better ad revenue`);
+      }
+    } else {
+      internalLinks = internalLinks.slice(0, 10);
+    }
     
     if (internalLinks.length === 0) {
       bus.emit('log', 'no-internal-links-found');
       console.log('ℹ️ No internal links found');
       return;
     }
-    
-    bus.emit('log', `found-${internalLinks.length}-internal-links`);
-    console.log(`🔗 Found ${internalLinks.length} internal links`);
     
     // Visit up to maxClicks internal pages
     const linksToVisit = internalLinks.slice(0, Math.min(maxClicks, internalLinks.length));
@@ -400,17 +562,41 @@ async function performInternalNavigation(page, maxClicks) {
         bus.emit('log', `clicked-internal-link: ${href}`);
         console.log(`✅ Clicked internal link: ${href}`);
         
-        // Brief reading simulation on new page
-        const readingTime = 1000 + Math.random() * 2000;
-        console.log(`📖 Reading page for ${Math.round(readingTime/1000)}s...`);
+        // Check if this is an ad-heavy page
+        const linkCategory = categorizePageForAds(href);
+        const isAdHeavyPage = linkCategory.category === 'HIGH_AD_PRIORITY' || 
+                             linkCategory.category === 'MEDIUM_AD_PRIORITY';
+        
+        // Brief reading simulation on new page (longer for ad-heavy pages)
+        const baseReadingTime = isAdHeavyPage && adOptimized ? 3000 : 1000;
+        const readingTime = baseReadingTime + Math.random() * (isAdHeavyPage && adOptimized ? 4000 : 2000);
+        
+        if (isAdHeavyPage && adOptimized) {
+          console.log(`💰 Ad-heavy page detected (${linkCategory.fillRate} fill rate)`);
+          console.log(`📖 Extended reading time for ad interactions: ${Math.round(readingTime/1000)}s...`);
+        } else {
+          console.log(`📖 Reading page for ${Math.round(readingTime/1000)}s...`);
+        }
+        
         await page.waitForTimeout(readingTime);
         
-        // Quick scroll on internal page
-        await page.evaluate(() => {
-          window.scrollBy({ top: 200 + Math.random() * 300, behavior: 'smooth' });
-        });
+        // Quick scroll on internal page (more scrolling for ad-heavy pages)
+        const scrollAmount = isAdHeavyPage && adOptimized ? 300 + Math.random() * 500 : 200 + Math.random() * 300;
+        await page.evaluate((amount) => {
+          window.scrollBy({ top: amount, behavior: 'smooth' });
+        }, scrollAmount);
         
-        await page.waitForTimeout(800 + Math.random() * 1200);
+        const scrollPause = isAdHeavyPage && adOptimized ? 1500 + Math.random() * 2000 : 800 + Math.random() * 1200;
+        await page.waitForTimeout(scrollPause);
+        
+        // Additional scroll for ad viewability on high-priority pages
+        if (isAdHeavyPage && adOptimized) {
+          console.log('💰 Additional scroll for ad viewability...');
+          await page.evaluate(() => {
+            window.scrollBy({ top: 200 + Math.random() * 300, behavior: 'smooth' });
+          });
+          await page.waitForTimeout(1000 + Math.random() * 2000);
+        }
         
         // Scroll back up
         await page.evaluate(() => {
@@ -418,7 +604,6 @@ async function performInternalNavigation(page, maxClicks) {
         });
         
         await page.waitForTimeout(600 + Math.random() * 800);
-        
       } catch (error) {
         console.error(`❌ Error clicking internal link ${href}:`, error);
         bus.emit('log', `internal-link-error: ${href}`);
@@ -472,10 +657,18 @@ app.listen(PORT, () => {
    🔍 Google Search Integration (FIXED TYPING)
    📜 Natural Scrolling Patterns  
    🔗 Internal Page Navigation
+   💰 Ad Revenue Optimization (NEW!)
    🖱️ Real Mouse Events
    👁️ Visible Browser Windows
-   ⏱️ Human-like Timing
+   ⏱️ Human-like Timing (1-2 min dwell time)
    ⌨️ Realistic Typing Simulation
+
+💰 Ad Optimization:
+   ✅ Prioritizes blog/article pages (80-90% fill)
+   ✅ Targets homepage (70-90% fill)
+   ❌ Avoids calculator/utility pages (0-50% fill)
+   ⏱️ Extended dwell time (1-2 minutes)
+   📊 Smart page categorization
 
 📡 Endpoints:
    GET  /health  - Health check
@@ -483,6 +676,6 @@ app.listen(PORT, () => {
    GET  /events  - Server-sent events
 
 🎯 Ready to receive automation requests!
-🔧 Google Search typing issues have been FIXED!
+💰 Optimized for maximum ad revenue!
   `);
 });

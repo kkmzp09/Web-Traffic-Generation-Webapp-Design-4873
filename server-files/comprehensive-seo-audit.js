@@ -5,6 +5,7 @@ const express = require('express');
 const router = express.Router();
 const { Pool } = require('pg');
 const dataforSEOOnPage = require('./dataforseo-onpage-service');
+const cheerioScanner = require('./cheerio-page-scanner');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -120,6 +121,12 @@ router.post('/comprehensive-audit', async (req, res) => {
     const scanId = scanResult.rows[0].id;
     console.log(`📝 Scan record created: ${scanId}`);
 
+    // QUICK CHEERIO SCAN - Run on homepage + 2 additional pages
+    // This runs in background, doesn't block response
+    runCheerioPageScans(scanId, url, hostname).catch(err => {
+      console.error('⚠️ Cheerio scan failed:', err);
+    });
+
     // Return immediately - scan is running asynchronously
     // Frontend should poll or wait for completion
     res.json({
@@ -161,5 +168,71 @@ router.post('/comprehensive-audit', async (req, res) => {
     });
   }
 });
+
+/**
+ * Background function to run Cheerio page scans
+ * Scans homepage + discovers 2-3 additional pages
+ */
+async function runCheerioPageScans(scanId, baseUrl, hostname) {
+  try {
+    console.log(`🔍 Starting Cheerio page scans for scan ${scanId}`);
+    
+    // Pages to scan (homepage + common pages)
+    const pagesToScan = [
+      baseUrl, // Homepage
+      `${baseUrl.replace(/\/$/, '')}/about`,
+      `${baseUrl.replace(/\/$/, '')}/contact`,
+      `${baseUrl.replace(/\/$/, '')}/services`
+    ];
+    
+    // Scan each page
+    for (const pageUrl of pagesToScan) {
+      try {
+        console.log(`📄 Scanning: ${pageUrl}`);
+        const scanResult = await cheerioScanner.scanPageHTML(pageUrl);
+        
+        if (scanResult.success) {
+          // Store in database
+          await pool.query(
+            `INSERT INTO seo_page_scans 
+             (scan_id, page_url, page_title, meta_description, h1_tags, 
+              image_count, images_without_alt, has_canonical, is_noindex, 
+              issues, scan_success, created_at)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())`,
+            [
+              scanId,
+              scanResult.url,
+              scanResult.pageTitle,
+              scanResult.metaDescription,
+              scanResult.h1Tags,
+              scanResult.imageCount,
+              scanResult.imagesWithoutAlt,
+              scanResult.hasCanonical,
+              scanResult.isNoindex,
+              JSON.stringify(scanResult.issues),
+              true
+            ]
+          );
+          console.log(`✅ Stored ${scanResult.issues.length} issues for ${pageUrl}`);
+        } else {
+          // Store failed scan
+          await pool.query(
+            `INSERT INTO seo_page_scans 
+             (scan_id, page_url, issues, scan_success, error_message, created_at)
+             VALUES ($1, $2, $3, $4, $5, NOW())`,
+            [scanId, pageUrl, JSON.stringify([]), false, scanResult.error]
+          );
+          console.log(`⚠️ Failed to scan ${pageUrl}: ${scanResult.error}`);
+        }
+      } catch (pageError) {
+        console.error(`❌ Error scanning ${pageUrl}:`, pageError);
+      }
+    }
+    
+    console.log(`✅ Cheerio page scans complete for scan ${scanId}`);
+  } catch (error) {
+    console.error(`❌ Cheerio scan background job failed:`, error);
+  }
+}
 
 module.exports = router;

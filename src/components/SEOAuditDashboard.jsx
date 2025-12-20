@@ -6,6 +6,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../lib/authContext';
 import GSCAnalytics from './GSCAnalytics';
 import SEODashboard from './SEODashboard';
+import PageIssuesList from './PageIssuesList';
 import {
   Search, TrendingUp, AlertCircle, CheckCircle, XCircle,
   ChevronDown, ChevronUp, Zap, Target, BarChart2, Clock,
@@ -27,6 +28,8 @@ const SEOAuditDashboard = () => {
   const [scanHistory, setScanHistory] = useState([]);
   const [showNewScanModal, setShowNewScanModal] = useState(false);
   const [newScanUrl, setNewScanUrl] = useState('');
+  const [pageData, setPageData] = useState([]);
+  const [loadingPages, setLoadingPages] = useState(false);
 
   const API_BASE = import.meta.env.VITE_API_URL || 'https://api.organitrafficboost.com';
 
@@ -109,6 +112,7 @@ const SEOAuditDashboard = () => {
       success: true,
       url: scan.url,
       hostname: new URL(scan.url).hostname,
+      scanId: scan.id,
       analysis: {
         score: scan.score,
         issues: scan.issues,
@@ -118,6 +122,37 @@ const SEOAuditDashboard = () => {
     });
     setWebsiteUrl(scan.url);
     setActiveTab('overview');
+    
+    // Load page-level data
+    if (scan.id) {
+      loadPageData(scan.id);
+    }
+  };
+
+  // Load page-level issues
+  const loadPageData = async (scanId) => {
+    if (!scanId) return;
+    
+    try {
+      setLoadingPages(true);
+      console.log(`📄 Loading page-level data for scan ${scanId}`);
+      
+      const response = await fetch(`${API_BASE}/api/dataforseo/onpage/pages/${scanId}`);
+      const data = await response.json();
+      
+      if (data.success) {
+        console.log(`✅ Loaded ${data.pages.length} pages with ${data.totalIssues} issues`);
+        setPageData(data.pages);
+      } else {
+        console.log('⚠️ No page data available:', data.message);
+        setPageData([]);
+      }
+    } catch (error) {
+      console.error('❌ Error loading page data:', error);
+      setPageData([]);
+    } finally {
+      setLoadingPages(false);
+    }
   };
 
   // Save scan results
@@ -208,11 +243,15 @@ const SEOAuditDashboard = () => {
               success: true,
               url: resultsData.url || websiteUrl,
               hostname: resultsData.hostname || new URL(websiteUrl).hostname,
+              scanId: scanId,
               scannedAt: new Date().toISOString(),
               analysis: resultsData.analysis
             });
             setScanning(false);
             loadScanHistory();
+            
+            // Load page-level data
+            loadPageData(scanId);
           } else {
             // No results yet, show partial data from status
             console.warn('⚠️ No full results available, showing partial data');
@@ -619,7 +658,7 @@ const SEOAuditDashboard = () => {
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex gap-8">
-            {['overview', 'seo-automation', 'keywords', 'suggestions', 'performance', 'reports'].map(tab => (
+            {['overview', 'pages', 'seo-automation', 'keywords', 'suggestions', 'performance', 'reports'].map(tab => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -728,6 +767,24 @@ const SEOAuditDashboard = () => {
                     <BarChart2 className="w-16 h-16 text-gray-300" />
                   </div>
                 </div>
+              </div>
+            )}
+
+            {activeTab === 'pages' && (
+              <div>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Page-Level SEO Issues</h2>
+                <p className="text-gray-600 mb-6">
+                  Detailed analysis of each scanned page with fixable issues highlighted
+                </p>
+                
+                {loadingPages ? (
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+                    <RefreshCw className="w-12 h-12 text-purple-600 animate-spin mx-auto mb-4" />
+                    <p className="text-gray-600">Loading page-level data...</p>
+                  </div>
+                ) : (
+                  <PageIssuesList pages={pageData} />
+                )}
               </div>
             )}
 

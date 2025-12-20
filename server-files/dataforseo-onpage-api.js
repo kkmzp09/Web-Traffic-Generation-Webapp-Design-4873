@@ -478,4 +478,79 @@ router.get('/resources/:scanId', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/dataforseo/onpage/pages/:scanId
+ * Get page-level issues from Cheerio scan
+ */
+router.get('/pages/:scanId', async (req, res) => {
+  try {
+    const { scanId } = req.params;
+    
+    console.log(`📄 Fetching page-level issues for scan ${scanId}`);
+    
+    // Get page scans from database
+    const result = await pool.query(
+      `SELECT 
+        id,
+        page_url,
+        page_title,
+        meta_description,
+        h1_tags,
+        image_count,
+        images_without_alt,
+        has_canonical,
+        is_noindex,
+        issues,
+        scan_success,
+        error_message,
+        created_at
+       FROM seo_page_scans
+       WHERE scan_id = $1
+       ORDER BY created_at ASC`,
+      [scanId]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.json({
+        success: true,
+        pages: [],
+        message: 'No page-level scans found. Run a new audit to see page details.'
+      });
+    }
+    
+    // Format response
+    const pages = result.rows.map(row => ({
+      id: row.id,
+      url: row.page_url,
+      title: row.page_title,
+      metaDescription: row.meta_description,
+      h1Tags: row.h1_tags,
+      imageCount: row.image_count,
+      imagesWithoutAlt: row.images_without_alt,
+      hasCanonical: row.has_canonical,
+      isNoindex: row.is_noindex,
+      issues: row.issues,
+      issueCount: row.issues.length,
+      fixableCount: row.issues.filter(i => i.fixable).length,
+      scanSuccess: row.scan_success,
+      errorMessage: row.error_message,
+      scannedAt: row.created_at
+    }));
+    
+    console.log(`✅ Found ${pages.length} pages with ${pages.reduce((sum, p) => sum + p.issueCount, 0)} total issues`);
+    
+    res.json({
+      success: true,
+      pages,
+      totalPages: pages.length,
+      totalIssues: pages.reduce((sum, p) => sum + p.issueCount, 0),
+      totalFixable: pages.reduce((sum, p) => sum + p.fixableCount, 0)
+    });
+    
+  } catch (error) {
+    console.error('❌ Page fetch error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 module.exports = router;

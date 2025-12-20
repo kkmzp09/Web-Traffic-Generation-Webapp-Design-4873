@@ -1,0 +1,31 @@
+# VALIDATION TEST - INSTRUCTIONS
+
+## Debug logging is now ACTIVE on VPS
+
+Please do the following:
+
+1. Go to: https://organitrafficboost.com/seo-audit
+
+2. Click "Run New Audit"
+
+3. Enter URL: https://example.com
+
+4. Wait 60-90 seconds for scan to complete
+
+5. After scan completes, I will check PM2 logs for:
+   🚀 FINAL TRANSFORMED ANALYSIS BEING SENT TO FRONTEND:
+   {
+     "score": <number>,
+     "issues": [<array with items>],
+     "summary": {...}
+   }
+   🚀 END FINAL ANALYSIS
+
+This will prove:
+- Real DataForSEO data is being fetched
+- Transformation layer is working
+- Issues array is populated
+- Score is real (not mocked)
+
+Please run the scan now and let me know when it's done.
+Then I'll extract the logs and show you the proof.

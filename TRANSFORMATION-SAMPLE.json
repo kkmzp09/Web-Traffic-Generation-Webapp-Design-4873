@@ -1,0 +1,148 @@
+{
+  "description": "Sample transformed response from DataForSEO to frontend format",
+  
+  "input_dataforseo_format": {
+    "success": true,
+    "taskId": "12345678-1234-1234-1234-123456789012",
+    "summary": {
+      "onPageScore": 78,
+      "totalPages": 10,
+      "pagesCrawled": 10,
+      "pagesInQueue": 0,
+      "brokenLinks": 3,
+      "brokenResources": 2,
+      "duplicateTitle": 1,
+      "duplicateDescription": 2,
+      "duplicateContent": 0,
+      "linksExternal": 45,
+      "linksInternal": 8,
+      "checks": {
+        "no_content_encoding": 5,
+        "high_loading_time": 2,
+        "no_h1_tag": 1,
+        "no_image_alt": 12
+      },
+      "domain": "example.com",
+      "crawlProgress": "finished"
+    }
+  },
+  
+  "output_frontend_format": {
+    "success": true,
+    "url": "https://example.com",
+    "hostname": "example.com",
+    "analysis": {
+      "score": 78,
+      "issues": [
+        {
+          "category": "links",
+          "severity": "high",
+          "title": "3 Broken Links",
+          "description": "Broken links hurt user experience and SEO rankings.",
+          "impact": "HIGH",
+          "autoFixAvailable": false,
+          "count": 3
+        },
+        {
+          "category": "resources",
+          "severity": "high",
+          "title": "2 Broken Resources",
+          "description": "Images, scripts, or stylesheets failed to load.",
+          "impact": "HIGH",
+          "autoFixAvailable": false,
+          "count": 2
+        },
+        {
+          "category": "meta",
+          "severity": "critical",
+          "title": "1 Duplicate Page Titles",
+          "description": "Multiple pages share the same title tag, confusing search engines.",
+          "impact": "CRITICAL",
+          "autoFixAvailable": true,
+          "count": 1
+        },
+        {
+          "category": "meta",
+          "severity": "high",
+          "title": "2 Duplicate Meta Descriptions",
+          "description": "Multiple pages have identical meta descriptions.",
+          "impact": "HIGH",
+          "autoFixAvailable": true,
+          "count": 2
+        },
+        {
+          "category": "content",
+          "severity": "medium",
+          "title": "Low Internal Linking",
+          "description": "Only 8 internal links found. Improve site structure with more internal links.",
+          "impact": "MEDIUM",
+          "autoFixAvailable": false
+        },
+        {
+          "category": "performance",
+          "severity": "medium",
+          "title": "5 Pages Without Compression",
+          "description": "Enable gzip/brotli compression to improve load times.",
+          "impact": "MEDIUM",
+          "autoFixAvailable": false,
+          "count": 5
+        },
+        {
+          "category": "performance",
+          "severity": "high",
+          "title": "2 Slow Loading Pages",
+          "description": "Pages take too long to load, hurting user experience.",
+          "impact": "HIGH",
+          "autoFixAvailable": false,
+          "count": 2
+        },
+        {
+          "category": "headings",
+          "severity": "critical",
+          "title": "1 Pages Missing H1 Tag",
+          "description": "Every page should have exactly one H1 heading.",
+          "impact": "CRITICAL",
+          "autoFixAvailable": false,
+          "count": 1
+        },
+        {
+          "category": "images",
+          "severity": "high",
+          "title": "12 Images Missing Alt Text",
+          "description": "Alt text improves accessibility and SEO.",
+          "impact": "HIGH",
+          "autoFixAvailable": true,
+          "count": 12
+        }
+      ],
+      "summary": {
+        "total": 9,
+        "critical": 2,
+        "high": 5,
+        "medium": 2
+      },
+      "pageData": {
+        "title": "example.com",
+        "description": "Scanned 10 pages",
+        "pagesCrawled": 10,
+        "totalPages": 10,
+        "crawlProgress": "finished",
+        "linksInternal": 8,
+        "linksExternal": 45
+      }
+    }
+  },
+  
+  "transformation_mapping": {
+    "score": "summary.onPageScore → analysis.score",
+    "issues": "Built from summary.brokenLinks, duplicateTitle, checks.* → analysis.issues[]",
+    "summary": "Calculated from issues array → analysis.summary",
+    "pageData": "summary.domain, pagesCrawled, etc. → analysis.pageData"
+  },
+  
+  "frontend_rendering": {
+    "score_display": "78/100 with color-coded badge",
+    "issues_list": "9 issues grouped by severity (2 critical, 5 high, 2 medium)",
+    "page_info": "Scanned 10 pages, 8 internal links, 45 external links"
+  }
+}
