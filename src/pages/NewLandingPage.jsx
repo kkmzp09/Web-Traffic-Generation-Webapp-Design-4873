@@ -307,9 +307,9 @@ export default function NewLandingPage() {
       <section id="pricing" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Simple, Transparent Pricing</h2>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">SEO Optimization Plans</h2>
             <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Choose the perfect plan for your needs. All plans include geo-targeting and real-time analytics.
+              Technical SEO audits, AI-powered recommendations, and monitoring. No ranking guarantees.
             </p>
           </div>
 
@@ -317,7 +317,7 @@ export default function NewLandingPage() {
             {/* Starter Plan */}
             <div className="bg-white rounded-2xl shadow-lg border-2 border-gray-200 p-8 hover:shadow-2xl transition-all hover:scale-105">
               <h3 className="text-2xl font-bold text-gray-900 mb-2">Starter</h3>
-              <p className="text-gray-600 mb-6">Perfect for testing</p>
+              <p className="text-gray-600 mb-6">Small websites</p>
               <div className="mb-6">
                 <div className="flex items-baseline">
                   <span className="text-4xl font-bold text-gray-900">₹1,245</span>
@@ -325,21 +325,21 @@ export default function NewLandingPage() {
                 </div>
               </div>
               <div className="mb-6">
-                <div className="text-3xl font-bold text-blue-600 mb-2">500</div>
-                <div className="text-gray-600">Quality Visits</div>
+                <div className="text-sm font-semibold text-blue-600 mb-2">10 pages/scan • 5 scans/month</div>
+                <div className="text-gray-600">10 keywords tracked</div>
               </div>
               <ul className="space-y-3 mb-8">
                 <li className="flex items-center gap-2">
                   <FaCheckCircle className="text-green-500" />
-                  <span className="text-gray-700">Basic geo-targeting</span>
+                  <span className="text-gray-700">Basic SEO audits</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <FaCheckCircle className="text-green-500" />
-                  <span className="text-gray-700">Real-time analytics</span>
+                  <span className="text-gray-700">Preview mode only</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <FaCheckCircle className="text-green-500" />
-                  <span className="text-gray-700">Email support</span>
+                  <span className="text-gray-700">Monthly reports</span>
                 </li>
               </ul>
               <button
@@ -359,7 +359,7 @@ export default function NewLandingPage() {
                 </span>
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-2">Growth</h3>
-              <p className="text-gray-600 mb-6">For growing businesses</p>
+              <p className="text-gray-600 mb-6">Growing websites</p>
               <div className="mb-6">
                 <div className="flex items-baseline">
                   <span className="text-4xl font-bold text-gray-900">₹2,905</span>
@@ -367,25 +367,25 @@ export default function NewLandingPage() {
                 </div>
               </div>
               <div className="mb-6">
-                <div className="text-3xl font-bold text-purple-600 mb-2">2,000</div>
-                <div className="text-gray-600">Quality Visits</div>
+                <div className="text-sm font-semibold text-purple-600 mb-2">50 pages/scan • 20 scans/month</div>
+                <div className="text-gray-600">50 keywords tracked</div>
               </div>
               <ul className="space-y-3 mb-8">
                 <li className="flex items-center gap-2">
                   <FaCheckCircle className="text-green-500" />
-                  <span className="text-gray-700">Advanced geo-targeting</span>
+                  <span className="text-gray-700">Scheduled scans (weekly)</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <FaCheckCircle className="text-green-500" />
+                  <span className="text-gray-700">Server-side deployment</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <FaCheckCircle className="text-green-500" />
+                  <span className="text-gray-700">Weekly reports</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <FaCheckCircle className="text-green-500" />
                   <span className="text-gray-700">Priority support</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <FaCheckCircle className="text-green-500" />
-                  <span className="text-gray-700">Multiple campaigns</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <FaCheckCircle className="text-green-500" />
-                  <span className="text-gray-700">Traffic scheduling</span>
                 </li>
               </ul>
               <button
@@ -399,7 +399,7 @@ export default function NewLandingPage() {
             {/* Professional Plan */}
             <div className="bg-white rounded-2xl shadow-lg border-2 border-gray-200 p-8 hover:shadow-2xl transition-all hover:scale-105">
               <h3 className="text-2xl font-bold text-gray-900 mb-2">Professional</h3>
-              <p className="text-gray-600 mb-6">For established sites</p>
+              <p className="text-gray-600 mb-6">Established sites</p>
               <div className="mb-6">
                 <div className="flex items-baseline">
                   <span className="text-4xl font-bold text-gray-900">₹4,897</span>
@@ -407,25 +407,25 @@ export default function NewLandingPage() {
                 </div>
               </div>
               <div className="mb-6">
-                <div className="text-3xl font-bold text-indigo-600 mb-2">5,000</div>
-                <div className="text-gray-600">Quality Visits</div>
+                <div className="text-sm font-semibold text-indigo-600 mb-2">200 pages/scan • Unlimited scans</div>
+                <div className="text-gray-600">200 keywords tracked</div>
               </div>
               <ul className="space-y-3 mb-8">
                 <li className="flex items-center gap-2">
                   <FaCheckCircle className="text-green-500" />
-                  <span className="text-gray-700">Priority delivery</span>
+                  <span className="text-gray-700">Daily monitoring</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <FaCheckCircle className="text-green-500" />
-                  <span className="text-gray-700">Advanced analytics</span>
+                  <span className="text-gray-700">Production deployment</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <FaCheckCircle className="text-green-500" />
+                  <span className="text-gray-700">Advanced reports</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <FaCheckCircle className="text-green-500" />
                   <span className="text-gray-700">24/7 support</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <FaCheckCircle className="text-green-500" />
-                  <span className="text-gray-700">Custom sources</span>
                 </li>
               </ul>
               <button
@@ -438,8 +438,8 @@ export default function NewLandingPage() {
 
             {/* Business Plan */}
             <div className="bg-white rounded-2xl shadow-lg border-2 border-gray-200 p-8 hover:shadow-2xl transition-all hover:scale-105">
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">Business</h3>
-              <p className="text-gray-600 mb-6">For large operations</p>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Enterprise</h3>
+              <p className="text-gray-600 mb-6">Large sites (30k+ pages)</p>
               <div className="mb-6">
                 <div className="flex items-baseline">
                   <span className="text-4xl font-bold text-gray-900">₹8,217</span>
@@ -447,25 +447,25 @@ export default function NewLandingPage() {
                 </div>
               </div>
               <div className="mb-6">
-                <div className="text-3xl font-bold text-green-600 mb-2">15,000</div>
-                <div className="text-gray-600">Quality Visits</div>
+                <div className="text-sm font-semibold text-green-600 mb-2">Custom limits • 30k+ pages</div>
+                <div className="text-gray-600">Unlimited keywords</div>
               </div>
               <ul className="space-y-3 mb-8">
                 <li className="flex items-center gap-2">
                   <FaCheckCircle className="text-green-500" />
-                  <span className="text-gray-700">Fastest delivery</span>
+                  <span className="text-gray-700">Batch scanning</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <FaCheckCircle className="text-green-500" />
+                  <span className="text-gray-700">Incremental deployment</span>
+                </li>
+                <li className="flex items-center gap-2">
+                  <FaCheckCircle className="text-green-500" />
+                  <span className="text-gray-700">Approval workflows</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <FaCheckCircle className="text-green-500" />
                   <span className="text-gray-700">Dedicated manager</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <FaCheckCircle className="text-green-500" />
-                  <span className="text-gray-700">Unlimited campaigns</span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <FaCheckCircle className="text-green-500" />
-                  <span className="text-gray-700">API access</span>
                 </li>
               </ul>
               <button
