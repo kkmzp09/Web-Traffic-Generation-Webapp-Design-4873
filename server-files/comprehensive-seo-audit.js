@@ -11,10 +11,20 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false }
 });
 
+// HARD PLAN LIMITS - ENFORCED STRICTLY
+const PLAN_LIMITS = {
+  'starter': 10,
+  'growth': 50,
+  'professional': 200,
+  'enterprise': 1000,
+  'default': 10  // Safety fallback
+};
+
 /**
  * POST /api/seo/comprehensive-audit
  * Comprehensive SEO audit with REAL DataForSEO On-Page API
  * Now triggers actual DataForSEO crawl instead of instant Cheerio scan
+ * ENFORCES HARD PAGE LIMITS based on user plan
  */
 router.post('/comprehensive-audit', async (req, res) => {
   try {
@@ -40,12 +50,34 @@ router.post('/comprehensive-audit', async (req, res) => {
 
     const hostname = parsedUrl.hostname;
 
-    console.log(`🔍 Starting REAL DataForSEO audit for: ${url} (force_fresh: ${force_fresh})`);
+    // FETCH USER PLAN AND ENFORCE HARD LIMIT
+    let maxPages = PLAN_LIMITS.default;
+    let userPlan = 'starter';
+    
+    if (userId) {
+      try {
+        const userResult = await pool.query(
+          'SELECT plan FROM users WHERE id = $1',
+          [userId]
+        );
+        
+        if (userResult.rows.length > 0) {
+          userPlan = (userResult.rows[0].plan || 'starter').toLowerCase();
+          maxPages = PLAN_LIMITS[userPlan] || PLAN_LIMITS.default;
+        }
+      } catch (error) {
+        console.error('⚠️ Error fetching user plan, using default limit:', error);
+        maxPages = PLAN_LIMITS.default;
+      }
+    }
 
-    // Start DataForSEO On-Page crawl task
+    console.log(`🔍 Starting REAL DataForSEO audit for: ${url}`);
+    console.log(`📊 User plan: ${userPlan}, Max pages: ${maxPages}`);
+
+    // Start DataForSEO On-Page crawl task with HARD LIMIT
     const taskResult = await dataforSEOOnPage.postOnPageTask({
       target: url,
-      max_crawl_pages: 10, // Default, can be adjusted based on plan
+      max_crawl_pages: maxPages,  // ENFORCED HARD LIMIT
       enable_javascript: true,
       enable_browser_rendering: false,
       load_resources: true,
@@ -85,7 +117,9 @@ router.post('/comprehensive-audit', async (req, res) => {
       hostname: hostname,
       scannedAt: new Date().toISOString(),
       status: 'crawling',
-      message: 'DataForSEO scan started. This will take 30-60 seconds to complete.',
+      maxPages: maxPages,
+      userPlan: userPlan,
+      message: `Scanning first ${maxPages} pages (${userPlan} plan limit)`,
       analysis: {
         score: 0,
         issues: [],

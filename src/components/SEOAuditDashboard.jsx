@@ -144,10 +144,21 @@ const SEOAuditDashboard = () => {
     }
   };
 
-  // Poll scan status until completion
-  const pollScanStatus = async (scanId) => {
+  // Poll scan status until completion with SAFETY TIMEOUT
+  const pollScanStatus = async (scanId, startTime = Date.now(), pollCount = 0) => {
     try {
-      console.log('🔄 Polling scan status for scanId:', scanId);
+      const elapsedMinutes = (Date.now() - startTime) / 1000 / 60;
+      const MAX_POLL_TIME = 10; // 10 minutes hard timeout
+      
+      console.log(`🔄 Polling scan status for scanId: ${scanId} (attempt ${pollCount + 1}, ${elapsedMinutes.toFixed(1)}min elapsed)`);
+      
+      // SAFETY TIMEOUT - Stop after 10 minutes
+      if (elapsedMinutes > MAX_POLL_TIME) {
+        console.error('⏱️ TIMEOUT: Scan exceeded 10 minute limit, stopping poll');
+        setScanning(false);
+        alert('Scan timeout: The scan took too long and was stopped. Results may be partial.');
+        return;
+      }
       
       const response = await fetch(`${API_BASE}/api/dataforseo/onpage/status/${scanId}`);
       const data = await response.json();
@@ -155,6 +166,32 @@ const SEOAuditDashboard = () => {
       console.log('📊 Polling response:', data);
       
       if (data.success) {
+        // Check if page limit reached
+        if (data.pagesCrawled && data.maxPages && data.pagesCrawled >= data.maxPages) {
+          console.log(`✅ Page limit reached: ${data.pagesCrawled}/${data.maxPages} pages scanned`);
+          // Fetch results even if not fully complete
+          const resultsResponse = await fetch(`${API_BASE}/api/dataforseo/onpage/results/${scanId}`);
+          const resultsData = await resultsResponse.json();
+          
+          if (resultsData.success) {
+            setAuditData({
+              success: true,
+              url: resultsData.url || websiteUrl,
+              hostname: resultsData.hostname || new URL(websiteUrl).hostname,
+              scannedAt: new Date().toISOString(),
+              analysis: resultsData.analysis || {
+                score: resultsData.score || 0,
+                issues: resultsData.issues || [],
+                summary: resultsData.summary || {},
+                pageData: resultsData.pageData || {}
+              }
+            });
+            setScanning(false);
+            loadScanHistory();
+          }
+          return;
+        }
+        
         if (data.status === 'ready' || data.status === 'Ok.' || data.completed) {
           // Scan completed - fetch full results
           console.log('✅ Scan completed! Fetching full results...');
@@ -184,8 +221,9 @@ const SEOAuditDashboard = () => {
           }
         } else {
           // Still crawling - poll again in 5 seconds
-          console.log('⏳ Still crawling... checking again in 5s');
-          setTimeout(() => pollScanStatus(scanId), 5000);
+          const pagesInfo = data.pagesCrawled ? ` (${data.pagesCrawled}/${data.maxPages || '?'} pages)` : '';
+          console.log(`⏳ Still crawling${pagesInfo}... checking again in 5s`);
+          setTimeout(() => pollScanStatus(scanId, startTime, pollCount + 1), 5000);
         }
       } else {
         console.error('❌ Polling failed:', data.error);
@@ -193,8 +231,8 @@ const SEOAuditDashboard = () => {
       }
     } catch (error) {
       console.error('❌ Polling error:', error);
-      // Retry after 5 seconds
-      setTimeout(() => pollScanStatus(scanId), 5000);
+      // Retry after 5 seconds (with same timeout tracking)
+      setTimeout(() => pollScanStatus(scanId, startTime, pollCount + 1), 5000);
     }
   };
 
@@ -220,9 +258,19 @@ const SEOAuditDashboard = () => {
         // Check if scan is async (crawling status)
         if (data.status === 'crawling') {
           console.log('⏳ Scan is crawling, scanId:', data.scanId, 'taskId:', data.taskId);
+          console.log(`📊 Plan limit: ${data.maxPages} pages (${data.userPlan} plan)`);
           
-          // Show initial crawling state
-          setAuditData(data);
+          // Show initial crawling state with limit info
+          setAuditData({
+            ...data,
+            analysis: {
+              ...data.analysis,
+              pageData: {
+                ...data.analysis.pageData,
+                limitMessage: data.message || `Scanning first ${data.maxPages} pages`
+              }
+            }
+          });
           
           // Start polling for completion
           if (data.scanId) {
