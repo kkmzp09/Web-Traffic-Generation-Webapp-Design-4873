@@ -14,6 +14,167 @@ pool.on('connect', (client) => {
   client.query('SET search_path TO public');
 });
 
+// ============================================
+// DATA TRANSFORMATION LAYER
+// Convert DataForSEO format to frontend format
+// ============================================
+function transformDataForSEOToFrontend(dataforSEOAnalysis) {
+  const summary = dataforSEOAnalysis.summary || {};
+  const issues = [];
+  
+  // Extract score
+  const score = Math.round(summary.onPageScore || 0);
+  
+  // Build issues array from DataForSEO checks and metrics
+  if (summary.brokenLinks > 0) {
+    issues.push({
+      category: 'links',
+      severity: 'high',
+      title: `${summary.brokenLinks} Broken Links`,
+      description: 'Broken links hurt user experience and SEO rankings.',
+      impact: 'HIGH',
+      autoFixAvailable: false,
+      count: summary.brokenLinks
+    });
+  }
+  
+  if (summary.brokenResources > 0) {
+    issues.push({
+      category: 'resources',
+      severity: 'high',
+      title: `${summary.brokenResources} Broken Resources`,
+      description: 'Images, scripts, or stylesheets failed to load.',
+      impact: 'HIGH',
+      autoFixAvailable: false,
+      count: summary.brokenResources
+    });
+  }
+  
+  if (summary.duplicateTitle > 0) {
+    issues.push({
+      category: 'meta',
+      severity: 'critical',
+      title: `${summary.duplicateTitle} Duplicate Page Titles`,
+      description: 'Multiple pages share the same title tag, confusing search engines.',
+      impact: 'CRITICAL',
+      autoFixAvailable: true,
+      count: summary.duplicateTitle
+    });
+  }
+  
+  if (summary.duplicateDescription > 0) {
+    issues.push({
+      category: 'meta',
+      severity: 'high',
+      title: `${summary.duplicateDescription} Duplicate Meta Descriptions`,
+      description: 'Multiple pages have identical meta descriptions.',
+      impact: 'HIGH',
+      autoFixAvailable: true,
+      count: summary.duplicateDescription
+    });
+  }
+  
+  if (summary.duplicateContent > 0) {
+    issues.push({
+      category: 'content',
+      severity: 'critical',
+      title: `${summary.duplicateContent} Pages with Duplicate Content`,
+      description: 'Duplicate content can harm search rankings.',
+      impact: 'CRITICAL',
+      autoFixAvailable: false,
+      count: summary.duplicateContent
+    });
+  }
+  
+  // Check for low internal linking
+  if (summary.linksInternal < 10 && summary.pagesCrawled > 1) {
+    issues.push({
+      category: 'content',
+      severity: 'medium',
+      title: 'Low Internal Linking',
+      description: `Only ${summary.linksInternal} internal links found. Improve site structure with more internal links.`,
+      impact: 'MEDIUM',
+      autoFixAvailable: false
+    });
+  }
+  
+  // Process checks for additional issues
+  const checks = summary.checks || {};
+  if (checks.no_content_encoding > 0) {
+    issues.push({
+      category: 'performance',
+      severity: 'medium',
+      title: `${checks.no_content_encoding} Pages Without Compression`,
+      description: 'Enable gzip/brotli compression to improve load times.',
+      impact: 'MEDIUM',
+      autoFixAvailable: false,
+      count: checks.no_content_encoding
+    });
+  }
+  
+  if (checks.high_loading_time > 0) {
+    issues.push({
+      category: 'performance',
+      severity: 'high',
+      title: `${checks.high_loading_time} Slow Loading Pages`,
+      description: 'Pages take too long to load, hurting user experience.',
+      impact: 'HIGH',
+      autoFixAvailable: false,
+      count: checks.high_loading_time
+    });
+  }
+  
+  if (checks.no_h1_tag > 0) {
+    issues.push({
+      category: 'headings',
+      severity: 'critical',
+      title: `${checks.no_h1_tag} Pages Missing H1 Tag`,
+      description: 'Every page should have exactly one H1 heading.',
+      impact: 'CRITICAL',
+      autoFixAvailable: false,
+      count: checks.no_h1_tag
+    });
+  }
+  
+  if (checks.no_image_alt > 0) {
+    issues.push({
+      category: 'images',
+      severity: 'high',
+      title: `${checks.no_image_alt} Images Missing Alt Text`,
+      description: 'Alt text improves accessibility and SEO.',
+      impact: 'HIGH',
+      autoFixAvailable: true,
+      count: checks.no_image_alt
+    });
+  }
+  
+  // Calculate summary counts
+  const criticalIssues = issues.filter(i => i.severity === 'critical').length;
+  const highIssues = issues.filter(i => i.severity === 'high').length;
+  const mediumIssues = issues.filter(i => i.severity === 'medium').length;
+  
+  // Return frontend-expected format
+  return {
+    score: score,
+    issues: issues,
+    summary: {
+      total: issues.length,
+      critical: criticalIssues,
+      high: highIssues,
+      medium: mediumIssues
+    },
+    pageData: {
+      title: summary.domain || 'Website',
+      description: `Scanned ${summary.pagesCrawled} pages`,
+      pagesCrawled: summary.pagesCrawled,
+      totalPages: summary.totalPages,
+      crawlProgress: summary.crawlProgress,
+      linksInternal: summary.linksInternal,
+      linksExternal: summary.linksExternal
+    }
+  };
+}
+
 // CORS middleware
 router.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', req.headers.origin || '*');
@@ -185,15 +346,22 @@ router.get('/results/:scanId', async (req, res) => {
 
     console.log(`📊 Fetching results for scan ${scanId}, task ${taskId}`);
 
-    // Get comprehensive analysis
-    const analysis = await dataforSEOOnPage.getComprehensiveAnalysis(taskId);
+    // Get comprehensive analysis from DataForSEO
+    const dataforSEOAnalysis = await dataforSEOOnPage.getComprehensiveAnalysis(taskId);
 
-    if (!analysis.success) {
+    if (!dataforSEOAnalysis.success) {
       return res.json({
         success: false,
-        error: analysis.error || 'Failed to fetch results'
+        error: dataforSEOAnalysis.error || 'Failed to fetch results'
       });
     }
+
+    console.log('📊 Raw DataForSEO analysis:', JSON.stringify(dataforSEOAnalysis.summary, null, 2));
+
+    // TRANSFORM DataForSEO format to frontend format
+    const transformedAnalysis = transformDataForSEOToFrontend(dataforSEOAnalysis);
+    
+    console.log('✅ Transformed analysis:', JSON.stringify(transformedAnalysis, null, 2));
 
     // Update database with results
     await pool.query(
@@ -204,21 +372,23 @@ router.get('/results/:scanId', async (req, res) => {
            updated_at = NOW()
        WHERE id = $3`,
       [
-        Math.round(analysis.summary?.onPageScore || 0),
-        analysis.totalPages || 0,
+        transformedAnalysis.score,
+        transformedAnalysis.pageData.pagesCrawled || 0,
         scanId
       ]
     );
 
     res.json({
       success: true,
+      url: scan.url,
+      hostname: new URL(scan.url).hostname,
       scan: {
         id: scan.id,
         url: scan.url,
         status: 'completed',
         createdAt: scan.created_at
       },
-      analysis: analysis
+      analysis: transformedAnalysis
     });
 
   } catch (error) {
