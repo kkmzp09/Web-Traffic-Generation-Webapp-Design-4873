@@ -4,6 +4,7 @@ import SafeIcon from '../common/SafeIcon';
 import * as FiIcons from 'react-icons/fi';
 import { useAuth } from '../lib/authContext';
 import { useSubscription } from '../lib/subscriptionContext';
+import PhonePeCheckout from './PhonePeCheckout';
 
 const { FiFileText, FiDownload, FiEye, FiCreditCard, FiCalendar, FiDollarSign, FiRefreshCw } = FiIcons;
 
@@ -13,6 +14,8 @@ const Invoice = () => {
   const { subscription } = useSubscription();
   const [invoices, setInvoices] = useState([]);
   const [totalPaid, setTotalPaid] = useState(0);
+  const [showCheckout, setShowCheckout] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState(null);
 
   // Load invoices from localStorage
   useEffect(() => {
@@ -58,8 +61,21 @@ const Invoice = () => {
   };
 
   const handleManageSubscription = () => {
-    // Navigate to payment page to upgrade/change plan
-    navigate('/payment');
+    // Determine next tier based on current plan
+    const upgradePlans = {
+      'Starter Plan': { name: 'Growth', price: 2905 },
+      'Growth Plan': { name: 'Professional', price: 4897 },
+      'Professional Plan': { name: 'Business', price: 8217 },
+      'Business Plan': { name: 'Business', price: 8217 }
+    };
+    const nextPlan = upgradePlans[subscription?.plan] || { name: 'Professional', price: 4897 };
+    setSelectedPlan({
+      name: nextPlan.name,
+      price: nextPlan.price,
+      billingCycle: 'monthly',
+      serviceType: 'traffic'
+    });
+    setShowCheckout(true);
   };
 
   return (
@@ -239,6 +255,25 @@ const Invoice = () => {
           </div>
         </div>
       </div>
+
+      {/* PhonePe Checkout Modal */}
+      {showCheckout && selectedPlan && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <PhonePeCheckout
+              plan={selectedPlan}
+              onSuccess={() => {
+                setShowCheckout(false);
+                navigate('/payment-success');
+              }}
+              onCancel={() => {
+                setShowCheckout(false);
+                setSelectedPlan(null);
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
