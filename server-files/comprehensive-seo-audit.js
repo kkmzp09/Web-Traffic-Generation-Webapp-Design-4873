@@ -23,8 +23,13 @@ const PLAN_LIMITS = {
 /**
  * POST /api/seo/comprehensive-audit
  * Comprehensive SEO audit with REAL DataForSEO On-Page API
- * Now triggers actual DataForSEO crawl instead of instant Cheerio scan
- * ENFORCES HARD PAGE LIMITS based on user plan
+ * 
+ * PRODUCTION SAFETY:
+ * - One scan = one DataForSEO task (no caching)
+ * - max_crawl_pages strictly enforced by user plan
+ * - Requires authenticated userId (UUID)
+ * - No background polling after completion
+ * - No repeated scans without explicit user action
  */
 router.post('/comprehensive-audit', async (req, res) => {
   try {
@@ -34,6 +39,13 @@ router.post('/comprehensive-audit', async (req, res) => {
       return res.status(400).json({
         success: false,
         error: 'URL is required'
+      });
+    }
+
+    if (!userId) {
+      return res.status(400).json({
+        success: false,
+        error: 'User authentication required'
       });
     }
 
@@ -56,17 +68,18 @@ router.post('/comprehensive-audit', async (req, res) => {
     
     if (userId) {
       try {
-        const userResult = await pool.query(
-          'SELECT plan FROM users WHERE id = $1',
-          [userId]
+        // Try to get subscription plan from subscriptions table
+        const subResult = await pool.query(
+          'SELECT plan_name FROM subscriptions WHERE user_id = $1 AND status = $2 ORDER BY created_at DESC LIMIT 1',
+          [userId, 'active']
         );
         
-        if (userResult.rows.length > 0) {
-          userPlan = (userResult.rows[0].plan || 'starter').toLowerCase();
+        if (subResult.rows.length > 0) {
+          userPlan = (subResult.rows[0].plan_name || 'starter').toLowerCase();
           maxPages = PLAN_LIMITS[userPlan] || PLAN_LIMITS.default;
         }
       } catch (error) {
-        console.error('⚠️ Error fetching user plan, using default limit:', error);
+        console.warn('⚠️ Could not fetch user plan, using default limit:', error.message);
         maxPages = PLAN_LIMITS.default;
       }
     }

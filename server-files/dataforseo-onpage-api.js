@@ -356,12 +356,8 @@ router.get('/results/:scanId', async (req, res) => {
       });
     }
 
-    console.log('📊 Raw DataForSEO analysis:', JSON.stringify(dataforSEOAnalysis.summary, null, 2));
-
     // TRANSFORM DataForSEO format to frontend format
     const transformedAnalysis = transformDataForSEOToFrontend(dataforSEOAnalysis);
-    
-    console.log('✅ Transformed analysis:', JSON.stringify(transformedAnalysis, null, 2));
 
     // Update database with results
     await pool.query(
