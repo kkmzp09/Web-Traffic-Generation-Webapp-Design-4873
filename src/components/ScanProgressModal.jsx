@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const ScanProgressModal = ({ scanId, onComplete, onClose }) => {
+const ScanProgressModal = ({ scanId, userId, onComplete, onClose }) => {
   const [progress, setProgress] = useState({
     status: 'crawling',
     pagesDiscovered: 0,
@@ -93,7 +93,7 @@ const ScanProgressModal = ({ scanId, onComplete, onClose }) => {
         fallbackInterval = setInterval(async () => {
           try {
             const response = await fetch(
-              `https://api.organitrafficboost.com/api/seo/scan/${scanId}`
+              `https://api.organitrafficboost.com/api/seo/scan/${scanId}${userId ? `?userId=${userId}` : ''}`
             );
             const data = await response.json();
             if (data.success && data.scan) {

@@ -635,6 +635,7 @@ export default function SEODashboard() {
       {showProgress && currentScanId && (
         <ScanProgressModal
           scanId={currentScanId}
+          userId={user?.id}
           onComplete={async (results) => {
             setShowProgress(false);
             setScanning(false);
