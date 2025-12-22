@@ -33,6 +33,8 @@ export default function AutoFixSEOResults() {
   const [widgetStatus, setWidgetStatus] = useState(null);
   const [validatingWidget, setValidatingWidget] = useState(false);
   const [showWidgetWarning, setShowWidgetWarning] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [verificationResult, setVerificationResult] = useState(null);
 
   useEffect(() => {
     if (scanId && user) {
@@ -180,6 +182,40 @@ export default function AutoFixSEOResults() {
     }
   };
 
+  const verifyAutoFix = async () => {
+    setVerifying(true);
+    setVerificationResult(null);
+
+    try {
+      const response = await fetch(
+        'https://api.organitrafficboost.com/api/seo/verify-autofix',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            scanId: scanId,
+            url: scan?.url,
+            domain: scan?.domain
+          })
+        }
+      );
+
+      const data = await response.json();
+      setVerificationResult(data);
+
+      if (data.success && data.verified) {
+        alert(`✅ Verification Complete!\n\n${data.changeCount} changes detected:\n${data.changes?.map(c => `- ${c.field}: ${c.beforeLength || c.before} → ${c.afterLength || c.after}`).join('\n')}`);
+      } else {
+        alert('⚠️ Verification completed but no changes detected.\n\nThis might mean the page already meets SEO criteria.');
+      }
+    } catch (error) {
+      console.error('Verification error:', error);
+      alert('❌ Verification failed: ' + error.message);
+    } finally {
+      setVerifying(false);
+    }
+  };
+
   const applyAllSafeFixes = async () => {
     // VALIDATE WIDGET FIRST
     if (!widgetValidated) {
@@ -216,6 +252,11 @@ export default function AutoFixSEOResults() {
         
         // Reload results
         await loadScanResults();
+
+        // Ask if user wants to verify
+        if (window.confirm('✅ Fixes applied successfully!\n\nWould you like to verify that the fixes are working on your website?')) {
+          await verifyAutoFix();
+        }
       }
     } catch (error) {
       console.error('Error applying all fixes:', error);
@@ -334,9 +375,56 @@ export default function AutoFixSEOResults() {
                   <h3 className="text-sm font-semibold text-green-800 mb-1">
                     ✅ Widget Installed & Verified
                   </h3>
-                  <p className="text-sm text-green-700">
+                  <p className="text-sm text-green-700 mb-3">
                     Widget detected on {scan?.url}. Fixes will be applied in real-time when users visit your website.
                   </p>
+                  <button
+                    onClick={verifyAutoFix}
+                    disabled={verifying}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 text-sm font-medium"
+                  >
+                    {verifying ? (
+                      <>
+                        <FiLoader className="inline animate-spin mr-2" />
+                        Verifying Fixes...
+                      </>
+                    ) : (
+                      '🔍 Verify Auto-Fix is Working'
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Verification Results */}
+          {verificationResult && verificationResult.verified && (
+            <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mb-4 rounded-lg">
+              <div className="flex items-start">
+                <FiCheckCircle className="w-5 h-5 text-blue-600 mt-0.5 mr-3" />
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-blue-800 mb-2">
+                    ✅ Auto-Fix Verification Complete
+                  </h3>
+                  <p className="text-sm text-blue-700 mb-3">
+                    {verificationResult.message}
+                  </p>
+                  {verificationResult.changes && verificationResult.changes.length > 0 && (
+                    <div className="bg-white rounded p-3 text-sm">
+                      <p className="font-semibold text-gray-700 mb-2">Detected Changes:</p>
+                      <ul className="space-y-1">
+                        {verificationResult.changes.map((change, i) => (
+                          <li key={i} className="text-gray-600">
+                            <span className="font-medium">{change.field}:</span>{' '}
+                            {change.beforeLength !== undefined 
+                              ? `${change.beforeLength} → ${change.afterLength} chars`
+                              : `${change.before} → ${change.after}`
+                            }
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
