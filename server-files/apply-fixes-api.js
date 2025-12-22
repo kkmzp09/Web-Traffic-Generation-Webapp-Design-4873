@@ -147,11 +147,23 @@ router.post('/apply-all-fixes', async (req, res) => {
       appliedCount++;
     }
 
+    // Get scan details for verification
+    const scanResult = await pool.query(
+      'SELECT url, domain FROM seo_scans WHERE id = $1',
+      [scanId]
+    );
+
+    const scanData = scanResult.rows[0];
+
     res.json({
       success: true,
       appliedCount,
       skippedCount,
-      message: `Applied ${appliedCount} fixes, skipped ${skippedCount}`
+      message: `Applied ${appliedCount} fixes, skipped ${skippedCount}`,
+      scanId: scanId,
+      url: scanData?.url,
+      domain: scanData?.domain,
+      verificationReady: true
     });
 
   } catch (error) {
@@ -232,10 +244,44 @@ function generateFixCode(issue) {
 
     case 'Title Too Long':
       return `
-// Auto-fix: Shorten title
+// Auto-fix: Shorten title intelligently
 (function() {
   if (document.title.length > 60) {
-    document.title = document.title.substring(0, 57) + '...';
+    // Split by separator (- or |) and remove last part
+    const separators = [' - ', ' | ', ' – '];
+    let shortened = document.title;
+    
+    for (const sep of separators) {
+      if (shortened.includes(sep)) {
+        const parts = shortened.split(sep);
+        // Remove last part
+        parts.pop();
+        shortened = parts.join(sep);
+        
+        // If still too long, keep removing parts
+        while (shortened.length > 60 && parts.length > 1) {
+          parts.pop();
+          shortened = parts.join(sep);
+        }
+        
+        if (shortened.length <= 60) {
+          document.title = shortened;
+          console.log('✅ SEO Fix Applied: Shortened page title');
+          return;
+        }
+      }
+    }
+    
+    // If no separator found, just trim to 60 chars at last space
+    if (shortened.length > 60) {
+      shortened = shortened.substring(0, 60);
+      const lastSpace = shortened.lastIndexOf(' ');
+      if (lastSpace > 40) {
+        shortened = shortened.substring(0, lastSpace);
+      }
+      document.title = shortened;
+      console.log('✅ SEO Fix Applied: Shortened page title');
+    }
   }
 })();
 `;

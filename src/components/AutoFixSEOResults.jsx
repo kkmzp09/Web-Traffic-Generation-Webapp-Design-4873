@@ -42,6 +42,29 @@ export default function AutoFixSEOResults() {
     }
   }, [scanId, user]);
 
+  useEffect(() => {
+    // Check if widget was already validated for this domain from database
+    if (scan?.domain && user) {
+      checkWidgetValidationStatus();
+    }
+  }, [scan, user]);
+
+  const checkWidgetValidationStatus = async () => {
+    try {
+      const response = await fetch(
+        `https://api.organitrafficboost.com/api/seo/widget-validation-status?domain=${scan.domain}&userId=${user.id}`
+      );
+      const data = await response.json();
+      
+      if (data.success && data.validated) {
+        setWidgetValidated(true);
+        setWidgetStatus(data);
+      }
+    } catch (error) {
+      console.error('Error checking widget status:', error);
+    }
+  };
+
   const loadScanResults = async () => {
     try {
       setLoading(true);
@@ -93,7 +116,8 @@ export default function AutoFixSEOResults() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             url: scan?.url,
-            domain: scan?.domain
+            domain: scan?.domain,
+            userId: user?.id
           })
         }
       );
@@ -104,6 +128,9 @@ export default function AutoFixSEOResults() {
         setWidgetValidated(true);
         setWidgetStatus(data);
         setShowWidgetWarning(false);
+        
+        // Validation is already saved in database by the backend API
+        
         return true;
       } else {
         setWidgetValidated(false);

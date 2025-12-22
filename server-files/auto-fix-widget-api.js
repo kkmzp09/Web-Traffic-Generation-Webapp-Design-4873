@@ -103,20 +103,10 @@ router.get('/auto-fixes', async (req, res) => {
     // Generate combined script
     const combinedScript = generateCombinedScript(fixes, scan);
     
-    res.json({
-      success: true,
-      domain: scan.domain,
-      scanId: scanId,
-      fixCount: fixes.length,
-      script: combinedScript,
-      fixes: fixes.map(f => ({
-        id: f.id,
-        title: f.issue_title,
-        severity: f.severity,
-        category: f.category,
-        pageUrl: f.page_url
-      }))
-    });
+    // Return as JavaScript (not JSON) so browser can execute it
+    res.setHeader('Content-Type', 'application/javascript');
+    res.setHeader('Cache-Control', 'public, max-age=3600'); // Cache for 1 hour
+    res.send(combinedScript);
     
   } catch (error) {
     console.error('❌ Error serving auto-fixes:', error);
@@ -167,6 +157,7 @@ console.log('✅ No SEO fixes to apply');
   // Severity: ${fix.severity} | Category: ${fix.category}
   try {
     ${fix.fix_code}
+    console.log('✅ SEO Fix Applied: ${fix.issue_title}');
     appliedCount++;
   } catch (error) {
     console.error('❌ Fix ${idx + 1} failed:', error);
@@ -174,7 +165,7 @@ console.log('✅ No SEO fixes to apply');
   }
   `).join('\n')}
   
-  console.log(\`✅ SEO Fixes Applied: \${appliedCount}/\${${fixes.length}}\`);
+  console.log(\`✅ SEO Fixes Applied: \${appliedCount}/${fixes.length}\`);
   if (errorCount > 0) {
     console.warn(\`⚠️  \${errorCount} fixes failed\`);
   }

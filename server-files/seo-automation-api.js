@@ -1242,6 +1242,14 @@ router.use('/', applyFixesAPI);
 const validateWidgetAPI = require('./validate-widget-api');
 router.use('/', validateWidgetAPI);
 
+// Mount auto-fix verification API
+const verifyAutofixAPI = require('./verify-autofix-api');
+router.use('/', verifyAutofixAPI);
+
+// Mount widget validation status API
+const widgetValidationStatusAPI = require('./widget-validation-status-api');
+router.use('/', widgetValidationStatusAPI);
+
 // Website management routes
 const websitesRoutes = require('./websites-api');
 router.use('/websites', websitesRoutes);

@@ -3,6 +3,12 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 const cheerio = require('cheerio');
+const { Pool } = require('pg');
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
 
 /**
  * POST /api/seo/validate-widget-strict
@@ -10,7 +16,7 @@ const cheerio = require('cheerio');
  */
 router.post('/validate-widget-strict', async (req, res) => {
   try {
-    const { url, domain } = req.body;
+    const { url, domain, userId } = req.body;
 
     if (!url && !domain) {
       return res.status(400).json({
@@ -79,6 +85,33 @@ router.post('/validate-widget-strict', async (req, res) => {
 
     if (widgetFound) {
       console.log(`✅ Widget found: ${widgetType} - ${widgetUrl}`);
+      
+      // Save validation status to database
+      if (userId && domain) {
+        try {
+          const existing = await pool.query(
+            'SELECT id FROM widget_validations WHERE domain = $1 AND user_id = $2',
+            [domain, userId]
+          );
+
+          if (existing.rows.length > 0) {
+            await pool.query(
+              `UPDATE widget_validations 
+               SET validated = true, script_tag = $1, validated_at = NOW()
+               WHERE domain = $2 AND user_id = $3`,
+              [widgetUrl, domain, userId]
+            );
+          } else {
+            await pool.query(
+              `INSERT INTO widget_validations (domain, user_id, validated, script_tag, validated_at)
+               VALUES ($1, $2, true, $3, NOW())`,
+              [domain, userId, widgetUrl]
+            );
+          }
+        } catch (dbError) {
+          console.error('Error saving validation:', dbError);
+        }
+      }
       
       return res.json({
         success: true,
