@@ -68,7 +68,7 @@ router.get('/auto-fixes', async (req, res) => {
     const scan = scanResult.rows[0];
     const scanId = scan.id;
     
-    // Get all pending fixes for this scan
+    // Get all applied fixes for this scan (changed from 'pending' to 'applied')
     const fixesResult = await pool.query(
       `SELECT 
         f.id,
@@ -83,7 +83,7 @@ router.get('/auto-fixes', async (req, res) => {
        FROM seo_fixes f
        JOIN seo_issues i ON f.issue_id = i.id
        WHERE f.scan_id = $1 
-       AND f.status = 'pending'
+       AND f.status = 'applied'
        AND f.fix_code IS NOT NULL
        ORDER BY 
          CASE i.severity 
