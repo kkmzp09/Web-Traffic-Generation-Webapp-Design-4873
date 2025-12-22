@@ -301,20 +301,49 @@ export default function AutoFixSEOResults() {
     }
   };
 
-  const getRecommendedAction = (issue) => {
-    const actions = {
-      'Missing H1 Heading': 'Add an H1 heading to the page',
-      'Missing Meta Description': 'Add a meta description (120-160 characters)',
-      'Meta Description Too Short': 'Expand meta description to 120-160 characters',
-      'Meta Description Too Long': 'Shorten meta description to under 160 characters',
-      'Title Too Short': 'Expand title to 50-60 characters',
-      'Title Too Long': 'Shorten title to under 60 characters',
-      'Missing Canonical Tag': 'Add canonical link tag to prevent duplicate content',
-      'Incomplete Open Graph Tags': 'Add missing Open Graph meta tags for social sharing',
-      'No Schema Markup': 'Add Schema.org structured data markup',
-      'No Internal Links': 'Add internal links to improve site navigation'
-    };
-    return actions[issue.title] || 'Review and optimize this element';
+  const getNewContent = (issue) => {
+    const currentValue = issue.current_value || '';
+    
+    switch (issue.title) {
+      case 'Meta Description Too Short':
+        return currentValue + ' Learn more about our comprehensive services, expert solutions, and how we can help you achieve your goals.';
+      
+      case 'Meta Description Too Long':
+        return currentValue.substring(0, 157) + '...';
+      
+      case 'Title Too Short':
+        return currentValue + ' | Professional Services';
+      
+      case 'Title Too Long':
+        // Remove last section after separator
+        const separators = [' - ', ' | ', ' – '];
+        for (const sep of separators) {
+          if (currentValue.includes(sep)) {
+            const parts = currentValue.split(sep);
+            parts.pop();
+            return parts.join(sep);
+          }
+        }
+        return currentValue.substring(0, 60);
+      
+      case 'Missing H1 Heading':
+        return scan?.title || 'Welcome';
+      
+      case 'Missing Meta Description':
+        return (scan?.title || 'Welcome') + ' - Discover more about our services and offerings.';
+      
+      case 'Missing Canonical Tag':
+        return issue.page_url || scan?.url;
+      
+      case 'Incomplete Open Graph Tags':
+        return 'og:title, og:description, og:url, og:type';
+      
+      case 'No Schema Markup':
+        return 'WebPage schema with name, description, and URL';
+      
+      default:
+        return 'Auto-fix will be applied';
+    }
   };
 
   if (loading) {
@@ -639,8 +668,8 @@ export default function AutoFixSEOResults() {
                                       )}
 
                                       <div className="bg-green-50 rounded p-3">
-                                        <p className="text-xs text-green-700 font-semibold mb-1">Recommended Action:</p>
-                                        <p className="text-sm text-green-800">{getRecommendedAction(issue)}</p>
+                                        <p className="text-xs text-green-700 font-semibold mb-1">New Content (After Auto-Fix):</p>
+                                        <p className="text-sm text-green-800 font-mono break-words">{getNewContent(issue)}</p>
                                       </div>
                                     </div>
 
@@ -731,9 +760,9 @@ export default function AutoFixSEOResults() {
                 )}
 
                 <div>
-                  <p className="text-sm font-medium text-gray-700 mb-2">After Fix:</p>
+                  <p className="text-sm font-medium text-gray-700 mb-2">After Fix (New Content):</p>
                   <div className="bg-green-50 border border-green-200 rounded p-3">
-                    <p className="text-sm text-gray-800">{getRecommendedAction(previewingFix)}</p>
+                    <p className="text-sm text-gray-800 font-mono break-words">{getNewContent(previewingFix)}</p>
                   </div>
                 </div>
 
