@@ -14,6 +14,7 @@ const quickAuditRoutes = require('./seo-quick-audit-api');
 const comprehensiveAuditRoutes = require('./comprehensive-seo-audit');
 const scanHistoryRoutes = require('./seo-scan-history-api');
 const { sendScanEmail } = require('./send-scan-email');
+const { generateAutoFixesForScan } = require('./generate-auto-fixes');
 
 // Use Puppeteer scanner for JavaScript-rendered pages (set to true to enable)
 const USE_PUPPETEER = process.env.USE_PUPPETEER_SCANNER === 'true' || false;
@@ -404,6 +405,16 @@ async function performScan(scanId, url, userId, domain, pageLimit = 10) {
       totalWarnings,
       scannedCount
     });
+
+    // Generate auto-fixes for detected issues
+    console.log(`🔧 Generating auto-fixes for scan ${scanId}...`);
+    try {
+      const autoFixResult = await generateAutoFixesForScan(scanId);
+      console.log(`✅ Generated ${autoFixResult.fixedCount} auto-fixes`);
+    } catch (autoFixError) {
+      console.error('⚠️  Auto-fix generation failed:', autoFixError.message);
+      // Don't fail the scan if auto-fix generation fails
+    }
 
     // Send email notification
     try {
@@ -1216,6 +1227,10 @@ router.use('/', scanHistoryRoutes);
 // Mount widget fixes routes
 const widgetFixesRoutes = require('./widget-fixes-api');
 router.use('/widget', widgetFixesRoutes);
+
+// Mount auto-fix widget API
+const autoFixWidgetAPI = require('./auto-fix-widget-api');
+router.use('/widget', autoFixWidgetAPI);
 
 // Website management routes
 const websitesRoutes = require('./websites-api');
