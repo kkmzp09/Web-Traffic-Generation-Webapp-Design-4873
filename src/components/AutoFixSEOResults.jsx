@@ -279,11 +279,34 @@ export default function AutoFixSEOResults() {
                 <FiAlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 mr-3" />
                 <div className="flex-1">
                   <h3 className="text-sm font-semibold text-yellow-800 mb-1">
-                    Widget Validation Required
+                    Widget Installation Required
                   </h3>
                   <p className="text-sm text-yellow-700 mb-3">
-                    Before applying fixes, we need to verify that the widget is installed on your website.
+                    To apply SEO fixes automatically, install this widget code on your website:
                   </p>
+                  
+                  {/* Installation Code */}
+                  <div className="bg-gray-900 rounded-lg p-4 mb-3 relative">
+                    <code className="text-green-400 text-xs font-mono block overflow-x-auto">
+                      {`<script src="https://api.organitrafficboost.com/api/seo/widget/auto-fixes?domain=${scan?.domain || 'your-domain.com'}"></script>`}
+                    </code>
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(
+                          `<script src="https://api.organitrafficboost.com/api/seo/widget/auto-fixes?domain=${scan?.domain}"></script>`
+                        );
+                        alert('✅ Code copied to clipboard!');
+                      }}
+                      className="absolute top-2 right-2 px-3 py-1 bg-gray-700 text-white text-xs rounded hover:bg-gray-600"
+                    >
+                      Copy
+                    </button>
+                  </div>
+
+                  <p className="text-xs text-yellow-700 mb-3">
+                    Add this code to your website's <code className="bg-yellow-100 px-1 rounded">&lt;head&gt;</code> section or before the closing <code className="bg-yellow-100 px-1 rounded">&lt;/body&gt;</code> tag.
+                  </p>
+
                   <button
                     onClick={validateWidget}
                     disabled={validatingWidget}
