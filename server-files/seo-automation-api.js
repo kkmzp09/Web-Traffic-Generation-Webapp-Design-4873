@@ -245,7 +245,9 @@ router.post('/scan-page', async (req, res) => {
     const scanId = scanResult.rows[0].id;
 
     // Perform the scan (async)
-    performScan(scanId, url, userId, domain, pageLimit);
+    // IMPORTANT: Always use 10 pages per scan, regardless of monthly limit
+    const perScanLimit = 10;
+    performScan(scanId, url, userId, domain, perScanLimit);
 
     res.json({
       success: true,
@@ -1231,6 +1233,10 @@ router.use('/widget', widgetFixesRoutes);
 // Mount auto-fix widget API
 const autoFixWidgetAPI = require('./auto-fix-widget-api');
 router.use('/widget', autoFixWidgetAPI);
+
+// Mount apply fixes API
+const applyFixesAPI = require('./apply-fixes-api');
+router.use('/', applyFixesAPI);
 
 // Website management routes
 const websitesRoutes = require('./websites-api');
