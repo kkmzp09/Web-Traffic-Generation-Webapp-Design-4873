@@ -1238,6 +1238,10 @@ router.use('/widget', autoFixWidgetAPI);
 const applyFixesAPI = require('./apply-fixes-api');
 router.use('/', applyFixesAPI);
 
+// Mount widget validation API
+const validateWidgetAPI = require('./validate-widget-api');
+router.use('/', validateWidgetAPI);
+
 // Website management routes
 const websitesRoutes = require('./websites-api');
 router.use('/websites', websitesRoutes);

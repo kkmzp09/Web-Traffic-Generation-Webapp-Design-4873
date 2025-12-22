@@ -29,6 +29,10 @@ export default function AutoFixSEOResults() {
   const [appliedFixes, setAppliedFixes] = useState(new Set());
   const [previewingFix, setPreviewingFix] = useState(null);
   const [bulkApplying, setBulkApplying] = useState(false);
+  const [widgetValidated, setWidgetValidated] = useState(false);
+  const [widgetStatus, setWidgetStatus] = useState(null);
+  const [validatingWidget, setValidatingWidget] = useState(false);
+  const [showWidgetWarning, setShowWidgetWarning] = useState(false);
 
   useEffect(() => {
     if (scanId && user) {
@@ -76,6 +80,45 @@ export default function AutoFixSEOResults() {
     }
   };
 
+  const validateWidget = async () => {
+    setValidatingWidget(true);
+    
+    try {
+      const response = await fetch(
+        'https://api.organitrafficboost.com/api/seo/validate-widget-strict',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            url: scan?.url,
+            domain: scan?.domain
+          })
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success && data.widgetInstalled) {
+        setWidgetValidated(true);
+        setWidgetStatus(data);
+        setShowWidgetWarning(false);
+        return true;
+      } else {
+        setWidgetValidated(false);
+        setWidgetStatus(data);
+        setShowWidgetWarning(true);
+        return false;
+      }
+    } catch (error) {
+      console.error('Widget validation error:', error);
+      setWidgetValidated(false);
+      setShowWidgetWarning(true);
+      return false;
+    } finally {
+      setValidatingWidget(false);
+    }
+  };
+
   const togglePageExpand = (serialNo) => {
     const newExpanded = new Set(expandedPages);
     if (newExpanded.has(serialNo)) {
@@ -91,6 +134,15 @@ export default function AutoFixSEOResults() {
   };
 
   const applyAutoFix = async (issue) => {
+    // VALIDATE WIDGET FIRST
+    if (!widgetValidated) {
+      const isValid = await validateWidget();
+      if (!isValid) {
+        alert('⚠️ Widget not installed!\n\nPlease install the widget on your website before applying fixes.\n\nFixes will not work without the widget.');
+        return;
+      }
+    }
+
     const fixKey = `${issue.page_url}-${issue.id}`;
     setApplyingFixes(new Set(applyingFixes).add(fixKey));
 
@@ -129,6 +181,15 @@ export default function AutoFixSEOResults() {
   };
 
   const applyAllSafeFixes = async () => {
+    // VALIDATE WIDGET FIRST
+    if (!widgetValidated) {
+      const isValid = await validateWidget();
+      if (!isValid) {
+        alert('⚠️ Widget not installed!\n\nPlease install the widget on your website before applying fixes.\n\nFixes will not work without the widget.');
+        return;
+      }
+    }
+
     setBulkApplying(true);
 
     try {
@@ -210,6 +271,53 @@ export default function AutoFixSEOResults() {
           >
             <FiArrowLeft /> Back to Dashboard
           </button>
+
+          {/* Widget Status Banner */}
+          {!widgetValidated && (
+            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4 rounded-lg">
+              <div className="flex items-start">
+                <FiAlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 mr-3" />
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-yellow-800 mb-1">
+                    Widget Validation Required
+                  </h3>
+                  <p className="text-sm text-yellow-700 mb-3">
+                    Before applying fixes, we need to verify that the widget is installed on your website.
+                  </p>
+                  <button
+                    onClick={validateWidget}
+                    disabled={validatingWidget}
+                    className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 disabled:opacity-50 text-sm font-medium"
+                  >
+                    {validatingWidget ? (
+                      <>
+                        <FiLoader className="inline animate-spin mr-2" />
+                        Validating...
+                      </>
+                    ) : (
+                      'Validate Widget Installation'
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {widgetValidated && widgetStatus && (
+            <div className="bg-green-50 border-l-4 border-green-400 p-4 mb-4 rounded-lg">
+              <div className="flex items-start">
+                <FiCheckCircle className="w-5 h-5 text-green-600 mt-0.5 mr-3" />
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-green-800 mb-1">
+                    ✅ Widget Installed & Verified
+                  </h3>
+                  <p className="text-sm text-green-700">
+                    Widget detected on {scan?.url}. Fixes will be applied in real-time when users visit your website.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="bg-white rounded-2xl shadow-lg p-6">
             <div className="flex items-center justify-between">
