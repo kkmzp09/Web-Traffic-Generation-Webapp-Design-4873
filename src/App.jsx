@@ -30,6 +30,7 @@ import OnPageSEO from './components/OnPageSEO';
 import SEODashboard from './components/SEODashboard';
 import SEOScanResults from './components/SEOScanResults';
 import AutoFixSEOResults from './components/AutoFixSEOResults';
+import ScanHistory from './components/ScanHistory';
 import GSCAnalytics from './components/GSCAnalytics';
 import WidgetInstallation from './components/WidgetInstallation';
 import PricingPlans from './components/PricingPlans';
@@ -114,6 +115,7 @@ function AppShell() {
           <Route path="/gsc-analytics" element={<RequireAuth><GSCAnalytics /></RequireAuth>} />
           <Route path="/seo-dashboard" element={<RequireAuth><SubscriptionGuard><SEODashboard /></SubscriptionGuard></RequireAuth>} />
           <Route path="/seo-scan/:scanId" element={<RequireAuth><SubscriptionGuard><AutoFixSEOResults /></SubscriptionGuard></RequireAuth>} />
+          <Route path="/scan-history" element={<RequireAuth><SubscriptionGuard><ScanHistory /></SubscriptionGuard></RequireAuth>} />
           <Route path="/seo-scan-old/:scanId" element={<RequireAuth><SubscriptionGuard><SEOScanResults /></SubscriptionGuard></RequireAuth>} />
           <Route path="/widget-installation" element={<RequireAuth><SubscriptionGuard><WidgetInstallation /></SubscriptionGuard></RequireAuth>} />
           <Route path="/checkout" element={<RequireAuth><Checkout /></RequireAuth>} />
