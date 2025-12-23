@@ -675,10 +675,29 @@ export default function AutoFixSEOResults() {
 
                                     <div className="flex flex-col gap-2 ml-4">
                                       {isApplied ? (
-                                        <div className="flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg">
-                                          <FiCheck className="w-4 h-4" />
-                                          <span className="text-sm font-medium">Applied</span>
-                                        </div>
+                                        <>
+                                          <div className="flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg">
+                                            <FiCheck className="w-4 h-4" />
+                                            <span className="text-sm font-medium">Applied</span>
+                                          </div>
+                                          <button
+                                            onClick={verifyAutoFix}
+                                            disabled={verifying}
+                                            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm font-medium"
+                                          >
+                                            {verifying ? (
+                                              <>
+                                                <FiLoader className="w-4 h-4 animate-spin" />
+                                                Verifying...
+                                              </>
+                                            ) : (
+                                              <>
+                                                <FiCheck className="w-4 h-4" />
+                                                Verify Fix
+                                              </>
+                                            )}
+                                          </button>
+                                        </>
                                       ) : (
                                         <>
                                           <button
