@@ -11,7 +11,10 @@ import {
   FiChevronRight,
   FiCheck,
   FiLoader,
-  FiClock
+  FiClock,
+  FiCheckCircle,
+  FiXCircle,
+  FiExternalLink
 } from 'react-icons/fi';
 
 export default function AutoFixSEOResults() {
@@ -22,9 +25,10 @@ export default function AutoFixSEOResults() {
   const [scan, setScan] = useState(null);
   const [pages, setPages] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [expandedPages, setExpandedPages] = useState(new Set());
-  const [applyingFixes, setApplyingFixes] = useState(new Set()); // Set of issueIds
-  const [applyingPageFixes, setApplyingPageFixes] = useState(new Set()); // Set of pageIds
+  const [expandedRows, setExpandedRows] = useState(new Set());
+  const [applyingFixes, setApplyingFixes] = useState(new Set()); // Set of pageIds
+  const [validatingPages, setValidatingPages] = useState(new Set()); // Set of pageIds
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (scanId && user) {
@@ -35,6 +39,7 @@ export default function AutoFixSEOResults() {
   const loadScanResults = async () => {
     try {
       setLoading(true);
+      setError(null);
       const response = await fetch(
         `https://api.organitrafficboost.com/api/seo/scans/${scanId}/pages`
       );
@@ -43,74 +48,30 @@ export default function AutoFixSEOResults() {
       if (data.success) {
         setScan(data.scan);
         setPages(data.pages);
+      } else {
+        setError(data.error || 'Failed to load scan results');
       }
     } catch (error) {
       console.error('Error loading scan results:', error);
+      setError('Failed to load scan results. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const togglePageExpand = (pageId) => {
-    const newExpanded = new Set(expandedPages);
+  const toggleRowExpand = (pageId) => {
+    const newExpanded = new Set(expandedRows);
     if (newExpanded.has(pageId)) {
       newExpanded.delete(pageId);
     } else {
       newExpanded.add(pageId);
     }
-    setExpandedPages(newExpanded);
-  };
-
-  const applySingleFix = async (issue, pageId) => {
-    const fixKey = `${issue.id}`;
-    setApplyingFixes(prev => new Set([...prev, fixKey]));
-
-    try {
-      const response = await fetch(
-        'https://api.organitrafficboost.com/api/seo/fixes/apply-single',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            issueId: issue.id,
-            userId: user.id,
-            scanId: parseInt(scanId)
-          })
-        }
-      );
-
-      const data = await response.json();
-
-      if (data.success) {
-        // Optimistic update: mark issue as applied
-        setPages(prevPages => 
-          prevPages.map(page => 
-            page.id === pageId
-              ? {
-                  ...page,
-                  issues: page.issues.map(i => 
-                    i.id === issue.id
-                      ? { ...i, fix_status: 'applied' }
-                      : i
-                  )
-                }
-              : page
-          )
-        );
-      }
-    } catch (error) {
-      console.error('Error applying fix:', error);
-    } finally {
-      setApplyingFixes(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(fixKey);
-        return newSet;
-      });
-    }
+    setExpandedRows(newExpanded);
   };
 
   const applyPageFixes = async (page) => {
-    setApplyingPageFixes(prev => new Set([...prev, page.id]));
+    setApplyingFixes(prev => new Set([...prev, page.id]));
+    setError(null);
 
     try {
       const response = await fetch(
@@ -129,12 +90,14 @@ export default function AutoFixSEOResults() {
       const data = await response.json();
 
       if (data.success) {
-        // Optimistic update: mark all auto-fixable issues as applied
+        // Update page state
         setPages(prevPages => 
           prevPages.map(p => 
             p.id === page.id
               ? {
                   ...p,
+                  fix_applied: true,
+                  applied_at: new Date().toISOString(),
                   issues: p.issues.map(i => 
                     i.auto_fixable && i.fix_status === 'not_fixed'
                       ? { ...i, fix_status: 'applied' }
@@ -144,11 +107,14 @@ export default function AutoFixSEOResults() {
               : p
           )
         );
+      } else {
+        setError(`Failed to apply fixes: ${data.error}`);
       }
     } catch (error) {
-      console.error('Error applying page fixes:', error);
+      console.error('Error applying fixes:', error);
+      setError('Failed to apply fixes. Please try again.');
     } finally {
-      setApplyingPageFixes(prev => {
+      setApplyingFixes(prev => {
         const newSet = new Set(prev);
         newSet.delete(page.id);
         return newSet;
@@ -156,43 +122,103 @@ export default function AutoFixSEOResults() {
     }
   };
 
-  const getSeverityIcon = (severity) => {
-    switch (severity) {
-      case 'critical':
-        return <FiAlertCircle className="w-5 h-5 text-red-600" />;
-      case 'warning':
-        return <FiAlertTriangle className="w-5 h-5 text-yellow-600" />;
-      case 'info':
-        return <FiInfo className="w-5 h-5 text-blue-600" />;
-      default:
-        return <FiInfo className="w-5 h-5 text-gray-600" />;
+  const validatePageFixes = async (page) => {
+    setValidatingPages(prev => new Set([...prev, page.id]));
+    setError(null);
+
+    try {
+      const response = await fetch(
+        'https://api.organitrafficboost.com/api/seo/verify-autofix',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            scanId: parseInt(scanId),
+            url: page.page_url,
+            domain: scan.domain
+          })
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Update validation state
+        setPages(prevPages => 
+          prevPages.map(p => 
+            p.id === page.id
+              ? {
+                  ...p,
+                  validation_status: data.allFixed ? 'validated' : 'failed',
+                  validated_at: new Date().toISOString(),
+                  validation_details: data
+                }
+              : p
+          )
+        );
+      } else {
+        setError(`Validation failed: ${data.error}`);
+        setPages(prevPages => 
+          prevPages.map(p => 
+            p.id === page.id
+              ? { ...p, validation_status: 'failed', validated_at: new Date().toISOString() }
+              : p
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error validating fixes:', error);
+      setError('Failed to validate fixes. Please try again.');
+      setPages(prevPages => 
+        prevPages.map(p => 
+          p.id === page.id
+            ? { ...p, validation_status: 'failed' }
+            : p
+        )
+      );
+    } finally {
+      setValidatingPages(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(page.id);
+        return newSet;
+      });
     }
   };
 
-  const getSeverityColor = (severity) => {
-    switch (severity) {
-      case 'critical':
-        return 'bg-red-50 border-red-200';
-      case 'warning':
-        return 'bg-yellow-50 border-yellow-200';
-      case 'info':
-        return 'bg-blue-50 border-blue-200';
-      default:
-        return 'bg-gray-50 border-gray-200';
-    }
+  const getScoreColor = (score) => {
+    if (score >= 80) return 'text-green-600 bg-green-50';
+    if (score >= 60) return 'text-yellow-600 bg-yellow-50';
+    return 'text-red-600 bg-red-50';
   };
 
-  const getSeverityBadge = (severity) => {
-    switch (severity) {
-      case 'critical':
-        return 'bg-red-100 text-red-800';
-      case 'warning':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'info':
-        return 'bg-blue-100 text-blue-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+  const hasAutoFixableIssues = (page) => {
+    return page.issues.some(i => i.auto_fixable && i.fix_status === 'not_fixed');
+  };
+
+  const allIssuesFixed = (page) => {
+    const autoFixable = page.issues.filter(i => i.auto_fixable);
+    if (autoFixable.length === 0) return false;
+    return autoFixable.every(i => i.fix_status === 'applied' || i.fix_status === 'verified');
+  };
+
+  const formatDateTime = (dateString) => {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
+  const getNextScanDate = (lastScanDate) => {
+    if (!lastScanDate) return 'Not scheduled';
+    const date = new Date(lastScanDate);
+    date.setDate(date.getDate() + 7);
+    return formatDateTime(date.toISOString());
   };
 
   if (loading) {
@@ -208,283 +234,314 @@ export default function AutoFixSEOResults() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
+        <div className="mb-6">
           <button
-            onClick={() => navigate('/dashboard/seo')}
+            onClick={() => navigate('/seo-dashboard')}
             className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
           >
             <FiArrowLeft className="w-5 h-5" />
             Back to SEO Dashboard
           </button>
 
-          <div className="bg-white rounded-2xl shadow-lg p-6">
+          <div className="bg-white rounded-xl shadow-lg p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                <h1 className="text-2xl font-bold text-gray-900 mb-1">
                   SEO Scan Results
                 </h1>
                 <p className="text-gray-600">{scan?.domain}</p>
               </div>
               <div className="text-right">
-                <div className="text-4xl font-bold text-indigo-600 mb-1">
+                <div className="text-3xl font-bold text-indigo-600 mb-1">
                   {scan?.score}/100
                 </div>
                 <p className="text-sm text-gray-500">{scan?.total_pages} pages scanned</p>
               </div>
             </div>
 
-            <div className="mt-6 flex gap-4">
-              <div className="flex items-center gap-2 px-4 py-2 bg-red-50 rounded-lg">
-                <FiAlertCircle className="w-5 h-5 text-red-600" />
-                <span className="font-semibold text-red-900">{scan?.critical_count}</span>
-                <span className="text-red-700">Critical</span>
+            {error && (
+              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
+                <FiXCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-red-900">Error</p>
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
               </div>
-              <div className="flex items-center gap-2 px-4 py-2 bg-yellow-50 rounded-lg">
-                <FiAlertTriangle className="w-5 h-5 text-yellow-600" />
-                <span className="font-semibold text-yellow-900">{scan?.warning_count}</span>
-                <span className="text-yellow-700">Warnings</span>
-              </div>
-              <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-lg">
-                <FiInfo className="w-5 h-5 text-blue-600" />
-                <span className="font-semibold text-blue-900">{scan?.info_count}</span>
-                <span className="text-blue-700">Info</span>
-              </div>
-            </div>
-
-            <div className="mt-6 flex gap-3">
-              <button
-                onClick={() => navigate(`/scan-history?domain=${encodeURIComponent(scan?.domain)}`)}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
-              >
-                <FiClock className="w-4 h-4 inline mr-2" />
-                View History
-              </button>
-            </div>
+            )}
           </div>
         </div>
 
-        {/* Pages List */}
-        <div className="space-y-4">
-          {pages.map((page) => {
-            const isExpanded = expandedPages.has(page.id);
-            const isApplyingPage = applyingPageFixes.has(page.id);
-            const autoFixableCount = page.issues.filter(i => i.auto_fixable && i.fix_status === 'not_fixed').length;
+        {/* Data Table */}
+        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider w-16">
+                    SL No
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    Page URL
+                  </th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider w-24">
+                    SEO Score
+                  </th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider w-32">
+                    Google Rank
+                  </th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider w-28">
+                    Fix Available
+                  </th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider w-36">
+                    Action
+                  </th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider w-36">
+                    Validation
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider w-40">
+                    Last Scan
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider w-40">
+                    Next Scan
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {pages.length === 0 ? (
+                  <tr>
+                    <td colSpan="9" className="px-4 py-12 text-center text-gray-500">
+                      No pages found for this scan
+                    </td>
+                  </tr>
+                ) : (
+                  pages.map((page) => {
+                    const isExpanded = expandedRows.has(page.id);
+                    const isApplying = applyingFixes.has(page.id);
+                    const isValidating = validatingPages.has(page.id);
+                    const hasFixable = hasAutoFixableIssues(page);
+                    const isFixed = allIssuesFixed(page) || page.fix_applied;
 
-            return (
-              <div key={page.id} className="bg-white rounded-xl shadow-md overflow-hidden">
-                {/* Page Header */}
-                <div
-                  className="p-6 cursor-pointer hover:bg-gray-50 transition-colors"
-                  onClick={() => togglePageExpand(page.id)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className="flex items-center gap-2">
-                        {isExpanded ? (
-                          <FiChevronDown className="w-5 h-5 text-gray-400" />
-                        ) : (
-                          <FiChevronRight className="w-5 h-5 text-gray-400" />
-                        )}
-                        <span className="text-lg font-bold text-gray-900">
-                          {page.sequence_number}.
-                        </span>
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-indigo-600 hover:text-indigo-800 break-all">
-                          {page.page_url}
-                        </p>
-                        {page.page_title && (
-                          <p className="text-xs text-gray-500 mt-1">{page.page_title}</p>
-                        )}
-                      </div>
-                    </div>
+                    return (
+                      <React.Fragment key={page.id}>
+                        <tr className="hover:bg-gray-50 transition-colors">
+                          {/* SL No */}
+                          <td className="px-4 py-4 text-sm font-medium text-gray-900">
+                            {page.sequence_number}
+                          </td>
 
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-gray-900">
-                          {page.page_score}/100
-                        </div>
-                      </div>
-                      <div className="flex gap-2">
-                        {page.critical_count > 0 && (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                            {page.critical_count} Critical
-                          </span>
-                        )}
-                        {page.warning_count > 0 && (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                            {page.warning_count} Warning
-                          </span>
-                        )}
-                        {page.info_count > 0 && (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            {page.info_count} Info
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {!isExpanded && autoFixableCount > 0 && (
-                    <div className="mt-4 flex gap-3">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          applyPageFixes(page);
-                        }}
-                        disabled={isApplyingPage}
-                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
-                      >
-                        {isApplyingPage ? (
-                          <>
-                            <FiLoader className="w-4 h-4 animate-spin" />
-                            Applying...
-                          </>
-                        ) : (
-                          <>
-                            <FiZap className="w-4 h-4" />
-                            Fix All Safe Issues ({autoFixableCount})
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Page Issues (Expanded) */}
-                {isExpanded && (
-                  <div className="px-6 pb-6 bg-gray-50">
-                    {autoFixableCount > 0 && (
-                      <div className="mb-4 pt-4">
-                        <button
-                          onClick={() => applyPageFixes(page)}
-                          disabled={isApplyingPage}
-                          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
-                        >
-                          {isApplyingPage ? (
-                            <>
-                              <FiLoader className="w-4 h-4 animate-spin" />
-                              Applying...
-                            </>
-                          ) : (
-                            <>
-                              <FiZap className="w-4 h-4" />
-                              Fix All Safe Issues ({autoFixableCount})
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    )}
-
-                    <div className="space-y-4">
-                      {page.issues.map((issue) => {
-                        const fixKey = `${issue.id}`;
-                        const isApplying = applyingFixes.has(fixKey);
-                        const isApplied = issue.fix_status === 'applied' || issue.fix_status === 'verified';
-
-                        return (
-                          <div
-                            key={issue.id}
-                            className={`border rounded-lg p-4 ${getSeverityColor(issue.severity)}`}
-                          >
-                            <div className="flex items-start gap-4">
-                              <div className="flex-shrink-0 mt-1">
-                                {getSeverityIcon(issue.severity)}
-                              </div>
-
-                              <div className="flex-1">
-                                {/* Issue Header */}
-                                <div className="flex items-start justify-between mb-3">
-                                  <div>
-                                    <h4 className="font-semibold text-gray-900 mb-1">
-                                      {issue.title}
-                                    </h4>
-                                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getSeverityBadge(issue.severity)}`}>
-                                      {issue.severity.charAt(0).toUpperCase() + issue.severity.slice(1)}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                {/* Why it matters */}
-                                {issue.why_it_matters && (
-                                  <div className="mb-3 p-3 bg-white bg-opacity-60 rounded">
-                                    <p className="text-xs font-semibold text-gray-700 mb-1">
-                                      Why it matters:
-                                    </p>
-                                    <p className="text-sm text-gray-700">
-                                      {issue.why_it_matters}
-                                    </p>
-                                  </div>
+                          {/* Page URL */}
+                          <td className="px-4 py-4">
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => toggleRowExpand(page.id)}
+                                className="text-indigo-600 hover:text-indigo-800 font-medium text-sm flex items-center gap-2"
+                              >
+                                {isExpanded ? (
+                                  <FiChevronDown className="w-4 h-4" />
+                                ) : (
+                                  <FiChevronRight className="w-4 h-4" />
                                 )}
-
-                                {/* Current Value */}
-                                {issue.current_value && (
-                                  <div className="mb-3">
-                                    <p className="text-xs font-semibold text-gray-600 mb-1">
-                                      Current:
-                                    </p>
-                                    <p className="text-sm text-gray-800 font-mono bg-white bg-opacity-60 p-2 rounded break-words">
-                                      {issue.current_value}
-                                    </p>
-                                  </div>
-                                )}
-
-                                {/* Recommended Value */}
-                                {issue.recommended_value && (
-                                  <div className="mb-3">
-                                    <p className="text-xs font-semibold text-green-700 mb-1">
-                                      Recommended:
-                                    </p>
-                                    <p className="text-sm text-gray-800 font-mono bg-green-50 p-2 rounded break-words">
-                                      {issue.recommended_value}
-                                    </p>
-                                  </div>
-                                )}
-
-                                {/* Actions */}
-                                <div className="flex items-center gap-3 mt-4">
-                                  {isApplied ? (
-                                    <div className="flex items-center gap-2 px-3 py-1.5 bg-green-100 text-green-700 rounded-lg">
-                                      <FiCheck className="w-4 h-4" />
-                                      <span className="text-sm font-medium">Applied</span>
-                                    </div>
-                                  ) : issue.auto_fixable ? (
-                                    <button
-                                      onClick={() => applySingleFix(issue, page.id)}
-                                      disabled={isApplying}
-                                      className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
-                                    >
-                                      {isApplying ? (
-                                        <>
-                                          <FiLoader className="w-4 h-4 animate-spin" />
-                                          Applying...
-                                        </>
-                                      ) : (
-                                        <>
-                                          <FiZap className="w-4 h-4" />
-                                          Auto Fix
-                                        </>
-                                      )}
-                                    </button>
-                                  ) : (
-                                    <div className="px-3 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium">
-                                      Manual Fix Required
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
+                                <span className="truncate max-w-md">{page.page_url}</span>
+                              </button>
+                              <a
+                                href={page.page_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-gray-400 hover:text-gray-600"
+                              >
+                                <FiExternalLink className="w-4 h-4" />
+                              </a>
                             </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                            {page.issues.length > 0 && (
+                              <div className="text-xs text-gray-500 mt-1">
+                                {page.critical_count > 0 && <span className="text-red-600">{page.critical_count} Critical</span>}
+                                {page.critical_count > 0 && page.warning_count > 0 && <span className="mx-1">•</span>}
+                                {page.warning_count > 0 && <span className="text-yellow-600">{page.warning_count} Warning</span>}
+                              </div>
+                            )}
+                          </td>
+
+                          {/* SEO Score */}
+                          <td className="px-4 py-4 text-center">
+                            <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${getScoreColor(page.page_score)}`}>
+                              {page.page_score}/100
+                            </span>
+                          </td>
+
+                          {/* Google Rank */}
+                          <td className="px-4 py-4 text-center">
+                            <span className="text-xs text-gray-400 italic">Coming Soon</span>
+                          </td>
+
+                          {/* Fix Available */}
+                          <td className="px-4 py-4 text-center">
+                            {hasFixable ? (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                Yes
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                                No
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Action Button */}
+                          <td className="px-4 py-4 text-center">
+                            {isFixed ? (
+                              <button
+                                disabled
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-medium cursor-not-allowed"
+                              >
+                                <FiCheck className="w-4 h-4" />
+                                Applied
+                              </button>
+                            ) : hasFixable ? (
+                              <button
+                                onClick={() => applyPageFixes(page)}
+                                disabled={isApplying}
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                              >
+                                {isApplying ? (
+                                  <>
+                                    <FiLoader className="w-4 h-4 animate-spin" />
+                                    Applying...
+                                  </>
+                                ) : (
+                                  <>
+                                    <FiZap className="w-4 h-4" />
+                                    Auto Apply
+                                  </>
+                                )}
+                              </button>
+                            ) : (
+                              <span className="text-xs text-gray-500">Manual Fix</span>
+                            )}
+                          </td>
+
+                          {/* Validation Status */}
+                          <td className="px-4 py-4 text-center">
+                            {!isFixed ? (
+                              <span className="text-xs text-gray-400">-</span>
+                            ) : page.validation_status === 'validated' ? (
+                              <button
+                                disabled
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-medium cursor-not-allowed"
+                              >
+                                <FiCheckCircle className="w-4 h-4" />
+                                Validated
+                              </button>
+                            ) : page.validation_status === 'failed' ? (
+                              <button
+                                onClick={() => validatePageFixes(page)}
+                                disabled={isValidating}
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 text-sm font-medium"
+                              >
+                                <FiXCircle className="w-4 h-4" />
+                                Retry
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => validatePageFixes(page)}
+                                disabled={isValidating}
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 disabled:opacity-50 text-sm font-medium"
+                              >
+                                {isValidating ? (
+                                  <>
+                                    <FiLoader className="w-4 h-4 animate-spin" />
+                                    Validating...
+                                  </>
+                                ) : (
+                                  <>
+                                    <FiCheckCircle className="w-4 h-4" />
+                                    Validate Fix
+                                  </>
+                                )}
+                              </button>
+                            )}
+                          </td>
+
+                          {/* Last Scan */}
+                          <td className="px-4 py-4 text-xs text-gray-600">
+                            {formatDateTime(page.created_at)}
+                          </td>
+
+                          {/* Next Scan */}
+                          <td className="px-4 py-4 text-xs text-gray-600">
+                            <div>
+                              {getNextScanDate(page.created_at)}
+                            </div>
+                            <div className="text-gray-400 mt-0.5">(Every 7 days)</div>
+                          </td>
+                        </tr>
+
+                        {/* Expanded Row - Issues Detail */}
+                        {isExpanded && (
+                          <tr>
+                            <td colSpan="9" className="px-4 py-4 bg-gray-50">
+                              <div className="space-y-3">
+                                <h4 className="font-semibold text-gray-900 mb-3">
+                                  SEO Issues ({page.issues.length})
+                                </h4>
+                                {page.issues.map((issue) => (
+                                  <div
+                                    key={issue.id}
+                                    className="bg-white border border-gray-200 rounded-lg p-4"
+                                  >
+                                    <div className="flex items-start gap-3">
+                                      <div className="flex-shrink-0 mt-1">
+                                        {issue.severity === 'critical' && <FiAlertCircle className="w-5 h-5 text-red-600" />}
+                                        {issue.severity === 'warning' && <FiAlertTriangle className="w-5 h-5 text-yellow-600" />}
+                                        {issue.severity === 'info' && <FiInfo className="w-5 h-5 text-blue-600" />}
+                                      </div>
+                                      <div className="flex-1">
+                                        <div className="flex items-center gap-2 mb-2">
+                                          <h5 className="font-medium text-gray-900">{issue.title}</h5>
+                                          <span className={`text-xs px-2 py-0.5 rounded ${
+                                            issue.severity === 'critical' ? 'bg-red-100 text-red-800' :
+                                            issue.severity === 'warning' ? 'bg-yellow-100 text-yellow-800' :
+                                            'bg-blue-100 text-blue-800'
+                                          }`}>
+                                            {issue.severity}
+                                          </span>
+                                          {issue.fix_status === 'applied' && (
+                                            <span className="text-xs px-2 py-0.5 rounded bg-green-100 text-green-800">
+                                              Fixed
+                                            </span>
+                                          )}
+                                        </div>
+                                        {issue.why_it_matters && (
+                                          <p className="text-sm text-gray-700 mb-2">{issue.why_it_matters}</p>
+                                        )}
+                                        {issue.current_value && (
+                                          <div className="text-xs mb-2">
+                                            <span className="font-medium text-gray-600">Current: </span>
+                                            <span className="text-gray-800">{issue.current_value}</span>
+                                          </div>
+                                        )}
+                                        {issue.recommended_value && (
+                                          <div className="text-xs">
+                                            <span className="font-medium text-green-600">Recommended: </span>
+                                            <span className="text-gray-800">{issue.recommended_value}</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })
                 )}
-              </div>
-            );
-          })}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

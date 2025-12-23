@@ -1504,8 +1504,8 @@ router.post('/fixes/apply-single', async (req, res) => {
     // Insert fix record
     const fixResult = await pool.query(
       `INSERT INTO seo_fixes 
-       (scan_id, issue_id, scan_page_id, fix_code, before_value, status, applied_by, applied_at)
-       VALUES ($1, $2, $3, $4, $5, 'applied', $6, NOW())
+       (scan_id, issue_id, scan_page_id, fix_code, before_value, status, user_id, applied_by, applied_at, fix_type)
+       VALUES ($1, $2, $3, $4, $5, 'applied', $6, $6, NOW(), 'javascript')
        RETURNING id`,
       [scanId, issueId, issue.scan_page_id, fixCode, issue.current_value, userId]
     );
@@ -1562,8 +1562,8 @@ router.post('/fixes/apply-page', async (req, res) => {
         // Insert fix record
         const fixResult = await pool.query(
           `INSERT INTO seo_fixes 
-           (scan_id, issue_id, scan_page_id, fix_code, before_value, status, applied_by, applied_at)
-           VALUES ($1, $2, $3, $4, $5, 'applied', $6, NOW())
+           (scan_id, issue_id, scan_page_id, fix_code, before_value, status, user_id, applied_by, applied_at, fix_type)
+           VALUES ($1, $2, $3, $4, $5, 'applied', $6, $6, NOW(), 'javascript')
            RETURNING id`,
           [scanId, issue.id, scanPageId, fixCode, issue.current_value, userId]
         );
