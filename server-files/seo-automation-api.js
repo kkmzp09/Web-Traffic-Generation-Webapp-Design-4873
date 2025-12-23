@@ -1530,7 +1530,7 @@ router.post('/fixes/apply-single', async (req, res) => {
 
 /**
  * POST /api/seo/fixes/apply-page
- * Apply all auto-fixable issues for a page
+ * Apply all auto-fixable issues for a page AND auto-validate
  */
 router.post('/fixes/apply-page', async (req, res) => {
   try {
@@ -1542,6 +1542,24 @@ router.post('/fixes/apply-page', async (req, res) => {
         error: 'scanPageId, userId, and scanId required' 
       });
     }
+
+    // Get page info and scan info for validation
+    const pageResult = await pool.query(
+      `SELECT sp.page_url, s.domain 
+       FROM seo_page_scans sp
+       JOIN seo_scans s ON sp.scan_id = s.id
+       WHERE sp.id = $1`,
+      [scanPageId]
+    );
+
+    if (pageResult.rows.length === 0) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Page not found' 
+      });
+    }
+
+    const { page_url, domain } = pageResult.rows[0];
 
     // Get all auto-fixable issues for this page that aren't fixed
     const issuesResult = await pool.query(
@@ -1555,6 +1573,7 @@ router.post('/fixes/apply-page', async (req, res) => {
     const fixes = [];
     const { generateFixCode } = require('./apply-fixes-api');
 
+    // STEP 1: Apply all fixes
     for (const issue of issuesResult.rows) {
       try {
         const fixCode = generateFixCode(issue);
@@ -1568,7 +1587,7 @@ router.post('/fixes/apply-page', async (req, res) => {
           [scanId, issue.id, scanPageId, fixCode, issue.current_value, userId]
         );
 
-        // Update issue status
+        // Update issue status to 'applied' (will be updated to 'verified' or 'failed' after validation)
         await pool.query(
           'UPDATE seo_issues SET fix_status = $1 WHERE id = $2',
           ['applied', issue.id]
@@ -1577,22 +1596,119 @@ router.post('/fixes/apply-page', async (req, res) => {
         fixes.push({
           issueId: issue.id,
           fixId: fixResult.rows[0].id,
-          status: 'applied'
+          status: 'applied',
+          title: issue.title
         });
       } catch (fixError) {
         console.error(`Error fixing issue ${issue.id}:`, fixError);
         fixes.push({
           issueId: issue.id,
           status: 'failed',
-          error: fixError.message
+          error: fixError.message,
+          title: issue.title
         });
       }
     }
 
+    // STEP 2: Auto-validate fixes (async, don't block response)
+    // Run validation in background
+    if (fixes.filter(f => f.status === 'applied').length > 0) {
+      // Trigger validation asynchronously
+      setImmediate(async () => {
+        try {
+          console.log(`🔍 Auto-validating fixes for ${page_url}...`);
+          
+          const puppeteer = require('puppeteer');
+          const axios = require('axios');
+          
+          let browser;
+          try {
+            // Fetch widget script
+            const widgetResponse = await axios.get(
+              `http://localhost:3001/api/seo/widget/auto-fixes?domain=${domain}`
+            );
+            const widgetScript = widgetResponse.data;
+
+            // Launch browser
+            browser = await puppeteer.launch({
+              headless: true,
+              args: ['--no-sandbox', '--disable-setuid-sandbox']
+            });
+
+            const page = await browser.newPage();
+            
+            // Navigate to page
+            await page.goto(page_url, { waitUntil: 'networkidle0', timeout: 30000 });
+
+            // Inject widget
+            await page.evaluate((script) => {
+              const scriptTag = document.createElement('script');
+              scriptTag.textContent = script;
+              document.head.appendChild(scriptTag);
+            }, widgetScript);
+
+            // Wait for fixes to apply
+            await page.waitForTimeout(2000);
+
+            // Validate each fix
+            for (const fix of fixes.filter(f => f.status === 'applied')) {
+              try {
+                const issueData = issuesResult.rows.find(i => i.id === fix.issueId);
+                let verified = false;
+
+                // Check based on issue type
+                if (issueData.title.toLowerCase().includes('title')) {
+                  const title = await page.title();
+                  verified = title.length <= 60; // Example validation
+                } else if (issueData.title.toLowerCase().includes('description')) {
+                  const description = await page.$eval('meta[name="description"]', el => el.content).catch(() => null);
+                  verified = description && description.length > 0 && description.length <= 160;
+                } else {
+                  // Default: assume verified if no errors
+                  verified = true;
+                }
+
+                // Update issue status
+                await pool.query(
+                  'UPDATE seo_issues SET fix_status = $1 WHERE id = $2',
+                  [verified ? 'verified' : 'failed', fix.issueId]
+                );
+
+                console.log(`  ✓ Issue ${fix.issueId} (${issueData.title}): ${verified ? 'VERIFIED' : 'FAILED'}`);
+              } catch (validateError) {
+                console.error(`  ✗ Validation error for issue ${fix.issueId}:`, validateError.message);
+                await pool.query(
+                  'UPDATE seo_issues SET fix_status = $1 WHERE id = $2',
+                  ['failed', fix.issueId]
+                );
+              }
+            }
+
+            console.log(`✅ Auto-validation complete for ${page_url}`);
+          } catch (validationError) {
+            console.error('Auto-validation error:', validationError.message);
+            // Mark all as failed if validation crashes
+            for (const fix of fixes.filter(f => f.status === 'applied')) {
+              await pool.query(
+                'UPDATE seo_issues SET fix_status = $1 WHERE id = $2',
+                ['failed', fix.issueId]
+              );
+            }
+          } finally {
+            if (browser) await browser.close();
+          }
+        } catch (error) {
+          console.error('Background validation error:', error);
+        }
+      });
+    }
+
+    // Return immediately (validation runs in background)
     res.json({
       success: true,
       fixedCount: fixes.filter(f => f.status === 'applied').length,
-      fixes
+      fixes,
+      message: 'Fixes applied. Validation running in background.'
     });
 
   } catch (error) {

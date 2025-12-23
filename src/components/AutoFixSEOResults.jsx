@@ -27,8 +27,8 @@ export default function AutoFixSEOResults() {
   const [loading, setLoading] = useState(true);
   const [expandedRows, setExpandedRows] = useState(new Set());
   const [applyingFixes, setApplyingFixes] = useState(new Set()); // Set of pageIds
-  const [validatingPages, setValidatingPages] = useState(new Set()); // Set of pageIds
   const [error, setError] = useState(null);
+  const [autoRefreshInterval, setAutoRefreshInterval] = useState(null);
 
   useEffect(() => {
     if (scanId && user) {
@@ -107,6 +107,9 @@ export default function AutoFixSEOResults() {
               : p
           )
         );
+        
+        // Start auto-refresh to check validation status
+        startAutoRefresh();
       } else {
         setError(`Failed to apply fixes: ${data.error}`);
       }
@@ -122,68 +125,32 @@ export default function AutoFixSEOResults() {
     }
   };
 
-  const validatePageFixes = async (page) => {
-    setValidatingPages(prev => new Set([...prev, page.id]));
-    setError(null);
-
-    try {
-      const response = await fetch(
-        'https://api.organitrafficboost.com/api/seo/verify-autofix',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            scanId: parseInt(scanId),
-            url: page.page_url,
-            domain: scan.domain
-          })
-        }
-      );
-
-      const data = await response.json();
-
-      if (data.success) {
-        // Update validation state
-        setPages(prevPages => 
-          prevPages.map(p => 
-            p.id === page.id
-              ? {
-                  ...p,
-                  validation_status: data.allFixed ? 'validated' : 'failed',
-                  validated_at: new Date().toISOString(),
-                  validation_details: data
-                }
-              : p
-          )
-        );
-      } else {
-        setError(`Validation failed: ${data.error}`);
-        setPages(prevPages => 
-          prevPages.map(p => 
-            p.id === page.id
-              ? { ...p, validation_status: 'failed', validated_at: new Date().toISOString() }
-              : p
-          )
-        );
+  // Auto-refresh to check validation status
+  const startAutoRefresh = () => {
+    if (autoRefreshInterval) return;
+    
+    const interval = setInterval(() => {
+      loadScanResults();
+    }, 5000); // Refresh every 5 seconds
+    
+    setAutoRefreshInterval(interval);
+    
+    // Stop after 2 minutes
+    setTimeout(() => {
+      if (interval) {
+        clearInterval(interval);
+        setAutoRefreshInterval(null);
       }
-    } catch (error) {
-      console.error('Error validating fixes:', error);
-      setError('Failed to validate fixes. Please try again.');
-      setPages(prevPages => 
-        prevPages.map(p => 
-          p.id === page.id
-            ? { ...p, validation_status: 'failed' }
-            : p
-        )
-      );
-    } finally {
-      setValidatingPages(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(page.id);
-        return newSet;
-      });
-    }
+    }, 120000);
   };
+
+  useEffect(() => {
+    return () => {
+      if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+      }
+    };
+  }, [autoRefreshInterval]);
 
   const getScoreColor = (score) => {
     if (score >= 80) return 'text-green-600 bg-green-50';
@@ -195,10 +162,18 @@ export default function AutoFixSEOResults() {
     return page.issues.some(i => i.auto_fixable && i.fix_status === 'not_fixed');
   };
 
-  const allIssuesFixed = (page) => {
+  const getPageStatus = (page) => {
     const autoFixable = page.issues.filter(i => i.auto_fixable);
-    if (autoFixable.length === 0) return false;
-    return autoFixable.every(i => i.fix_status === 'applied' || i.fix_status === 'verified');
+    if (autoFixable.length === 0) return 'no_fixes';
+    
+    const verified = autoFixable.filter(i => i.fix_status === 'verified').length;
+    const failed = autoFixable.filter(i => i.fix_status === 'failed').length;
+    const applied = autoFixable.filter(i => i.fix_status === 'applied').length;
+    
+    if (verified === autoFixable.length) return 'verified';
+    if (failed > 0) return 'failed';
+    if (applied > 0) return 'validating';
+    return 'not_fixed';
   };
 
   const formatDateTime = (dateString) => {
@@ -294,11 +269,8 @@ export default function AutoFixSEOResults() {
                   <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider w-28">
                     Fix Available
                   </th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider w-36">
-                    Action
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider w-36">
-                    Validation
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider w-48">
+                    Action / Status
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider w-40">
                     Last Scan
@@ -311,7 +283,7 @@ export default function AutoFixSEOResults() {
               <tbody className="divide-y divide-gray-200">
                 {pages.length === 0 ? (
                   <tr>
-                    <td colSpan="9" className="px-4 py-12 text-center text-gray-500">
+                    <td colSpan="8" className="px-4 py-12 text-center text-gray-500">
                       No pages found for this scan
                     </td>
                   </tr>
@@ -319,9 +291,8 @@ export default function AutoFixSEOResults() {
                   pages.map((page) => {
                     const isExpanded = expandedRows.has(page.id);
                     const isApplying = applyingFixes.has(page.id);
-                    const isValidating = validatingPages.has(page.id);
                     const hasFixable = hasAutoFixableIssues(page);
-                    const isFixed = allIssuesFixed(page) || page.fix_applied;
+                    const pageStatus = getPageStatus(page);
 
                     return (
                       <React.Fragment key={page.id}>
@@ -388,17 +359,9 @@ export default function AutoFixSEOResults() {
                             )}
                           </td>
 
-                          {/* Action Button */}
+                          {/* Action / Status */}
                           <td className="px-4 py-4 text-center">
-                            {isFixed ? (
-                              <button
-                                disabled
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-medium cursor-not-allowed"
-                              >
-                                <FiCheck className="w-4 h-4" />
-                                Applied
-                              </button>
-                            ) : hasFixable ? (
+                            {pageStatus === 'not_fixed' && hasFixable ? (
                               <button
                                 onClick={() => applyPageFixes(page)}
                                 disabled={isApplying}
@@ -416,50 +379,23 @@ export default function AutoFixSEOResults() {
                                   </>
                                 )}
                               </button>
+                            ) : pageStatus === 'validating' ? (
+                              <span className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-100 text-yellow-700 rounded-lg text-sm font-medium">
+                                <FiLoader className="w-4 h-4 animate-spin" />
+                                Validating...
+                              </span>
+                            ) : pageStatus === 'verified' ? (
+                              <span className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-medium">
+                                <FiCheckCircle className="w-4 h-4" />
+                                Fixed & Verified
+                              </span>
+                            ) : pageStatus === 'failed' ? (
+                              <span className="inline-flex items-center gap-2 px-4 py-2 bg-red-100 text-red-700 rounded-lg text-sm font-medium">
+                                <FiXCircle className="w-4 h-4" />
+                                Failed - Manual Fix Required
+                              </span>
                             ) : (
                               <span className="text-xs text-gray-500">Manual Fix</span>
-                            )}
-                          </td>
-
-                          {/* Validation Status */}
-                          <td className="px-4 py-4 text-center">
-                            {!isFixed ? (
-                              <span className="text-xs text-gray-400">-</span>
-                            ) : page.validation_status === 'validated' ? (
-                              <button
-                                disabled
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg text-sm font-medium cursor-not-allowed"
-                              >
-                                <FiCheckCircle className="w-4 h-4" />
-                                Validated
-                              </button>
-                            ) : page.validation_status === 'failed' ? (
-                              <button
-                                onClick={() => validatePageFixes(page)}
-                                disabled={isValidating}
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 text-sm font-medium"
-                              >
-                                <FiXCircle className="w-4 h-4" />
-                                Retry
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => validatePageFixes(page)}
-                                disabled={isValidating}
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 disabled:opacity-50 text-sm font-medium"
-                              >
-                                {isValidating ? (
-                                  <>
-                                    <FiLoader className="w-4 h-4 animate-spin" />
-                                    Validating...
-                                  </>
-                                ) : (
-                                  <>
-                                    <FiCheckCircle className="w-4 h-4" />
-                                    Validate Fix
-                                  </>
-                                )}
-                              </button>
                             )}
                           </td>
 
@@ -480,7 +416,7 @@ export default function AutoFixSEOResults() {
                         {/* Expanded Row - Issues Detail */}
                         {isExpanded && (
                           <tr>
-                            <td colSpan="9" className="px-4 py-4 bg-gray-50">
+                            <td colSpan="8" className="px-4 py-4 bg-gray-50">
                               <div className="space-y-3">
                                 <h4 className="font-semibold text-gray-900 mb-3">
                                   SEO Issues ({page.issues.length})
@@ -506,9 +442,19 @@ export default function AutoFixSEOResults() {
                                           }`}>
                                             {issue.severity}
                                           </span>
-                                          {issue.fix_status === 'applied' && (
+                                          {issue.fix_status === 'verified' && (
                                             <span className="text-xs px-2 py-0.5 rounded bg-green-100 text-green-800">
-                                              Fixed
+                                              ✓ Verified
+                                            </span>
+                                          )}
+                                          {issue.fix_status === 'applied' && (
+                                            <span className="text-xs px-2 py-0.5 rounded bg-yellow-100 text-yellow-800">
+                                              ⏳ Validating
+                                            </span>
+                                          )}
+                                          {issue.fix_status === 'failed' && (
+                                            <span className="text-xs px-2 py-0.5 rounded bg-red-100 text-red-800">
+                                              ✗ Failed
                                             </span>
                                           )}
                                         </div>
