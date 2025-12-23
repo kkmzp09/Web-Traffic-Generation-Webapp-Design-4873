@@ -15,6 +15,7 @@ const comprehensiveAuditRoutes = require('./comprehensive-seo-audit');
 const scanHistoryRoutes = require('./seo-scan-history-api');
 const { sendScanEmail } = require('./send-scan-email');
 const { generateAutoFixesForScan } = require('./generate-auto-fixes');
+const { getWhyItMatters, getRecommendedValue, isAutoFixable, calculatePageScore } = require('./seo-issue-helpers');
 
 // Use Puppeteer scanner for JavaScript-rendered pages (set to true to enable)
 const USE_PUPPETEER = process.env.USE_PUPPETEER_SCANNER === 'true' || false;
@@ -332,7 +333,10 @@ async function performScan(scanId, url, userId, domain, pageLimit = 10) {
     let totalScore = 0;
     let scannedCount = 0;
     
-    for (const pageUrl of pagesToScan) {
+    for (let i = 0; i < pagesToScan.length; i++) {
+      const pageUrl = pagesToScan[i];
+      const sequenceNumber = i + 1; // 1-indexed
+      
       try {
         // Update progress before scanning
         progressTracker.updateScanning(scanId, scannedCount, pageUrl);
@@ -349,15 +353,42 @@ async function performScan(scanId, url, userId, domain, pageLimit = 10) {
         totalWarnings += scanResults.issues.filter(i => i.severity === 'warning').length;
         totalPassed += scanResults.passed.length;
         
-        // Insert issues for this page
+        // PHASE 1: Calculate page-level counts
+        const pageCriticalCount = scanResults.issues.filter(i => i.severity === 'critical').length;
+        const pageWarningCount = scanResults.issues.filter(i => i.severity === 'warning').length;
+        const pageInfoCount = scanResults.issues.filter(i => i.severity === 'info').length;
+        const pageScore = calculatePageScore(scanResults.issues);
+        
+        // PHASE 1: Insert into seo_page_scans with sequence number
+        const pageInsertResult = await pool.query(
+          `INSERT INTO seo_page_scans 
+           (scan_id, sequence_number, page_url, page_title, page_score, critical_count, warning_count, info_count, scan_success, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+           RETURNING id`,
+          [scanId, sequenceNumber, pageUrl, scanResults.title || '', pageScore, pageCriticalCount, pageWarningCount, pageInfoCount, true]
+        );
+        
+        const scanPageId = pageInsertResult.rows[0].id;
+        
+        // PHASE 1: Insert issues with enhanced data
         for (const issue of scanResults.issues) {
+          const whyItMatters = getWhyItMatters(issue.title);
+          const recommendedValue = getRecommendedValue({
+            ...issue,
+            currentValue: issue.currentValue,
+            pageTitle: scanResults.title,
+            pageUrl: pageUrl
+          });
+          const autoFixable = isAutoFixable(issue.title);
+          
           await pool.query(
             `INSERT INTO seo_issues 
-             (scan_id, user_id, category, severity, title, description, current_value, element_selector, page_url)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-            [scanId, userId, issue.category, issue.severity, 
+             (scan_id, scan_page_id, user_id, category, severity, title, description, current_value, element_selector, page_url, why_it_matters, recommended_value, auto_fixable, fix_status)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)`,
+            [scanId, scanPageId, userId, issue.category, issue.severity, 
              issue.title, issue.description, 
-             issue.currentValue, issue.elementSelector, pageUrl]
+             issue.currentValue, issue.elementSelector, pageUrl,
+             whyItMatters, recommendedValue, autoFixable, 'not_fixed']
           );
         }
         
@@ -381,7 +412,7 @@ async function performScan(scanId, url, userId, domain, pageLimit = 10) {
     const avgScore = scannedCount > 0 ? Math.round(totalScore / scannedCount) : 0;
     const scanDuration = Date.now() - startTime;
     
-    // Update scan record with aggregated results
+    // PHASE 1: Update scan record with aggregated results including new columns
     await pool.query(
       `UPDATE seo_scans 
        SET status = 'completed', 
@@ -392,9 +423,14 @@ async function performScan(scanId, url, userId, domain, pageLimit = 10) {
            scan_duration_ms = $5,
            pages_scanned = $6,
            pages_skipped = $7,
+           total_pages = $8,
+           critical_count = $9,
+           warning_count = $10,
+           info_count = $11,
            scanned_at = NOW()
-       WHERE id = $8`,
-      [avgScore, totalCritical, totalWarnings, totalPassed, scanDuration, scannedCount, skippedPages.length, scanId]
+       WHERE id = $12`,
+      [avgScore, totalCritical, totalWarnings, totalPassed, scanDuration, scannedCount, skippedPages.length, 
+       scannedCount, totalCritical, totalWarnings, (totalIssues - totalCritical - totalWarnings), scanId]
     );
 
     console.log(`✅ Scan ${scanId} completed: ${scannedCount} pages scanned, ${skippedPages.length} pages skipped (pending issues), avg score ${avgScore}, ${totalIssues} total issues`);
@@ -1253,5 +1289,316 @@ router.use('/', widgetValidationStatusAPI);
 // Website management routes
 const websitesRoutes = require('./websites-api');
 router.use('/websites', websitesRoutes);
+
+// ============================================
+// PHASE 1: NEW READ APIs
+// ============================================
+
+/**
+ * GET /api/seo/scans/:scanId/pages
+ * Get page-level results for a scan with issues
+ */
+router.get('/scans/:scanId/pages', async (req, res) => {
+  try {
+    const { scanId } = req.params;
+
+    // Get scan details
+    const scanResult = await pool.query(
+      'SELECT * FROM seo_scans WHERE id = $1',
+      [scanId]
+    );
+
+    if (scanResult.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Scan not found' });
+    }
+
+    const scan = scanResult.rows[0];
+
+    // Get pages with issues
+    const pagesResult = await pool.query(
+      `SELECT 
+        sp.id,
+        sp.sequence_number,
+        sp.page_url,
+        sp.page_title,
+        sp.page_score,
+        sp.critical_count,
+        sp.warning_count,
+        sp.info_count,
+        sp.created_at
+      FROM seo_page_scans sp
+      WHERE sp.scan_id = $1
+      ORDER BY sp.sequence_number ASC`,
+      [scanId]
+    );
+
+    // Get issues for each page
+    const pages = [];
+    for (const page of pagesResult.rows) {
+      const issuesResult = await pool.query(
+        `SELECT 
+          id,
+          title,
+          description,
+          why_it_matters,
+          current_value,
+          recommended_value,
+          severity,
+          category,
+          auto_fixable,
+          fix_status
+        FROM seo_issues
+        WHERE scan_page_id = $1
+        ORDER BY 
+          CASE severity 
+            WHEN 'critical' THEN 1 
+            WHEN 'warning' THEN 2 
+            WHEN 'info' THEN 3 
+            ELSE 4 
+          END,
+          title ASC`,
+        [page.id]
+      );
+
+      pages.push({
+        ...page,
+        issues: issuesResult.rows
+      });
+    }
+
+    res.json({
+      success: true,
+      scan: {
+        id: scan.id,
+        url: scan.url,
+        domain: scan.domain,
+        score: scan.seo_score,
+        total_pages: scan.total_pages,
+        critical_count: scan.critical_count,
+        warning_count: scan.warning_count,
+        info_count: scan.info_count,
+        created_at: scan.created_at
+      },
+      pages
+    });
+
+  } catch (error) {
+    console.error('Get scan pages error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/seo/scans/history
+ * Get scan history for a user/domain
+ */
+router.get('/scans/history', async (req, res) => {
+  try {
+    const { userId, domain, limit = 20, offset = 0 } = req.query;
+
+    if (!userId) {
+      return res.status(400).json({ success: false, error: 'userId required' });
+    }
+
+    let query = `
+      SELECT 
+        id,
+        url,
+        domain,
+        seo_score,
+        total_pages,
+        critical_count,
+        warning_count,
+        info_count,
+        created_at,
+        scanned_at
+      FROM seo_scans
+      WHERE user_id = $1
+    `;
+    
+    const params = [userId];
+
+    if (domain) {
+      query += ' AND domain = $2';
+      params.push(domain);
+      query += ' ORDER BY created_at DESC LIMIT $3 OFFSET $4';
+      params.push(parseInt(limit), parseInt(offset));
+    } else {
+      query += ' ORDER BY created_at DESC LIMIT $2 OFFSET $3';
+      params.push(parseInt(limit), parseInt(offset));
+    }
+
+    const result = await pool.query(query, params);
+
+    // Get total count
+    let countQuery = 'SELECT COUNT(*) FROM seo_scans WHERE user_id = $1';
+    const countParams = [userId];
+    if (domain) {
+      countQuery += ' AND domain = $2';
+      countParams.push(domain);
+    }
+    const countResult = await pool.query(countQuery, countParams);
+    const totalCount = parseInt(countResult.rows[0].count);
+
+    res.json({
+      success: true,
+      scans: result.rows,
+      pagination: {
+        total: totalCount,
+        limit: parseInt(limit),
+        offset: parseInt(offset),
+        hasMore: (parseInt(offset) + result.rows.length) < totalCount
+      }
+    });
+
+  } catch (error) {
+    console.error('Get scan history error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ============================================
+// PHASE 1: FIX APIs
+// ============================================
+
+/**
+ * POST /api/seo/fixes/apply-single
+ * Apply a single fix
+ */
+router.post('/fixes/apply-single', async (req, res) => {
+  try {
+    const { issueId, userId, scanId } = req.body;
+
+    if (!issueId || !userId || !scanId) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'issueId, userId, and scanId required' 
+      });
+    }
+
+    // Get issue details
+    const issueResult = await pool.query(
+      'SELECT * FROM seo_issues WHERE id = $1',
+      [issueId]
+    );
+
+    if (issueResult.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'Issue not found' });
+    }
+
+    const issue = issueResult.rows[0];
+
+    // Check if already fixed
+    if (issue.fix_status === 'applied' || issue.fix_status === 'verified') {
+      return res.json({ 
+        success: true, 
+        message: 'Issue already fixed',
+        alreadyFixed: true 
+      });
+    }
+
+    // Generate fix code (reuse existing logic from apply-fixes-api)
+    const { generateFixCode } = require('./apply-fixes-api');
+    const fixCode = generateFixCode(issue);
+
+    // Insert fix record
+    const fixResult = await pool.query(
+      `INSERT INTO seo_fixes 
+       (scan_id, issue_id, scan_page_id, fix_code, before_value, status, applied_by, applied_at)
+       VALUES ($1, $2, $3, $4, $5, 'applied', $6, NOW())
+       RETURNING id`,
+      [scanId, issueId, issue.scan_page_id, fixCode, issue.current_value, userId]
+    );
+
+    // Update issue status
+    await pool.query(
+      'UPDATE seo_issues SET fix_status = $1 WHERE id = $2',
+      ['applied', issueId]
+    );
+
+    res.json({
+      success: true,
+      fixId: fixResult.rows[0].id,
+      message: 'Fix applied successfully'
+    });
+
+  } catch (error) {
+    console.error('Apply single fix error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/seo/fixes/apply-page
+ * Apply all auto-fixable issues for a page
+ */
+router.post('/fixes/apply-page', async (req, res) => {
+  try {
+    const { scanPageId, userId, scanId } = req.body;
+
+    if (!scanPageId || !userId || !scanId) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'scanPageId, userId, and scanId required' 
+      });
+    }
+
+    // Get all auto-fixable issues for this page that aren't fixed
+    const issuesResult = await pool.query(
+      `SELECT * FROM seo_issues 
+       WHERE scan_page_id = $1 
+       AND auto_fixable = true 
+       AND fix_status = 'not_fixed'`,
+      [scanPageId]
+    );
+
+    const fixes = [];
+    const { generateFixCode } = require('./apply-fixes-api');
+
+    for (const issue of issuesResult.rows) {
+      try {
+        const fixCode = generateFixCode(issue);
+
+        // Insert fix record
+        const fixResult = await pool.query(
+          `INSERT INTO seo_fixes 
+           (scan_id, issue_id, scan_page_id, fix_code, before_value, status, applied_by, applied_at)
+           VALUES ($1, $2, $3, $4, $5, 'applied', $6, NOW())
+           RETURNING id`,
+          [scanId, issue.id, scanPageId, fixCode, issue.current_value, userId]
+        );
+
+        // Update issue status
+        await pool.query(
+          'UPDATE seo_issues SET fix_status = $1 WHERE id = $2',
+          ['applied', issue.id]
+        );
+
+        fixes.push({
+          issueId: issue.id,
+          fixId: fixResult.rows[0].id,
+          status: 'applied'
+        });
+      } catch (fixError) {
+        console.error(`Error fixing issue ${issue.id}:`, fixError);
+        fixes.push({
+          issueId: issue.id,
+          status: 'failed',
+          error: fixError.message
+        });
+      }
+    }
+
+    res.json({
+      success: true,
+      fixedCount: fixes.filter(f => f.status === 'applied').length,
+      fixes
+    });
+
+  } catch (error) {
+    console.error('Apply page fixes error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 module.exports = router;

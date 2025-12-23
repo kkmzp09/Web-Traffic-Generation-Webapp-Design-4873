@@ -101,7 +101,7 @@ export default function ScanHistory() {
         {/* Header */}
         <div className="mb-8">
           <button
-            onClick={() => navigate('/seo-automation')}
+            onClick={() => navigate('/seo-dashboard')}
             className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
           >
             <FiArrowLeft className="w-5 h-5" />
@@ -137,7 +137,7 @@ export default function ScanHistory() {
               Start scanning your website to see results here
             </p>
             <button
-              onClick={() => navigate('/seo-automation')}
+              onClick={() => navigate('/seo-dashboard')}
               className="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium"
             >
               Start New Scan
@@ -205,7 +205,7 @@ export default function ScanHistory() {
 
                       {/* Action */}
                       <button
-                        onClick={() => navigate(`/seo-automation/results/${scan.id}`)}
+                        onClick={() => navigate(`/seo-scan/${scan.id}`)}
                         className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium text-sm"
                       >
                         View Details

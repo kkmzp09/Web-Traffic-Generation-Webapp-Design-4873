@@ -212,7 +212,7 @@ export default function AutoFixSEOResults() {
         {/* Header */}
         <div className="mb-8">
           <button
-            onClick={() => navigate('/seo-automation')}
+            onClick={() => navigate('/dashboard/seo')}
             className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
           >
             <FiArrowLeft className="w-5 h-5" />
@@ -255,7 +255,7 @@ export default function AutoFixSEOResults() {
 
             <div className="mt-6 flex gap-3">
               <button
-                onClick={() => navigate(`/scan-history?domain=${scan?.domain}`)}
+                onClick={() => navigate(`/scan-history?domain=${encodeURIComponent(scan?.domain)}`)}
                 className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium"
               >
                 <FiClock className="w-4 h-4 inline mr-2" />
